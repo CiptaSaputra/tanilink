@@ -1,0 +1,6 @@
+{
+  "name": "Sistem Pengurangan Food Loss",
+  "description": "Platform digital untuk mengurangi kehilangan dan sisa pangan (food loss & waste) pada rantai pasok pertanian Indonesia melalui koordinasi multi-peran.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
