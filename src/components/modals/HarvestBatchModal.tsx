@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
-import { COMMODITY_LIST } from '../../types';
+import { useData } from '../../context/DataContext';
+import { COMMODITY_LIST } from '../../constants/commodities';
 
 interface HarvestBatchModalProps {
   harvestingId: string | null;
@@ -10,7 +10,7 @@ interface HarvestBatchModalProps {
 }
 
 export const HarvestBatchModal: React.FC<HarvestBatchModalProps> = ({ harvestingId, onClose }) => {
-  const { harvests, createHarvestBatch } = useApp();
+  const { harvests, createHarvestBatch } = useData();
   const [actualVolume, setActualVolume] = useState<number>(0);
 
   const h = harvestingId ? harvests.find(x => x.id === harvestingId) : null;

@@ -39,8 +39,11 @@ export type StorageKey = typeof STORAGE_KEYS[keyof typeof STORAGE_KEYS];
 /**
  * Baca item dari localStorage dan parse sebagai T.
  * Mengembalikan null jika kosong, tidak ada, atau JSON corrupt.
+ * SSR-safe: returns null if window is undefined.
  */
 export function storageRead<T>(key: StorageKey): T | null {
+  if (typeof window === 'undefined') return null;
+  
   try {
     const raw = localStorage.getItem(key);
     if (raw === null) return null;
@@ -54,8 +57,11 @@ export function storageRead<T>(key: StorageKey): T | null {
 /**
  * Tulis value ke localStorage sebagai JSON.
  * Silent fail dengan console.warn jika gagal (mis. storage penuh).
+ * SSR-safe: does nothing if window is undefined.
  */
 export function storageWrite<T>(key: StorageKey, value: T): void {
+  if (typeof window === 'undefined') return;
+  
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (err) {
@@ -65,8 +71,11 @@ export function storageWrite<T>(key: StorageKey, value: T): void {
 
 /**
  * Hapus satu key dari localStorage.
+ * SSR-safe.
  */
 export function storageRemove(key: StorageKey): void {
+  if (typeof window === 'undefined') return;
+  
   try {
     localStorage.removeItem(key);
   } catch (err) {

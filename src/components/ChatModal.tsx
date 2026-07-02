@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useApp } from '../context/AppContext';
+import { useChat } from '../context/ChatContext';
 import { Message, Conversation } from '../types';
 import { X, Send, MessageSquare, Phone } from 'lucide-react';
 
@@ -29,7 +29,7 @@ export default function ChatModal({
   isOpen,
   onClose,
 }: ChatModalProps) {
-  const { conversations, messages, sendMessage, startConversation } = useApp();
+  const { conversations, messages, sendMessage, startConversation } = useChat();
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 

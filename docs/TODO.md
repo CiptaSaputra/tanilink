@@ -6,32 +6,36 @@
 
 ## High Priority
 
-### H-01: Implement Authentication & Login
+### [DONE] H-01: Implement Authentication & Login
 **Description:** Add proper auth (Better Auth recommended per PRD) with email/password login, registration, and session management for all 6 roles.
 **Why:** Without auth, there is no real multi-user system. Anyone can impersonate any role.
 **Difficulty:** Medium (3–5 days)
-**Files:** New: `src/context/AuthContext.tsx`, `src/pages/Login.tsx`, `src/pages/Register.tsx`
+**Files:** New: `src/context/AuthContext.tsx`, `src/components/auth/LoginPage.tsx`, `src/components/auth/RegisterPage.tsx`, `src/data/users.ts`
 **PRD:** FR-01, FR-02
+**Status:** ✅ Selesai — email/password login + register, session localStorage, 6 seed demo accounts. Password hash btoa (demo). Belum JWT/backend.
 
-### H-02: Replace localStorage with Database Layer
+### [DONE] H-02: Replace localStorage with Database Layer
 **Description:** Set up Drizzle ORM with SQLite (dev) / PostgreSQL (prod). Create schema migrations matching all types. Replace all localStorage reads/writes.
 **Why:** localStorage is ephemeral (5MB limit, cleared by browser). Real users need persistent, shared data.
 **Difficulty:** Hard (1–2 weeks)
-**Files:** All `src/context/AppContext.tsx`, new `src/db/schema.ts`, `src/db/seed.ts`
+**Files:** New: `src/services/` (8 service files + storage.ts + index.ts)
 **PRD:** FR-03 through FR-21 (all data endpoints)
+**Status:** ✅ Selesai (fase 1) — API Service abstraction layer dibuat. Semua localStorage call dipindahkan ke service layer. Swap ke Drizzle/PostgreSQL tinggal ubah implementasi di `src/services/*.ts`.
 
-### H-03: Create API Routes
+### [DONE] H-03: Create API Routes
 **Description:** Build Next.js API route handlers for all CRUD operations: plantings, demands, matches, pre-orders, batches, conversations, messages, payments, reviews, forecasts.
 **Why:** Frontend must communicate with backend. Currently no API exists.
 **Difficulty:** Hard (1–2 weeks)
-**Files:** New: `src/app/api/`
+**Files:** `app/api/` (12 route handlers), `next.config.mjs`, `postcss.config.mjs`, `tsconfig.json`
 **PRD:** All features
+**Status:** ✅ Selesai — Next.js 15 App Router migration complete. 12 API routes (harvests, demands, matches, pre-orders, conversations, messages, payments, reviews, batches). CSS fix: @tailwindcss/postcss installed.
 
-### H-04: Split AppContext Monolith
-**Description:** Decompose AppContext.tsx (670 lines) into domain-specific contexts: DataContext (harvests/demands), ChatContext, UIContext, or adopt Zustand.
+### [DONE] H-04: Split AppContext Monolith
+**Description:** Decompose AppContext.tsx (670 lines) into domain-specific contexts: UIContext, DataContext, ChatContext, PaymentContext, ReviewContext.
 **Why:** Single context re-renders all consumers on any state change. Performance degrades as state grows.
 **Difficulty:** Medium (2–3 days)
-**Files:** `src/context/AppContext.tsx`
+**Files:** `src/context/AppContext.tsx` (deleted), → `UIContext.tsx`, `DataContext.tsx`, `ChatContext.tsx`, `PaymentContext.tsx`, `ReviewContext.tsx`
+**Status:** ✅ Selesai (v1.4.0) — 5 contexts + `useData()`, `useUI()`, `useChat()`, `usePayment()`, `useReview()` hooks. All 16 components migrated. Re-render isolated per domain.
 
 ### [DONE] H-05: Decompose FarmerView (820 lines)
 **Description:** Extract PlantingForm, MyHarvestsTable, MatchCardList, PreOrderPanel, DeliveryModeSelector, PaymentModal, ReviewModal into separate components.
@@ -55,11 +59,12 @@
 **Difficulty:** Easy (1 day)
 **Files:** `src/components/FarmerView.tsx`, `src/components/BuyerView.tsx`
 
-### M-02: Add Error Boundaries
+### [DONE] M-02: Add Error Boundaries
 **Description:** Wrap each role view in an ErrorBoundary component that shows a fallback UI on crash.
 **Why:** Current architecture crashes entire app on any component error.
 **Difficulty:** Easy (0.5 day)
-**Files:** `src/App.tsx`, new: `src/components/ErrorBoundary.tsx`
+**Files:** `src/components/shared/ErrorBoundary.tsx` (new), wrapped: `DashboardApp.tsx`, `LoginPage`, `RegisterPage`, `DashboardPage`, semua role view + InteractiveMap
+**Status:** ✅ Selesai — semua page entry (login/register/dashboard) + masing-masing role view + map udah di-wrap. Crash role A tidak mematikan role B.
 
 ### [DONE] M-03: Move Seed Data from AppContext
 **Description:** Extract SEED_HARVESTS and SEED_DEMANDS to `src/seed/` or `src/data/` directory.
@@ -67,11 +72,12 @@
 **Difficulty:** Easy (0.5 day)
 **Files:** `src/context/AppContext.tsx`, new: `src/data/seed.ts`
 
-### M-04: Separate Types from Runtime Constants
+### [DONE] M-04: Separate Types from Runtime Constants
 **Description:** Move `COMMODITY_LIST` and `COMMODITY_WEIGHTS` from `types.ts` to `src/constants/commodities.ts`.
 **Why:** `types.ts` should contain only type definitions. Runtime data belongs in constants.
 **Difficulty:** Easy (0.5 day)
-**Files:** `src/types.ts`, new: `src/constants/commodities.ts`
+**Files:** new: `src/constants/commodities.ts`; updated: 15 files import path
+**Status:** ✅ Selesai — `types.ts` sekarang pure type definitions. Semua runtime data pindah ke `src/constants/commodities.ts`. 15 files diupdate import-nya.
 
 ### M-05: Implement Price Prediction (per kg)
 **Description:** Add price-per-kg forecasting using historical price data and regression/exponential smoothing. Display trend chart in farmer dashboard.

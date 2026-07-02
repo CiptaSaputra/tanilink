@@ -4,13 +4,13 @@
  */
 
 import React from 'react';
-import { useApp } from '../context/AppContext';
+import { useUI } from '../context/UIContext';
 import { useAuth } from '../context/AuthContext';
 import { Sprout, ShieldAlert, RefreshCw, Layers, Truck, Sliders, Users, ShoppingBag, LogOut, UserCircle, MapPin } from 'lucide-react';
 import { Role } from '../types';
 
 export default function Navbar() {
-  const { activeRole, setRole, resetAllData } = useApp();
+  const { activeRole, setRole, resetAllData } = useUI();
   const { currentUser, logout } = useAuth();
 
   const rolesList: { id: Role; label: string; icon: React.ReactNode; color: string; desc: string }[] = [

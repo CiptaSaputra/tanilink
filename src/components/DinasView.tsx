@@ -4,8 +4,9 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { useApp } from '../context/AppContext';
-import { COMMODITY_LIST, Komoditas, Harvest, Demand } from '../types';
+import { useData } from '../context/DataContext';
+import { COMMODITY_LIST } from '../constants/commodities';
+import type { Komoditas, Harvest, Demand } from '../types';
 import { generateHarvestForecast } from '../utils/forecasting';
 import { optimizeCollectorRoutes, optimizeBatchRoutes, calculateHaversineDistance } from '../utils/routeOptimizer';
 import { 
@@ -29,7 +30,7 @@ import {
 } from 'lucide-react';
 
 export default function DinasView() {
-  const { harvests, demands, matches, harvestBatches } = useApp();
+  const { harvests, demands, matches, harvestBatches } = useData();
   const [activeTab, setActiveTab] = useState<'monitoring' | 'forecasting' | 'routing'>('monitoring');
 
   // --- TAB 2: FORECASTING STATES ---

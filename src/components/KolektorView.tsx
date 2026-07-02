@@ -8,8 +8,8 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { useApp } from '../context/AppContext';
-import { COMMODITY_LIST } from '../types';
+import { useData } from '../context/DataContext';
+import { COMMODITY_LIST } from '../constants/commodities';
 import { optimizeBatchRoutes } from '../utils/routeOptimizer';
 import {
   Truck,
@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 export default function KolektorView() {
-  const { harvestBatches, preOrders, updateBatchStatus, activeUser } = useApp();
+  const { harvestBatches, preOrders, updateBatchStatus, activeUser } = useData();
 
   // Ready batches for this region
   const regionalBatches = useMemo(() =>

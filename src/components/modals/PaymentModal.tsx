@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Upload } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { usePayment } from '../../context/PaymentContext';
 
 interface PaymentModalProps {
   preOrderId: string | null;
@@ -9,7 +9,7 @@ interface PaymentModalProps {
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({ preOrderId, onClose }) => {
-  const { addPaymentConfirmation } = useApp();
+  const { addPaymentConfirmation } = usePayment();
   const [payProofUrl, setPayProofUrl] = useState('');
 
   return (

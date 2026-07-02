@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
-import { COMMODITY_LIST, Komoditas } from '../../types';
-import { useApp } from '../../context/AppContext';
+import { COMMODITY_LIST } from '../../constants/commodities';
+import type { Komoditas } from '../../types';
+import { useData } from '../../context/DataContext';
+import { useUI } from '../../context/UIContext';
 
 interface PlantingFormProps {
   mapLat?: number;
@@ -11,7 +13,8 @@ interface PlantingFormProps {
 }
 
 export const PlantingForm: React.FC<PlantingFormProps> = ({ mapLat, mapLng, mapRegion, clearMapSelection }) => {
-  const { addHarvest, showNotification } = useApp();
+  const { addHarvest } = useData();
+  const { showNotification } = useUI();
 
   const [commodity, setCommodity] = useState<Komoditas>('Bawang Merah');
   const [landArea, setLandArea] = useState<number>(1.0);

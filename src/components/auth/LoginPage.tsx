@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { Sprout, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -15,6 +16,7 @@ interface LoginPageProps {
 
 export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
   const { login } = useAuth();
+  const router = useRouter();
 
   const [credentials, setCredentials] = useState<LoginCredentials>({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
@@ -33,7 +35,9 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
     setError(null);
 
     const result = await login(credentials);
-    if (!result.success) {
+    if (result.success) {
+      router.replace('/');
+    } else {
       setError(result.error ?? 'Login gagal. Silakan coba lagi.');
     }
     setIsSubmitting(false);
@@ -43,7 +47,9 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
     setIsSubmitting(true);
     setError(null);
     const result = await login({ email, password: 'demo123' });
-    if (!result.success) {
+    if (result.success) {
+      router.replace('/');
+    } else {
       setError(result.error ?? 'Login gagal.');
     }
     setIsSubmitting(false);
@@ -178,6 +184,7 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
             {demoAccounts.map(acc => (
               <button
                 key={acc.email}
+                type="button"
                 onClick={() => handleDemoLogin(acc.email)}
                 disabled={isSubmitting}
                 className={`text-xs font-medium px-3 py-2 rounded-lg border transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${acc.color}`}

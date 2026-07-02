@@ -4,9 +4,10 @@
  */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useApp } from '../context/AppContext';
+import { useData } from '../context/DataContext';
 import { MapPin, Info, Tag, Calendar, User, Eye, EyeOff, Navigation, RefreshCw } from 'lucide-react';
-import { Harvest, Demand, COMMODITY_LIST, Komoditas } from '../types';
+import { COMMODITY_LIST } from '../constants/commodities';
+import type { Harvest, Demand, Komoditas } from '../types';
 import L from 'leaflet';
 
 interface InteractiveMapProps {
@@ -16,7 +17,7 @@ interface InteractiveMapProps {
 }
 
 export default function InteractiveMap({ onSelectCoords, selectedLat, selectedLng }: InteractiveMapProps) {
-  const { harvests, demands, matches } = useApp();
+  const { harvests, demands, matches } = useData();
   const [showHarvests, setShowHarvests] = useState(true);
   const [showDemands, setShowDemands] = useState(true);
   const [showMatches, setShowMatches] = useState(true);

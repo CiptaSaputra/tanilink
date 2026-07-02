@@ -5,12 +5,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useApp } from '../context/AppContext';
-import { 
-  COMMODITY_LIST, 
-  Komoditas, 
-  Harvest, 
-  Match 
+import { useData } from '../context/DataContext';
+import { useUI } from '../context/UIContext';
+import {
+  COMMODITY_LIST,
+} from '../constants/commodities';
+import type {
+  Komoditas,
+  Harvest,
+  Match,
 } from '../types';
 import { 
   Sprout, 
@@ -45,17 +48,12 @@ interface FarmerViewProps {
 }
 
 export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelection }: FarmerViewProps) {
-  const { 
-    harvests, 
-    demands, 
-    matches, 
-    addHarvest, 
-    updateMatchStatus, 
-    activeUser, 
-    showNotification,
-    createHarvestBatch,
-    harvestBatches,
-  } = useApp();
+  const {
+    harvests, demands, matches,
+    addHarvest, updateMatchStatus, activeUser,
+    createHarvestBatch, harvestBatches,
+  } = useData();
+  const { showNotification } = useUI();
 
   const [selectedTraceHarvest, setSelectedTraceHarvest] = useState<Harvest | null>(null);
 
@@ -74,19 +72,6 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
   const [longitude, setLongitude] = useState<number>(109.042);
   const [region, setRegion] = useState<string>('Brebes');
   const [notes, setNotes] = useState<string>('');
-
-  // Input Source metadata — petani hanya bisa self atau family
-  // Gapoktan & PPL input via dashboard PPL (input by proxy)
-  const [inputSource, setInputSource] = useState<'self' | 'family'>('self');
-
-  // Batch input rows state
-  const [batchRows, setBatchRows] = useState<{
-    farmerName: string;
-    commodity: Komoditas;
-    landArea: number;
-    expectedVolume: number;
-    askingPrice: number;
-  }[]>([]);
 
 
 
@@ -148,51 +133,19 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
     pDate.setDate(pDate.getDate() + metadata.typicalDurationDays);
     const expectedHarvestDate = pDate.toISOString().split('T')[0];
 
-    if (inputSource !== 'batch' as never) {
-      addHarvest({
-        commodity,
-        landArea,
-        expectedVolume,
-        askingPrice,
-        latitude,
-        longitude,
-        region,
-        plantingDate,
-        expectedHarvestDate,
-        notes,
-        inputSource,
-        inputByUserId: activeUser.PETANI.id
-      });
-    } else {
-      // Batch mode
-      if (batchRows.length === 0) {
-        showNotification('Silakan tambahkan minimal satu baris data petani!', 'warning');
-        return;
-      }
-      
-      batchRows.forEach((row) => {
-        const rowMetadata = COMMODITY_LIST[row.commodity];
-        const rowPDate = new Date(plantingDate);
-        rowPDate.setDate(rowPDate.getDate() + rowMetadata.typicalDurationDays);
-        const rowExpectedHarvestDate = rowPDate.toISOString().split('T')[0];
-
-        addHarvest({
-          commodity: row.commodity,
-          landArea: row.landArea,
-          expectedVolume: row.expectedVolume,
-          askingPrice: row.askingPrice,
-          latitude,
-          longitude,
-          region,
-          plantingDate,
-          expectedHarvestDate: rowExpectedHarvestDate,
-          notes: `Laporan massal untuk petani: ${row.farmerName}. ${notes}`,
-          inputSource: 'ppl', // batch dari form petani tetap dicatat sebagai ppl
-          inputByUserId: activeUser.PETANI.id
-        });
-      });
-      showNotification(`Berhasil menginput massal ${batchRows.length} laporan petani binaan!`, 'success');
-    }
+    addHarvest({
+      commodity,
+      landArea,
+      expectedVolume,
+      askingPrice,
+      latitude,
+      longitude,
+      region,
+      plantingDate,
+      expectedHarvestDate,
+      isPublished: true,
+      notes,
+    });
 
     // Reset coordinates picker if any
     if (clearMapSelection) clearMapSelection();
@@ -459,11 +412,6 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
                               <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: crop.color }} />
                               {h.commodity}
                             </div>
-                            {h.inputSource && (
-                              <div className="text-[8px] mt-1 inline-flex items-center px-1 py-0.2 rounded bg-nat-cream text-nat-sage font-bold border border-nat-border tracking-wider uppercase">
-                                {h.inputSource}
-                              </div>
-                            )}
                           </td>
                           <td className="py-3 text-nat-text">
                             <div>{h.landArea} Ha</div>

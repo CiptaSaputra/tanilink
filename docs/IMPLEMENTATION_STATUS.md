@@ -48,8 +48,9 @@
 |--------|--------|---------------|
 | Landing Page | 🔴 Not Started | 0% |
 | Authentication & RBAC | ✅ Complete | 90% |
-| Database & API Service Layer | ✅ Complete | 60% |
-| Database & API | 🔴 Not Started | 0% |
+| API Service Layer (localStorage) | ✅ Complete | 100% |
+| Next.js App Router + API Routes | ✅ Complete | 85% |
+| Database (Drizzle + PostgreSQL) | 🔴 Not Started | 0% |
 | Farmer Data Input | ✅ Complete | 100% |
 | Harvest Forecasting | ✅ Complete | 100% |
 | Price & Demand Prediction | 🟡 Partial | 60% |
@@ -72,12 +73,12 @@
 
 ## Overall Completion Estimate
 
-**Core MVP features:** ~88% complete
-**Full PRD features:** ~70% complete
+**Core MVP features:** ~90% complete
+**Full PRD features:** ~75% complete
 
 Biggest remaining gaps:
-- Database layer — service layer sudah ada, belum tersambung ke DB nyata (masih localStorage)
-- API routes (0%)
+- Database nyata (Drizzle + PostgreSQL) — API routes sudah ada, belum tersambung ke DB
 - Landing page (0%)
 - Price prediction (price per kg, not just volume)
 - Mobile optimization & testing
+- TypeScript strict errors di beberapa komponen (ignoreBuildErrors sementara aktif)

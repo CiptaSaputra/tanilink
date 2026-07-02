@@ -8,8 +8,8 @@
  */
 
 import React, { useMemo } from 'react';
-import { useApp } from '../context/AppContext';
-import { COMMODITY_LIST } from '../types';
+import { useData } from '../context/DataContext';
+import { COMMODITY_LIST } from '../constants/commodities';
 import {
   Users,
   MapPin,
@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 export default function PPLView() {
-  const { harvests, harvestBatches, preOrders, activeUser } = useApp();
+  const { harvests, harvestBatches, preOrders, activeUser } = useData();
 
   // Data agregat wilayah binaan — hanya dari planting yang dipublikasikan
   const regionalHarvests = useMemo(() => {

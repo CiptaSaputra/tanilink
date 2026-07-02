@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowRightLeft, BadgePercent } from 'lucide-react';
-import { Match, Harvest, Demand, COMMODITY_LIST } from '../../types';
+import { COMMODITY_LIST } from '../../constants/commodities';
+import type { Match, Harvest, Demand } from '../../types';
 
 interface MatchCardListProps {
   matches: Match[];
@@ -94,14 +95,14 @@ export const MatchCardList: React.FC<MatchCardListProps> = ({
                       <div className="bg-amber-500 h-full rounded-full" style={{ width: `${match.scoreDetails.priceScore}%` }} />
                     </div>
                   </div>
-                  {/* 3. Waktu */}
+                  {/* 3. Kesesuaian Volume */}
                   <div>
-                    <p className="text-nat-sage font-bold uppercase text-[9px]">Kesesuaian Jadwal</p>
+                    <p className="text-nat-sage font-bold uppercase text-[9px]">Kesesuaian Volume</p>
                     <p className="font-bold text-nat-dark mt-0.5 text-xs">
-                      {Math.abs((new Date(harvest.expectedHarvestDate).getTime() - new Date(demand.dateRequired).getTime()) / (1000 * 3600 * 24))} hari selisih
+                      {Math.round(match.scoreDetails.volumeScore)}% cocok
                     </p>
                     <div className="w-full bg-nat-cream h-1 rounded-full mt-1 overflow-hidden">
-                      <div className="bg-nat-brown h-full rounded-full" style={{ width: `${match.scoreDetails.timeScore}%` }} />
+                      <div className="bg-nat-brown h-full rounded-full" style={{ width: `${match.scoreDetails.volumeScore}%` }} />
                     </div>
                   </div>
                 </div>
@@ -109,25 +110,29 @@ export const MatchCardList: React.FC<MatchCardListProps> = ({
                 {/* Action Buttons */}
                 <div className="flex justify-between items-center mt-4">
                   <div className="text-[10px] text-nat-sage font-bold uppercase">
-                    Status: <span className={match.status === 'ACCEPTED' ? 'text-nat-green' : match.status === 'PENDING' ? 'text-amber-500' : 'text-nat-dark'}>{match.status}</span>
+                    Status: <span className={
+                      match.status === 'ACCEPTED_BY_FARMER' || match.status === 'ACCEPTED_BY_BUYER' ? 'text-nat-green'
+                      : match.status === 'PENDING' ? 'text-amber-500'
+                      : 'text-nat-dark'
+                    }>{match.status === 'ACCEPTED_BY_FARMER' ? 'DITERIMA PETANI' : match.status === 'ACCEPTED_BY_BUYER' ? 'DITERIMA PEMBELI' : match.status}</span>
                   </div>
-                  
+
                   {match.status === 'PENDING' ? (
                     <div className="flex gap-2">
-                      <button 
-                        onClick={() => onUpdateMatchStatus(match.id, 'REJECTED')}
+                      <button
+                        onClick={() => onUpdateMatchStatus(match.id, 'DISPUTED')}
                         className="px-4 py-2 rounded-xl bg-nat-light-cream text-nat-text text-[11px] font-bold border border-nat-border hover:bg-nat-cream transition-colors cursor-pointer"
                       >
                         Tolak
                       </button>
-                      <button 
-                        onClick={() => onUpdateMatchStatus(match.id, 'ACCEPTED')}
+                      <button
+                        onClick={() => onUpdateMatchStatus(match.id, userRole === 'PETANI' ? 'ACCEPTED_BY_FARMER' : 'ACCEPTED_BY_BUYER')}
                         className="px-4 py-2 rounded-xl bg-nat-green text-white text-[11px] font-bold hover:bg-nat-green-hover transition-colors shadow-sm cursor-pointer"
                       >
                         Terima & Lanjut Pre-Order
                       </button>
                     </div>
-                  ) : match.status === 'ACCEPTED' ? (
+                  ) : match.status === 'ACCEPTED_BY_FARMER' || match.status === 'ACCEPTED_BY_BUYER' ? (
                     <button 
                       onClick={() => onOpenChat(match.id, peerId, peerName)}
                       className="px-4 py-2 rounded-xl bg-nat-brown text-white text-[11px] font-bold hover:opacity-90 transition-colors shadow-sm cursor-pointer"

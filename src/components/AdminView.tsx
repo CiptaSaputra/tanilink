@@ -7,8 +7,12 @@
  */
 
 import React, { useState } from 'react';
-import { useApp } from '../context/AppContext';
-import { COMMODITY_LIST, COMMODITY_WEIGHTS, MatchWeights } from '../types';
+import { useData } from '../context/DataContext';
+import { usePayment } from '../context/PaymentContext';
+import { useReview } from '../context/ReviewContext';
+import { useUI } from '../context/UIContext';
+import { COMMODITY_LIST, COMMODITY_WEIGHTS } from '../constants/commodities';
+import type { MatchWeights } from '../types';
 import {
   Sliders,
   Settings,
@@ -28,18 +32,10 @@ import {
 } from 'lucide-react';
 
 export default function AdminView() {
-  const {
-    matches,
-    harvests,
-    demands,
-    harvestBatches,
-    preOrders,
-    reviews,
-    paymentConfirmations,
-    updateMatchStatus,
-    updateBatchStatus,
-    showNotification,
-  } = useApp();
+  const { matches, harvests, demands, harvestBatches, preOrders, updateMatchStatus, updateBatchStatus } = useData();
+  const { reviews } = useReview();
+  const { paymentConfirmations } = usePayment();
+  const { showNotification } = useUI();
 
   const [activeTab, setActiveTab] = useState<'matching' | 'distribution'>('matching');
 

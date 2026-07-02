@@ -1,7 +1,7 @@
 import React from 'react';
 import { Sprout, RefreshCw, AlertCircle } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
-import { Harvest, COMMODITY_LIST } from '../../types';
+import { COMMODITY_LIST } from '../../constants/commodities';
+import type { Harvest } from '../../types';
 
 interface MyHarvestsTableProps {
   harvests: Harvest[];

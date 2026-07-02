@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import { Sprout, Mail, Lock, Eye, EyeOff, User, MapPin, AlertCircle, Loader2, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -30,6 +31,7 @@ const REGIONS = [
 
 export default function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
   const { register } = useAuth();
+  const router = useRouter();
 
   const [form, setForm] = useState<RegisterData>({
     name: '',
@@ -79,7 +81,9 @@ export default function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
     setError(null);
 
     const result = await register(form);
-    if (!result.success) {
+    if (result.success) {
+      router.replace('/');
+    } else {
       setError(result.error ?? 'Pendaftaran gagal. Silakan coba lagi.');
     }
     setIsSubmitting(false);

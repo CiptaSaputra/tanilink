@@ -30,7 +30,8 @@
  *      - Efek harga pasar historis (demand pull) sebagai proxy
  */
 
-import { Komoditas, Harvest, COMMODITY_LIST } from '../types';
+import { COMMODITY_LIST } from '../constants/commodities';
+import type { Komoditas, Harvest } from '../types';
 
 // ---------------------------------------------------------------------------
 // Public types (backward-compatible)

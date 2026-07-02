@@ -4,6 +4,71 @@
 
 ---
 
+## 1.4.0 (2026-07-02 — H-04: Split AppContext Monolith)
+
+### Added
+- **`src/context/UIContext.tsx`** — UI state: `activeRole`, `notification`, `setRole`, `resetAllData`. Terpisah dari domain data.
+- **`src/context/DataContext.tsx`** — Domain data: `harvests`, `demands`, `matches`, `preOrders`, `harvestBatches` + CRUD.
+- **`src/context/ChatContext.tsx`** — Chat: `conversations`, `messages`, `sendMessage`, `startConversation`.
+- **`src/context/PaymentContext.tsx`** — Payment: `paymentConfirmations`, `addPaymentConfirmation`, `confirmPayment`.
+- **`src/context/ReviewContext.tsx`** — Review: `reviews`, `addReview`.
+- **`src/utils/matching.ts`** — Pure functions `calculateDistance` + `scoreMatch` dipindah dari AppContext.
+- **Provider nesting** di `DashboardApp.tsx`: `UIProvider → DataProvider → ChatProvider → PaymentProvider → ReviewProvider`.
+
+### Changed
+- **Semua komponen** (16 files) — migrasi dari `useApp()` ke hook spesifik: `useData()`, `useUI()`, `useChat()`, `usePayment()`, `useReview()`.
+- **Re-render isolation** — komponen yang hanya butuh UI state tidak lagi re-render saat data domain berubah, dan sebaliknya.
+
+### Removed
+- **`src/context/AppContext.tsx`** — di-rename ke `.old` (tidak digunakan lagi).
+
+## 1.3.1 (2026-07-02 — Hotfix: CSS tidak muncul di Next.js)
+
+### Fixed
+- **`postcss.config.mjs`** — ditambahkan konfigurasi PostCSS dengan `@tailwindcss/postcss`. Root cause: project menggunakan `@tailwindcss/vite` plugin yang hanya bekerja di Vite, tidak di Next.js. Next.js membaca Tailwind lewat PostCSS pipeline.
+- **`app/layout.tsx`** — hapus duplikasi import font Inter via `next/font/google`. Font sudah di-import di `src/index.css` via Google Fonts URL, duplikasi menyebabkan konflik.
+- **`app/not-found.tsx`** — tambah halaman 404 agar build Next.js tidak error saat collecting page data.
+
+### Installed
+- `@tailwindcss/postcss` (devDependency) — PostCSS plugin untuk Tailwind v4 di Next.js.
+
+---
+
+## 1.3.0 (2026-07-02 — H-03: Next.js 15 App Router Migration)
+
+### Added
+- **Next.js 15** — menggantikan Vite sebagai framework. App Router dengan `app/` directory.
+- **`app/layout.tsx`** — root layout dengan metadata dan font Inter dari Google Fonts.
+- **`app/page.tsx`** — root redirect: belum login → `/login`, sudah login → `/dashboard`.
+- **`app/(auth)/login/page.tsx`** — route login (`/login`).
+- **`app/(auth)/register/page.tsx`** — route register (`/register`).
+- **`app/dashboard/page.tsx`** — route dashboard (`/dashboard`) dengan auth guard.
+- **API Routes (server-side, dynamic)**:
+  - `GET/POST /api/harvests`
+  - `GET/POST /api/demands`
+  - `GET /api/matches`, `PATCH /api/matches/[id]/status`
+  - `GET/POST /api/pre-orders`, `PATCH /api/pre-orders/[id]`
+  - `GET/POST /api/conversations`, `GET/POST /api/conversations/[id]/messages`
+  - `GET/POST /api/payments`, `PATCH /api/payments/[id]/confirm`
+  - `GET/POST /api/reviews`
+  - `PATCH /api/batches/[id]/status`
+- **`next.config.mjs`** — konfigurasi Next.js (skip TS/lint errors saat build untuk sekarang).
+- **`src/components/RootApp.tsx`**, **`LoginApp.tsx`**, **`RegisterApp.tsx`**, **`DashboardApp.tsx`** — wrapper client components untuk dynamic import dengan `ssr: false`.
+
+### Changed
+- **`package.json`** scripts — `dev/build/start` sekarang menggunakan Next.js CLI.
+- **`tsconfig.json`** — diupdate untuk Next.js App Router (jsx: preserve, Next.js plugin).
+- **`src/services/storage.ts`** — SSR-safe: semua fungsi cek `typeof window === 'undefined'` sebelum akses localStorage.
+- **`src/context/AuthContext.tsx`** dan **`AppContext.tsx`** — ditambah `'use client'` directive.
+- **`src/App.tsx`** dan **`src/main.tsx`** — di-rename ke `.old` (tidak digunakan lagi).
+
+### Architecture
+- Semua komponen tetap di `src/components/` — tidak dipindahkan ke `app/`.
+- `app/` hanya berisi route entrypoints dan API handlers.
+- Dynamic import dengan `ssr: false` digunakan untuk komponen yang butuh `localStorage`/Leaflet/browser API.
+
+---
+
 ## 1.2.0 (2026-07-02 — H-02: API Service Abstraction Layer)
 
 ### Added

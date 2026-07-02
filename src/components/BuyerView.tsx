@@ -4,12 +4,15 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useApp } from '../context/AppContext';
-import { 
-  COMMODITY_LIST, 
-  Komoditas, 
-  Demand, 
-  Match 
+import { useData } from '../context/DataContext';
+import { useUI } from '../context/UIContext';
+import {
+  COMMODITY_LIST,
+} from '../constants/commodities';
+import type {
+  Komoditas,
+  Demand,
+  Match,
 } from '../types';
 import { 
   ShoppingBag, 
@@ -40,15 +43,11 @@ interface BuyerViewProps {
 }
 
 export default function BuyerView({ mapLat, mapLng, mapRegion, clearMapSelection }: BuyerViewProps) {
-  const { 
-    harvests, 
-    demands, 
-    matches, 
-    addDemand, 
-    updateMatchStatus, 
-    activeUser, 
-    showNotification 
-  } = useApp();
+  const {
+    harvests, demands, matches,
+    addDemand, updateMatchStatus, activeUser,
+  } = useData();
+  const { showNotification } = useUI();
 
   // Form states
   const [commodity, setCommodity] = useState<Komoditas>('Bawang Merah');

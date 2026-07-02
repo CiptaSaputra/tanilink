@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, MapPin } from 'lucide-react';
-import { COMMODITY_LIST, Komoditas } from '../../types';
-import { useApp } from '../../context/AppContext';
+import { COMMODITY_LIST } from '../../constants/commodities';
+import type { Komoditas } from '../../types';
+import { useData } from '../../context/DataContext';
+import { useUI } from '../../context/UIContext';
 
 interface DemandFormProps {
   mapLat?: number;
@@ -11,7 +13,8 @@ interface DemandFormProps {
 }
 
 export const DemandForm: React.FC<DemandFormProps> = ({ mapLat, mapLng, mapRegion, clearMapSelection }) => {
-  const { addDemand, showNotification } = useApp();
+  const { addDemand } = useData();
+  const { showNotification } = useUI();
 
   const [commodity, setCommodity] = useState<Komoditas>('Bawang Merah');
   const [requiredVolume, setRequiredVolume] = useState<number>(10000);

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Star } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { useReview } from '../../context/ReviewContext';
 
 interface ReviewModalProps {
   preOrderId: string | null;
@@ -11,7 +11,7 @@ interface ReviewModalProps {
 }
 
 export const ReviewModal: React.FC<ReviewModalProps> = ({ preOrderId, reviewerUserId, revieweeUserId, onClose }) => {
-  const { addReview } = useApp();
+  const { addReview } = useReview();
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
 
