@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import InteractiveMap from './components/InteractiveMap';
 import FarmerView from './components/FarmerView';
@@ -12,13 +13,52 @@ import BuyerView from './components/BuyerView';
 import DinasView from './components/DinasView';
 import AdminView from './components/AdminView';
 import PPLView from './components/PPLView';
+import KolektorView from './components/KolektorView';
+import LoginPage from './components/auth/LoginPage';
+import RegisterPage from './components/auth/RegisterPage';
 import { motion, AnimatePresence } from 'motion/react';
-import { Info, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Info, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+
+// ─── Auth Gate ────────────────────────────────────────────────────────────────
+
+type AuthView = 'login' | 'register';
+
+function AuthGate() {
+  const [view, setView] = useState<AuthView>('login');
+
+  return (
+    <AnimatePresence mode="wait">
+      {view === 'login' ? (
+        <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+          <LoginPage onNavigateToRegister={() => setView('register')} />
+        </motion.div>
+      ) : (
+        <motion.div key="register" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+          <RegisterPage onNavigateToLogin={() => setView('login')} />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+// ─── Loading Screen ───────────────────────────────────────────────────────────
+
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen bg-nat-light-cream/50 flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3 text-nat-sage">
+        <Loader2 className="w-8 h-8 animate-spin text-nat-green" />
+        <p className="text-sm font-medium">Memuat sesi...</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main App Content (hanya muncul setelah login) ────────────────────────────
 
 function AppContent() {
   const { activeRole, notification, dismissNotification } = useApp();
 
-  // Coordinate selection states from map click (to auto-fill forms)
   const [mapLat, setMapLat] = useState<number | undefined>(undefined);
   const [mapLng, setMapLng] = useState<number | undefined>(undefined);
   const [mapRegion, setMapRegion] = useState<string | undefined>(undefined);
@@ -40,14 +80,18 @@ function AppContent() {
       <Navbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Dynamic Interactive map - displayed for visual context */}
-        <InteractiveMap 
-          onSelectCoords={activeRole === 'PETANI' || activeRole === 'PEMBELI' || activeRole === 'PPL' ? handleSelectCoords : undefined}
+        {/* Peta interaktif — konteks visual untuk semua role */}
+        <InteractiveMap
+          onSelectCoords={
+            activeRole === 'PETANI' || activeRole === 'PEMBELI' || activeRole === 'PPL'
+              ? handleSelectCoords
+              : undefined
+          }
           selectedLat={mapLat}
           selectedLng={mapLng}
         />
 
-        {/* Dynamic role rendering */}
+        {/* Role views */}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeRole}
@@ -57,18 +101,18 @@ function AppContent() {
             transition={{ duration: 0.18 }}
           >
             {activeRole === 'PETANI' && (
-              <FarmerView 
-                mapLat={mapLat} 
-                mapLng={mapLng} 
-                mapRegion={mapRegion} 
+              <FarmerView
+                mapLat={mapLat}
+                mapLng={mapLng}
+                mapRegion={mapRegion}
                 clearMapSelection={handleClearCoords}
               />
             )}
             {activeRole === 'PEMBELI' && (
-              <BuyerView 
-                mapLat={mapLat} 
-                mapLng={mapLng} 
-                mapRegion={mapRegion} 
+              <BuyerView
+                mapLat={mapLat}
+                mapLng={mapLng}
+                mapRegion={mapRegion}
                 clearMapSelection={handleClearCoords}
               />
             )}
@@ -80,13 +124,14 @@ function AppContent() {
                 clearMapSelection={handleClearCoords}
               />
             )}
-            {activeRole === 'DINAS' && <DinasView />}
-            {activeRole === 'ADMIN' && <AdminView />}
+            {activeRole === 'DINAS'    && <DinasView />}
+            {activeRole === 'ADMIN'    && <AdminView />}
+            {activeRole === 'KOLEKTOR' && <KolektorView />}
           </motion.div>
         </AnimatePresence>
       </main>
 
-      {/* Slide-in feedback notification toast */}
+      {/* Toast notification */}
       <AnimatePresence>
         {notification && (
           <motion.div
@@ -94,8 +139,8 @@ function AppContent() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 30, transition: { duration: 0.15 } }}
             className={`fixed top-20 right-6 z-[9999] flex items-center space-x-3 px-4 py-3.5 rounded-xl shadow-xl border border-nat-border text-xs font-semibold select-none min-w-[320px] max-w-md transition-all ${
-              notification.type === 'success' 
-                ? 'bg-nat-light-cream text-emerald-900 border-l-4 border-l-nat-green' 
+              notification.type === 'success'
+                ? 'bg-nat-light-cream text-emerald-900 border-l-4 border-l-nat-green'
                 : notification.type === 'warning'
                 ? 'bg-nat-light-cream text-amber-900 border-l-4 border-l-nat-brown'
                 : 'bg-sky-50 text-sky-900 border-l-4 border-l-sky-500'
@@ -103,11 +148,9 @@ function AppContent() {
           >
             {notification.type === 'success' && <CheckCircle className="w-4 h-4 text-nat-green shrink-0" />}
             {notification.type === 'warning' && <AlertCircle className="w-4 h-4 text-nat-brown shrink-0" />}
-            {notification.type === 'info' && <Info className="w-4 h-4 text-sky-600 shrink-0" />}
-            
+            {notification.type === 'info'    && <Info className="w-4 h-4 text-sky-600 shrink-0" />}
             <span className="flex-1 font-medium">{notification.message}</span>
-            
-            <button 
+            <button
               onClick={dismissNotification}
               className={`p-1 rounded-lg transition-colors cursor-pointer ${
                 notification.type === 'success'
@@ -126,10 +169,27 @@ function AppContent() {
   );
 }
 
-export default function App() {
+// ─── Router (Auth vs App) ─────────────────────────────────────────────────────
+
+function AppRouter() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) return <LoadingScreen />;
+  if (!isAuthenticated) return <AuthGate />;
+
   return (
     <AppProvider>
       <AppContent />
     </AppProvider>
+  );
+}
+
+// ─── Root ─────────────────────────────────────────────────────────────────────
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppRouter />
+    </AuthProvider>
   );
 }

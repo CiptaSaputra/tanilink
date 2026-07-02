@@ -29,7 +29,7 @@ import {
   Camera,
   RefreshCw
 } from 'lucide-react';
-import TraceModal from './TraceModal';
+
 import { Harvest } from '../types';
 
 interface BuyerViewProps {
@@ -630,13 +630,6 @@ export default function BuyerView({ mapLat, mapLng, mapRegion, clearMapSelection
         </div>
       </div>
 
-      {selectedTraceHarvest && (
-        <TraceModal
-          harvest={selectedTraceHarvest}
-          isOpen={!!selectedTraceHarvest}
-          onClose={() => setSelectedTraceHarvest(null)}
-        />
-      )}
     </div>
   );
 }

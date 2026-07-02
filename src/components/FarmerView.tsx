@@ -35,8 +35,7 @@ import {
   Trash2,
   Layers
 } from 'lucide-react';
-import TraceModal from './TraceModal';
-import { gradeCropImage, GradingResult } from '../utils/cvGrading';
+
 
 interface FarmerViewProps {
   mapLat?: number;
@@ -89,50 +88,7 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
     askingPrice: number;
   }[]>([]);
 
-  // CV Quality Grading States
-  const [gradingImage, setGradingImage] = useState<string | null>(null);
-  const [gradingResult, setGradingResult] = useState<GradingResult | null>(null);
-  const [isGrading, setIsGrading] = useState<boolean>(false);
 
-  // Simulated preset agricultural images for immediate testing
-  const PRESET_GRADE_IMAGES = {
-    'GRADE_A': 'https://images.unsplash.com/photo-1595855759920-86582396756a?auto=format&fit=crop&q=80&w=250', // Vibrant premium tomato/chili style
-    'GRADE_C': 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?auto=format&fit=crop&q=80&w=250'  // Slightly bruised organic/dry harvest style
-  };
-
-  const handleGradeImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const base64Url = reader.result as string;
-      await runTensorFlowGrading(base64Url);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const runTensorFlowGrading = async (imageUrl: string) => {
-    setGradingImage(imageUrl);
-    setIsGrading(true);
-    setGradingResult(null);
-
-    try {
-      const result = await gradeCropImage(imageUrl);
-      setGradingResult(result);
-      
-      // Auto append grade into notes
-      setNotes((prev) => {
-        const base = prev ? prev.split(' (Grade AI:')[0] : '';
-        return `${base} (Grade AI: ${result.grade}, Confidence: ${result.confidence}%)`.trim();
-      });
-      showNotification(`Foto berhasil dianalisis dengan TensorFlow.js! Terdeteksi Grade: ${result.grade}`, 'success');
-    } catch (err) {
-      showNotification('Gagal menganalisis gambar dengan TensorFlow.js.', 'warning');
-    } finally {
-      setIsGrading(false);
-    }
-  };
 
   // Auto update coordinates and region if selected on map
   useEffect(() => {
@@ -761,14 +717,6 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
           </div>
         </div>
       </div>
-
-      {selectedTraceHarvest && (
-        <TraceModal
-          harvest={selectedTraceHarvest}
-          isOpen={!!selectedTraceHarvest}
-          onClose={() => setSelectedTraceHarvest(null)}
-        />
-      )}
 
       {/* Harvest Batch Creation Modal */}
       <AnimatePresence>

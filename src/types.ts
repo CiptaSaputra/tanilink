@@ -3,7 +3,47 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export type Role = 'PETANI' | 'PEMBELI' | 'PPL' | 'DINAS' | 'ADMIN';
+export type Role = 'PETANI' | 'PEMBELI' | 'PPL' | 'DINAS' | 'ADMIN' | 'KOLEKTOR';
+
+// ─── Auth Types ────────────────────────────────────────────────────────────────
+
+/** Entitas user yang disimpan di localStorage (password di-hash sederhana, bukan plaintext) */
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  /** Password di-hash dengan btoa (cukup untuk demo tanpa backend) */
+  passwordHash: string;
+  role: Role;
+  region: string;
+  createdAt: string;
+}
+
+/** User aktif yang tersedia di session — tanpa passwordHash */
+export type AuthUser = Omit<User, 'passwordHash'>;
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  role: Extract<Role, 'PETANI' | 'PEMBELI' | 'PPL' | 'KOLEKTOR'>; // Admin & Dinas tidak bisa self-register
+  region: string;
+}
+
+export interface AuthContextProps {
+  currentUser: AuthUser | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (credentials: LoginCredentials) => Promise<{ success: boolean; error?: string }>;
+  register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
+  logout: () => void;
+}
 
 export type Komoditas = 
   | 'Cabai Merah' 
@@ -95,10 +135,9 @@ export interface Harvest {
   region: string; // e.g., 'Brebes', 'Garut', 'Malang'
   plantingDate: string; // YYYY-MM-DD
   expectedHarvestDate: string; // YYYY-MM-DD
+  isPublished: boolean; // opt-in publikasi
   status: 'ACTIVE' | 'MATCHED' | 'HARVESTED' | 'EXPIRED';
   notes?: string;
-  inputSource?: 'self' | 'family' | 'gapoktan' | 'ppl';
-  inputByUserId?: string;
 }
 
 export interface Demand {
@@ -141,6 +180,17 @@ export interface MatchWeights {
   wPrice: number;    // e.g., 0.3
 }
 
+/** Bobot default per kategori komoditas (bukan diatur bebas oleh admin) */
+export const COMMODITY_WEIGHTS: Record<Komoditas, MatchWeights> = {
+  'Cabai Merah':  { wLocation: 0.5, wVolume: 0.25, wPrice: 0.25 }, // cepat rusak → lokasi penting
+  'Bawang Merah': { wLocation: 0.45, wVolume: 0.25, wPrice: 0.30 },
+  'Tomat':        { wLocation: 0.5, wVolume: 0.25, wPrice: 0.25 }, // cepat rusak
+  'Kentang':      { wLocation: 0.3, wVolume: 0.35, wPrice: 0.35 }, // tahan lama → harga lebih penting
+  'Kubis':        { wLocation: 0.35, wVolume: 0.30, wPrice: 0.35 },
+  'Padi':         { wLocation: 0.2, wVolume: 0.40, wPrice: 0.40 }, // tahan lama → volume & harga
+  'Jagung':       { wLocation: 0.25, wVolume: 0.35, wPrice: 0.40 },
+};
+
 export interface RegionStats {
   regionName: string;
   totalHarvestKg: number;
@@ -161,7 +211,42 @@ export interface PreOrder {
   farmerName: string;
   buyerName: string;
   commodity: Komoditas;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED';
+  deliveryMode: 'direct' | 'consolidated'; // jual langsung atau ikut konsolidasi
+  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+  createdAt: string;
+}
+
+export interface Conversation {
+  id: string;
+  matchId: string;
+  farmerUserId: string;
+  buyerUserId: string;
+  createdAt: string;
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderUserId: string;
+  content: string;
+  sentAt: string;
+}
+
+export interface PaymentConfirmation {
+  id: string;
+  preOrderId: string;
+  proofImageUrl?: string;
+  status: 'not_submitted' | 'submitted' | 'confirmed';
+  notes?: string;
+}
+
+export interface Review {
+  id: string;
+  preOrderId: string;
+  reviewerUserId: string;
+  revieweeUserId: string;
+  rating: number; // 1-5
+  comment?: string;
   createdAt: string;
 }
 
@@ -179,6 +264,6 @@ export interface HarvestBatch {
   harvestDate: string; // YYYY-MM-DD
   shelfLifeDays: number;
   priorityScore: number; // computed: 0-100, higher = more urgent
-  status: 'READY' | 'IN_TRANSIT' | 'DELIVERED';
+  status: 'READY' | 'IN_TRANSIT' | 'DELIVERED' | 'PICKED_UP_DIRECTLY'; // PICKED_UP_DIRECTLY = pembeli jemput langsung
   createdAt: string;
 }
