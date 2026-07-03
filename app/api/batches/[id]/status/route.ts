@@ -1,13 +1,7 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- *
- * PATCH /api/batches/[id]/status — update status harvest batch
- */
-
 import { NextRequest, NextResponse } from 'next/server';
-import { batchUpdateStatus } from '@/services';
-import { HarvestBatch } from '@/types';
+import { db } from '@/db';
+import { harvestBatches } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function PATCH(
   req: NextRequest,
@@ -15,15 +9,25 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const body = await req.json() as { status: HarvestBatch['status'] };
+    const body = await req.json();
 
     if (!body.status) {
       return NextResponse.json({ error: 'Status wajib diisi' }, { status: 400 });
     }
 
-    const updated = batchUpdateStatus(id, body.status);
+    await db.update(harvestBatches)
+      .set({ status: body.status })
+      .where(eq(harvestBatches.id, id));
+
+    const [updated] = await db.select().from(harvestBatches).where(eq(harvestBatches.id, id));
+
+    if (!updated) {
+      return NextResponse.json({ error: `Batch ${id} tidak ditemukan` }, { status: 404 });
+    }
+
     return NextResponse.json({ data: updated });
-  } catch {
+  } catch (err) {
+    console.error(err);
     return NextResponse.json({ error: 'Gagal update status batch' }, { status: 500 });
   }
 }

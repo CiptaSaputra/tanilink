@@ -43,13 +43,13 @@ interface DataContextProps {
   preOrders:      PreOrder[];
   harvestBatches: HarvestBatch[];
   activeUser:     ActiveUserMap;
-  addHarvest:             (data: Omit<Harvest, 'id' | 'farmerId' | 'farmerName' | 'status'>) => void;
-  addDemand:              (data: Omit<Demand, 'id' | 'buyerId' | 'buyerName' | 'status'>) => void;
-  updateMatchStatus:      (matchId: string, status: Match['status']) => void;
-  createHarvestBatch:     (harvestId: string, actualVolumeKg: number) => PreOrder | undefined;
-  updateBatchStatus:      (batchId: string, status: HarvestBatch['status']) => void;
-  setDeliveryMode:        (preOrderId: string, mode: 'direct' | 'consolidated') => void;
-  completePreOrder:       (preOrderId: string) => void;
+  addHarvest:             (data: Omit<Harvest, 'id' | 'farmerId' | 'farmerName' | 'status'>) => Promise<void>;
+  addDemand:              (data: Omit<Demand, 'id' | 'buyerId' | 'buyerName' | 'status'>) => Promise<void>;
+  updateMatchStatus:      (matchId: string, status: Match['status']) => Promise<void>;
+  createHarvestBatch:     (harvestId: string, actualVolumeKg: number) => Promise<PreOrder | undefined>;
+  updateBatchStatus:      (batchId: string, status: HarvestBatch['status']) => Promise<void>;
+  setDeliveryMode:        (preOrderId: string, mode: 'direct' | 'consolidated') => Promise<void>;
+  completePreOrder:       (preOrderId: string) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextProps | undefined>(undefined);
@@ -59,11 +59,27 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { showNotification } = useUI();
 
   // ── State ──────────────────────────────────────────────────────────────────
-  const [harvests, setHarvests]       = useState<Harvest[]>(() => harvestGetAll());
-  const [demands,  setDemands]        = useState<Demand[]>(() => demandGetAll());
+  const [harvests, setHarvests]       = useState<Harvest[]>([]);
+  const [demands,  setDemands]        = useState<Demand[]>([]);
   const [matches,  setMatches]        = useState<Match[]>([]);
-  const [preOrders, setPreOrders]      = useState<PreOrder[]>(() => preOrderGetAll());
-  const [harvestBatches, setHarvestBatches] = useState<HarvestBatch[]>(() => batchGetAll());
+  const [preOrders, setPreOrders]      = useState<PreOrder[]>([]);
+  const [harvestBatches, setHarvestBatches] = useState<HarvestBatch[]>([]);
+
+  useEffect(() => {
+    async function loadData() {
+      const [h, d, p, b] = await Promise.all([
+        harvestGetAll(),
+        demandGetAll(),
+        preOrderGetAll(),
+        batchGetAll()
+      ]);
+      setHarvests(h);
+      setDemands(d);
+      setPreOrders(p);
+      setHarvestBatches(b);
+    }
+    loadData();
+  }, []);
 
   // activeUser
   const activeUser: ActiveUserMap = {
@@ -95,7 +111,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
-  const addHarvest = useCallback((data: Omit<Harvest, 'id' | 'farmerId' | 'farmerName' | 'status'>) => {
+  const addHarvest = useCallback(async (data: Omit<Harvest, 'id' | 'farmerId' | 'farmerName' | 'status'>) => {
     const newHarvest: Harvest = {
       ...data,
       id:         `h-${Date.now()}`,
@@ -103,11 +119,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       farmerName: activeUser.PETANI.name,
       status:     'ACTIVE',
     };
-    setHarvests(svcHarvestAdd(newHarvest));
+    const updated = await svcHarvestAdd(newHarvest);
+    setHarvests(updated);
     showNotification(`Laporan tanam ${data.commodity} berhasil ditambahkan!`, 'success');
   }, [activeUser, showNotification]);
 
-  const addDemand = useCallback((data: Omit<Demand, 'id' | 'buyerId' | 'buyerName' | 'status'>) => {
+  const addDemand = useCallback(async (data: Omit<Demand, 'id' | 'buyerId' | 'buyerName' | 'status'>) => {
     const newDemand: Demand = {
       ...data,
       id:        `d-${Date.now()}`,
@@ -115,52 +132,56 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       buyerName: activeUser.PEMBELI.name,
       status:    'ACTIVE',
     };
-    setDemands(svcDemandAdd(newDemand));
+    const updated = await svcDemandAdd(newDemand);
+    setDemands(updated);
     showNotification(`Permintaan demand untuk ${data.commodity} berhasil dipublikasi!`, 'success');
   }, [activeUser, showNotification]);
 
-  const updateMatchStatus = useCallback((matchId: string, status: Match['status']) => {
-    setMatches(prev =>
-      prev.map(m => {
-        if (m.id !== matchId) return m;
+  const updateMatchStatus = useCallback(async (matchId: string, status: Match['status']) => {
+    // Need a simpler approach: update optimistic state, then make async calls
+    const m = matches.find(m => m.id === matchId);
+    if (!m) return;
+    
+    setMatches(prev => prev.map(match => match.id === matchId ? { ...match, status } : match));
+    
+    const h = harvests.find(harv => harv.id === m.harvestId);
+    const d = demands.find(dem => dem.id === m.demandId);
 
-        const h = harvests.find(harv => harv.id === m.harvestId);
-        const d = demands.find(dem => dem.id === m.demandId);
+    if (status === 'CONFIRMED' && h && d) {
+      const [updatedHarvests, updatedDemands] = await Promise.all([
+        svcHarvestUpdate(h.id, { status: 'MATCHED' }),
+        svcDemandUpdate(d.id, { status: 'FULFILLED' })
+      ]);
+      setHarvests(updatedHarvests);
+      setDemands(updatedDemands);
 
-        if (status === 'CONFIRMED' && h && d) {
-          setHarvests(svcHarvestUpdate(h.id, { status: 'MATCHED' }));
-          setDemands(svcDemandUpdate(d.id, { status: 'FULFILLED' }));
+      const newPO: PreOrder = {
+        id:               `po-${Date.now()}`,
+        matchId:          m.id,
+        harvestId:        m.harvestId,
+        demandId:         m.demandId,
+        agreedPricePerKg: d.offerPrice,
+        agreedVolumeKg:   Math.min(h.expectedVolume, d.requiredVolume),
+        farmerName:       h.farmerName,
+        buyerName:        d.buyerName,
+        commodity:        h.commodity,
+        deliveryMode:     'direct',
+        status:           'CONFIRMED',
+        createdAt:        new Date().toISOString().split('T')[0],
+      };
+      const updatedPreOrders = await svcPreOrderAdd(newPO);
+      setPreOrders(updatedPreOrders);
+      showNotification('Pre-Order Berhasil Dikonfirmasi! Hasil panen terselamatkan dari potensi susut.', 'success');
+    } else if (status === 'ACCEPTED_BY_FARMER') {
+      showNotification('Penawaran disetujui oleh Petani. Menunggu konfirmasi Pembeli.', 'info');
+    } else if (status === 'ACCEPTED_BY_BUYER') {
+      showNotification('Permintaan pencocokan diajukan ke Petani.', 'info');
+    } else if (status === 'DISPUTED') {
+      showNotification('Pencocokan dilaporkan mengalami kendala.', 'warning');
+    }
+  }, [harvests, demands, matches, showNotification]);
 
-          const newPO: PreOrder = {
-            id:               `po-${Date.now()}`,
-            matchId:          m.id,
-            harvestId:        m.harvestId,
-            demandId:         m.demandId,
-            agreedPricePerKg: d.offerPrice,
-            agreedVolumeKg:   Math.min(h.expectedVolume, d.requiredVolume),
-            farmerName:       h.farmerName,
-            buyerName:        d.buyerName,
-            commodity:        h.commodity,
-            deliveryMode:     'direct',
-            status:           'CONFIRMED',
-            createdAt:        new Date().toISOString().split('T')[0],
-          };
-          setPreOrders(svcPreOrderAdd(newPO));
-          showNotification('Pre-Order Berhasil Dikonfirmasi! Hasil panen terselamatkan dari potensi susut.', 'success');
-        } else if (status === 'ACCEPTED_BY_FARMER') {
-          showNotification('Penawaran disetujui oleh Petani. Menunggu konfirmasi Pembeli.', 'info');
-        } else if (status === 'ACCEPTED_BY_BUYER') {
-          showNotification('Permintaan pencocokan diajukan ke Petani.', 'info');
-        } else if (status === 'DISPUTED') {
-          showNotification('Pencocokan dilaporkan mengalami kendala.', 'warning');
-        }
-
-        return { ...m, status };
-      })
-    );
-  }, [harvests, demands, showNotification]);
-
-  const createHarvestBatch = useCallback((harvestId: string, actualVolumeKg: number): PreOrder | undefined => {
+  const createHarvestBatch = useCallback(async (harvestId: string, actualVolumeKg: number): Promise<PreOrder | undefined> => {
     const harvest = harvests.find(h => h.id === harvestId);
     if (!harvest) return undefined;
 
@@ -196,14 +217,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       createdAt:      today.toISOString().split('T')[0],
     };
 
-    setHarvestBatches(svcBatchAdd(newBatch));
-    setHarvests(svcHarvestUpdate(harvestId, { status: 'HARVESTED' }));
+    const updatedBatches = await svcBatchAdd(newBatch);
+    const updatedHarvests = await svcHarvestUpdate(harvestId, { status: 'HARVESTED' });
+    setHarvestBatches(updatedBatches);
+    setHarvests(updatedHarvests);
     showNotification(`Batch panen ${harvest.commodity} berhasil dicatat! Skor prioritas: ${priorityScore}`, 'success');
     return linkedPO;
   }, [harvests, preOrders, showNotification]);
 
-  const updateBatchStatus = useCallback((batchId: string, status: HarvestBatch['status']) => {
-    setHarvestBatches(batchUpdateStatus(batchId, status));
+  const updateBatchStatus = useCallback(async (batchId: string, status: HarvestBatch['status']) => {
+    const updated = await batchUpdateStatus(batchId, status);
+    setHarvestBatches(updated);
     const label =
       status === 'IN_TRANSIT'         ? 'sedang dalam pengiriman'   :
       status === 'DELIVERED'          ? 'sudah sampai tujuan'       :
@@ -211,13 +235,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     showNotification(`Status batch diperbarui: ${label}`, 'info');
   }, [showNotification]);
 
-  const setDeliveryMode = useCallback((preOrderId: string, mode: 'direct' | 'consolidated') => {
-    setPreOrders(preOrderSetDeliveryMode(preOrderId, mode));
+  const setDeliveryMode = useCallback(async (preOrderId: string, mode: 'direct' | 'consolidated') => {
+    const updated = await preOrderSetDeliveryMode(preOrderId, mode);
+    setPreOrders(updated);
     showNotification(`Jalur pengiriman diubah ke: ${mode === 'direct' ? 'Jual Langsung' : 'Ikut Konsolidasi'}`, 'info');
   }, [showNotification]);
 
-  const completePreOrder = useCallback((preOrderId: string) => {
-    setPreOrders(preOrderComplete(preOrderId));
+  const completePreOrder = useCallback(async (preOrderId: string) => {
+    const updated = await preOrderComplete(preOrderId);
+    setPreOrders(updated);
     showNotification('Pre-Order selesai! Silakan beri ulasan & rating.', 'success');
   }, [showNotification]);
 

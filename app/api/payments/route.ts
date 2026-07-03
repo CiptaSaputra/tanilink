@@ -1,33 +1,38 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- *
- * GET  /api/payments            — ambil semua payment
- * POST /api/payments            — upload bukti bayar (upsert by preOrderId)
- */
-
 import { NextRequest, NextResponse } from 'next/server';
-import { paymentGetAll, paymentUpsertByPreOrder } from '@/services';
+import { db } from '@/db';
+import { paymentConfirmations } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function GET() {
   try {
-    return NextResponse.json({ data: paymentGetAll() });
-  } catch {
-    return NextResponse.json({ error: 'Gagal mengambil payments' }, { status: 500 });
+    const data = await db.select().from(paymentConfirmations);
+    return NextResponse.json({ data });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: 'Gagal mengambil data payments' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as { preOrderId: string; proofImageUrl?: string; notes?: string };
+    const body = await req.json();
 
-    if (!body.preOrderId) {
-      return NextResponse.json({ error: 'preOrderId wajib diisi' }, { status: 400 });
+    if (!body.id || !body.preOrderId) {
+      return NextResponse.json({ error: 'Data payment tidak lengkap' }, { status: 400 });
     }
 
-    const updated = paymentUpsertByPreOrder(body.preOrderId, body.proofImageUrl, body.notes);
+    await db.insert(paymentConfirmations).values({
+      id: body.id,
+      preOrderId: body.preOrderId,
+      proofImageUrl: body.proofImageUrl || null,
+      status: body.status || 'not_submitted',
+      notes: body.notes || null,
+    });
+
+    const [updated] = await db.select().from(paymentConfirmations).where(eq(paymentConfirmations.id, body.id));
     return NextResponse.json({ data: updated }, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: 'Gagal menyimpan payment' }, { status: 500 });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: 'Gagal menambah payment' }, { status: 500 });
   }
 }

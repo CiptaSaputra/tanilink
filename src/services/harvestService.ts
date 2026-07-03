@@ -3,77 +3,53 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * src/services/harvestService.ts
- * ──────────────────────────────────────────────────────────────────────────────
- * Service layer untuk operasi data Harvest.
- * Implementasi saat ini: localStorage via storage helpers.
- * Untuk swap ke HTTP: ganti body setiap fungsi dengan fetch() calls.
  */
-
 import { Harvest } from '../types';
-import { STORAGE_KEYS, storageReadArray, storageWrite } from './storage';
-import { SEED_HARVESTS } from '../data/seed';
 
-// ─── Read ──────────────────────────────────────────────────────────────────────
-
-/** Ambil semua harvest. Fallback ke seed data jika storage kosong. */
-export function harvestGetAll(): Harvest[] {
-  const stored = storageReadArray<Harvest>(STORAGE_KEYS.HARVESTS);
-  if (stored.length === 0) {
-    harvestSaveAll(SEED_HARVESTS);
-    return SEED_HARVESTS;
-  }
-
-  // Bersihkan entri legacy H-LIVE dari simulator lama
-  const cleaned = stored.filter(
-    h => !h.id.startsWith('H-LIVE-') && !h.id.startsWith('h-live-')
-  );
-
-  // Migrasi: tambahkan isPublished jika belum ada
-  const migrated = cleaned.map(h => ({ ...h, isPublished: h.isPublished ?? true }));
-
-  if (migrated.length !== stored.length) {
-    harvestSaveAll(migrated);
-  }
-
-  return migrated;
+export async function harvestGetAll(): Promise<Harvest[]> {
+  const res = await fetch('/api/harvests');
+  if (!res.ok) return [];
+  return res.json();
 }
 
-/** Cari satu harvest berdasarkan ID. */
-export function harvestGetById(id: string): Harvest | undefined {
-  return harvestGetAll().find(h => h.id === id);
+export async function harvestGetById(id: string): Promise<Harvest | undefined> {
+  const res = await fetch(`/api/harvests/${id}`);
+  if (!res.ok) return undefined;
+  return res.json();
 }
 
-// ─── Write ─────────────────────────────────────────────────────────────────────
-
-/** Simpan seluruh array harvest (mengganti isi sebelumnya). */
-export function harvestSaveAll(harvests: Harvest[]): void {
-  storageWrite(STORAGE_KEYS.HARVESTS, harvests);
+export async function harvestSaveAll(harvests: Harvest[]): Promise<void> {
+  await fetch('/api/harvests', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(harvests),
+  });
 }
 
-/** Tambah harvest baru ke daftar. */
-export function harvestAdd(harvest: Harvest): Harvest[] {
-  const all = harvestGetAll();
-  const updated = [harvest, ...all];
-  harvestSaveAll(updated);
-  return updated;
+export async function harvestAdd(harvest: Harvest): Promise<Harvest[]> {
+  await fetch('/api/harvests', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(harvest),
+  });
+  return harvestGetAll();
 }
 
-/** Update satu harvest berdasarkan ID. */
-export function harvestUpdate(id: string, patch: Partial<Harvest>): Harvest[] {
-  const updated = harvestGetAll().map(h => h.id === id ? { ...h, ...patch } : h);
-  harvestSaveAll(updated);
-  return updated;
+export async function harvestUpdate(id: string, patch: Partial<Harvest>): Promise<Harvest[]> {
+  await fetch(`/api/harvests/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  return harvestGetAll();
 }
 
-/** Hapus harvest berdasarkan ID. */
-export function harvestRemove(id: string): Harvest[] {
-  const updated = harvestGetAll().filter(h => h.id !== id);
-  harvestSaveAll(updated);
-  return updated;
+export async function harvestRemove(id: string): Promise<Harvest[]> {
+  await fetch(`/api/harvests/${id}`, { method: 'DELETE' });
+  return harvestGetAll();
 }
 
-/** Reset ke seed data. */
-export function harvestReset(): Harvest[] {
-  harvestSaveAll(SEED_HARVESTS);
-  return SEED_HARVESTS;
+export async function harvestReset(): Promise<Harvest[]> {
+  await fetch('/api/harvests/reset', { method: 'POST' });
+  return harvestGetAll();
 }

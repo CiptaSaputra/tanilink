@@ -16,17 +16,21 @@ import { useUI } from './UIContext';
 
 interface ReviewContextProps {
   reviews:   Review[];
-  addReview: (preOrderId: string, reviewerUserId: string, revieweeUserId: string, rating: number, comment?: string) => void;
+  addReview: (preOrderId: string, reviewerUserId: string, revieweeUserId: string, rating: number, comment?: string) => Promise<void>;
 }
 
 const ReviewContext = createContext<ReviewContextProps | undefined>(undefined);
 
 export const ReviewProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [reviews, setReviews] = useState<Review[]>(() => reviewGetAll());
+  const [reviews, setReviews] = useState<Review[]>([]);
+
+  React.useEffect(() => {
+    reviewGetAll().then(setReviews);
+  }, []);
   const { showNotification } = useUI();
 
   const addReview = useCallback(
-    (preOrderId: string, reviewerUserId: string, revieweeUserId: string, rating: number, comment?: string) => {
+    async (preOrderId: string, reviewerUserId: string, revieweeUserId: string, rating: number, comment?: string) => {
       const newReview: Review = {
         id:             `rev-${Date.now()}`,
         preOrderId,
@@ -36,7 +40,8 @@ export const ReviewProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         comment,
         createdAt:      new Date().toISOString().split('T')[0],
       };
-      setReviews(reviewAdd(newReview));
+      const updated = await reviewAdd(newReview);
+      setReviews(updated);
       showNotification('Ulasan & rating berhasil dikirim!', 'success');
     },
     [showNotification]

@@ -18,23 +18,29 @@ import { useUI } from './UIContext';
 
 interface PaymentContextProps {
   paymentConfirmations: PaymentConfirmation[];
-  addPaymentConfirmation: (preOrderId: string, proofImageUrl?: string, notes?: string) => void;
-  confirmPayment: (paymentId: string) => void;
+  addPaymentConfirmation: (preOrderId: string, proofImageUrl?: string, notes?: string) => Promise<void>;
+  confirmPayment: (paymentId: string) => Promise<void>;
 }
 
 const PaymentContext = createContext<PaymentContextProps | undefined>(undefined);
 
 export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [paymentConfirmations, setPaymentConfirmations] = useState<PaymentConfirmation[]>(() => paymentGetAll());
+  const [paymentConfirmations, setPaymentConfirmations] = useState<PaymentConfirmation[]>([]);
+  
+  React.useEffect(() => {
+    paymentGetAll().then(setPaymentConfirmations);
+  }, []);
   const { showNotification } = useUI();
 
-  const addPaymentConfirmation = useCallback((preOrderId: string, proofImageUrl?: string, notes?: string) => {
-    setPaymentConfirmations(paymentUpsertByPreOrder(preOrderId, proofImageUrl, notes));
+  const addPaymentConfirmation = useCallback(async (preOrderId: string, proofImageUrl?: string, notes?: string) => {
+    const updated = await paymentUpsertByPreOrder(preOrderId, proofImageUrl, notes);
+    setPaymentConfirmations(updated);
     showNotification('Bukti pembayaran berhasil diunggah (opsional).', 'success');
   }, [showNotification]);
 
-  const confirmPayment = useCallback((paymentId: string) => {
-    setPaymentConfirmations(paymentConfirm(paymentId));
+  const confirmPayment = useCallback(async (paymentId: string) => {
+    const updated = await paymentConfirm(paymentId);
+    setPaymentConfirmations(updated);
     showNotification('Pembayaran telah dikonfirmasi!', 'success');
   }, [showNotification]);
 

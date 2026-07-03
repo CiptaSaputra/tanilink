@@ -3,52 +3,59 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * src/services/paymentService.ts
- * ──────────────────────────────────────────────────────────────────────────────
- * Service layer untuk operasi data PaymentConfirmation.
  */
-
 import { PaymentConfirmation } from '../types';
-import { STORAGE_KEYS, storageReadArray, storageWrite, storageRemove } from './storage';
 
-// ─── Read ──────────────────────────────────────────────────────────────────────
-
-export function paymentGetAll(): PaymentConfirmation[] {
-  return storageReadArray<PaymentConfirmation>(STORAGE_KEYS.PAYMENTS);
+export async function paymentGetAll(): Promise<PaymentConfirmation[]> {
+  const res = await fetch('/api/payments');
+  if (!res.ok) return [];
+  return res.json();
 }
 
-export function paymentGetById(id: string): PaymentConfirmation | undefined {
-  return paymentGetAll().find(p => p.id === id);
+export async function paymentGetById(id: string): Promise<PaymentConfirmation | undefined> {
+  const res = await fetch(`/api/payments/${id}`);
+  if (!res.ok) return undefined;
+  return res.json();
 }
 
-export function paymentGetByPreOrder(preOrderId: string): PaymentConfirmation | undefined {
-  return paymentGetAll().find(p => p.preOrderId === preOrderId);
+export async function paymentGetByPreOrder(preOrderId: string): Promise<PaymentConfirmation | undefined> {
+  const res = await fetch(`/api/payments/pre-order/${preOrderId}`);
+  if (!res.ok) return undefined;
+  return res.json();
 }
 
-// ─── Write ─────────────────────────────────────────────────────────────────────
-
-export function paymentSaveAll(payments: PaymentConfirmation[]): void {
-  storageWrite(STORAGE_KEYS.PAYMENTS, payments);
+export async function paymentSaveAll(payments: PaymentConfirmation[]): Promise<void> {
+  await fetch('/api/payments', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payments),
+  });
 }
 
-export function paymentAdd(payment: PaymentConfirmation): PaymentConfirmation[] {
-  const updated = [...paymentGetAll(), payment];
-  paymentSaveAll(updated);
-  return updated;
+export async function paymentAdd(payment: PaymentConfirmation): Promise<PaymentConfirmation[]> {
+  await fetch('/api/payments', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payment),
+  });
+  return paymentGetAll();
 }
 
-export function paymentUpdate(id: string, patch: Partial<PaymentConfirmation>): PaymentConfirmation[] {
-  const updated = paymentGetAll().map(p => p.id === id ? { ...p, ...patch } : p);
-  paymentSaveAll(updated);
-  return updated;
+export async function paymentUpdate(id: string, patch: Partial<PaymentConfirmation>): Promise<PaymentConfirmation[]> {
+  await fetch(`/api/payments/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  return paymentGetAll();
 }
 
-/** Upsert: update jika sudah ada payment untuk preOrderId, tambah jika belum. */
-export function paymentUpsertByPreOrder(
+export async function paymentUpsertByPreOrder(
   preOrderId: string,
   proofImageUrl?: string,
   notes?: string
-): PaymentConfirmation[] {
-  const existing = paymentGetByPreOrder(preOrderId);
+): Promise<PaymentConfirmation[]> {
+  const existing = await paymentGetByPreOrder(preOrderId);
   if (existing) {
     return paymentUpdate(existing.id, {
       proofImageUrl: proofImageUrl ?? existing.proofImageUrl,
@@ -67,11 +74,10 @@ export function paymentUpsertByPreOrder(
   }
 }
 
-/** Konfirmasi pembayaran (ubah status menjadi confirmed). */
-export function paymentConfirm(id: string): PaymentConfirmation[] {
+export async function paymentConfirm(id: string): Promise<PaymentConfirmation[]> {
   return paymentUpdate(id, { status: 'confirmed' });
 }
 
-export function paymentClear(): void {
-  storageRemove(STORAGE_KEYS.PAYMENTS);
+export async function paymentClear(): Promise<void> {
+  await fetch('/api/payments/clear', { method: 'POST' });
 }

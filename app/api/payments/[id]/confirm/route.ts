@@ -1,22 +1,29 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- *
- * PATCH /api/payments/[id]/confirm — konfirmasi pembayaran
- */
-
 import { NextRequest, NextResponse } from 'next/server';
-import { paymentConfirm } from '@/services';
+import { db } from '@/db';
+import { paymentConfirmations } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function PATCH(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const updated = paymentConfirm(id);
+    const body = await req.json();
+
+    await db.update(paymentConfirmations)
+      .set({ status: body.status || 'confirmed' })
+      .where(eq(paymentConfirmations.id, id));
+
+    const [updated] = await db.select().from(paymentConfirmations).where(eq(paymentConfirmations.id, id));
+
+    if (!updated) {
+      return NextResponse.json({ error: `Payment ${id} tidak ditemukan` }, { status: 404 });
+    }
+
     return NextResponse.json({ data: updated });
-  } catch {
-    return NextResponse.json({ error: 'Gagal konfirmasi payment' }, { status: 500 });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: 'Gagal update status payment' }, { status: 500 });
   }
 }

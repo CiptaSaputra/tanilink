@@ -1,34 +1,44 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- *
- * GET  /api/pre-orders — ambil semua pre-order
- * POST /api/pre-orders — buat pre-order baru
- */
-
 import { NextRequest, NextResponse } from 'next/server';
-import { preOrderGetAll, preOrderAdd } from '@/services';
-import { PreOrder } from '@/types';
+import { db } from '@/db';
+import { preOrders } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function GET() {
   try {
-    return NextResponse.json({ data: preOrderGetAll() });
-  } catch {
-    return NextResponse.json({ error: 'Gagal mengambil pre-orders' }, { status: 500 });
+    const data = await db.select().from(preOrders);
+    return NextResponse.json({ data });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: 'Gagal mengambil data pre-orders' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as PreOrder;
+    const body = await req.json();
 
-    if (!body.id || !body.matchId || !body.harvestId || !body.demandId) {
+    if (!body.id || !body.matchId) {
       return NextResponse.json({ error: 'Data pre-order tidak lengkap' }, { status: 400 });
     }
 
-    const updated = preOrderAdd(body);
+    await db.insert(preOrders).values({
+      id: body.id,
+      matchId: body.matchId,
+      harvestId: body.harvestId,
+      demandId: body.demandId,
+      agreedPricePerKg: body.agreedPricePerKg,
+      agreedVolumeKg: body.agreedVolumeKg,
+      farmerName: body.farmerName,
+      buyerName: body.buyerName,
+      commodity: body.commodity,
+      deliveryMode: body.deliveryMode,
+      status: body.status || 'PENDING',
+    });
+
+    const [updated] = await db.select().from(preOrders).where(eq(preOrders.id, body.id));
     return NextResponse.json({ data: updated }, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: 'Gagal membuat pre-order' }, { status: 500 });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: 'Gagal menambah pre-order' }, { status: 500 });
   }
 }

@@ -1,25 +1,19 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- *
- * GET  /api/conversations/[id]/messages — ambil semua pesan dalam conversation
- * POST /api/conversations/[id]/messages — kirim pesan baru
- */
-
 import { NextRequest, NextResponse } from 'next/server';
-import { messageGetByConversation, messageAdd } from '@/services';
-import { Message } from '@/types';
+import { db } from '@/db';
+import { messages } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const messages = messageGetByConversation(id);
-    return NextResponse.json({ data: messages });
-  } catch {
-    return NextResponse.json({ error: 'Gagal mengambil messages' }, { status: 500 });
+    const data = await db.select().from(messages).where(eq(messages.conversationId, id));
+    return NextResponse.json({ data });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: 'Gagal mengambil data messages' }, { status: 500 });
   }
 }
 
@@ -29,23 +23,23 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const body = await req.json() as Omit<Message, 'conversationId'>;
+    const body = await req.json();
 
-    if (!body.senderUserId || !body.content) {
-      return NextResponse.json({ error: 'Pesan tidak lengkap' }, { status: 400 });
+    if (!body.id || !body.senderUserId || !body.content) {
+      return NextResponse.json({ error: 'Data message tidak lengkap' }, { status: 400 });
     }
 
-    const newMsg: Message = {
-      id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    await db.insert(messages).values({
+      id: body.id,
       conversationId: id,
       senderUserId: body.senderUserId,
       content: body.content,
-      sentAt: new Date().toISOString(),
-    };
+      sentAt: body.sentAt ? new Date(body.sentAt) : undefined, // drizzle defaultNow handles if omitted, but schema maps to Date
+    });
 
-    const updated = messageAdd(newMsg);
-    return NextResponse.json({ data: updated }, { status: 201 });
-  } catch {
-    return NextResponse.json({ error: 'Gagal mengirim pesan' }, { status: 500 });
+    return NextResponse.json({ data: { ...body, conversationId: id } }, { status: 201 });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: 'Gagal menambah message' }, { status: 500 });
   }
 }

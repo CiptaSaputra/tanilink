@@ -1,44 +1,40 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- *
- * GET  /api/reviews — ambil semua review
- * POST /api/reviews — tambah review baru
- */
-
 import { NextRequest, NextResponse } from 'next/server';
-import { reviewGetAll, reviewAdd } from '@/services';
-import { Review } from '@/types';
+import { db } from '@/db';
+import { reviews } from '@/db/schema';
+import { eq } from 'drizzle-orm';
 
 export async function GET() {
   try {
-    return NextResponse.json({ data: reviewGetAll() });
-  } catch {
-    return NextResponse.json({ error: 'Gagal mengambil reviews' }, { status: 500 });
+    const data = await db.select().from(reviews);
+    return NextResponse.json({ data });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: 'Gagal mengambil data reviews' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as Omit<Review, 'id' | 'createdAt'>;
+    const body = await req.json();
 
-    if (!body.preOrderId || !body.reviewerUserId || !body.revieweeUserId || !body.rating) {
+    if (!body.id || !body.preOrderId || !body.reviewerUserId || !body.rating) {
       return NextResponse.json({ error: 'Data review tidak lengkap' }, { status: 400 });
     }
 
-    if (body.rating < 1 || body.rating > 5) {
-      return NextResponse.json({ error: 'Rating harus antara 1-5' }, { status: 400 });
-    }
+    await db.insert(reviews).values({
+      id: body.id,
+      preOrderId: body.preOrderId,
+      reviewerUserId: body.reviewerUserId,
+      revieweeUserId: body.revieweeUserId,
+      rating: body.rating,
+      comment: body.comment || null,
+      createdAt: body.createdAt ? new Date(body.createdAt) : undefined,
+    });
 
-    const newReview: Review = {
-      id: `rev-${Date.now()}`,
-      ...body,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-
-    const updated = reviewAdd(newReview);
+    const [updated] = await db.select().from(reviews).where(eq(reviews.id, body.id));
     return NextResponse.json({ data: updated }, { status: 201 });
-  } catch {
+  } catch (err) {
+    console.error(err);
     return NextResponse.json({ error: 'Gagal menambah review' }, { status: 500 });
   }
 }

@@ -3,43 +3,50 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * src/services/reviewService.ts
- * ──────────────────────────────────────────────────────────────────────────────
- * Service layer untuk operasi data Review & Rating.
  */
-
 import { Review } from '../types';
-import { STORAGE_KEYS, storageReadArray, storageWrite, storageRemove } from './storage';
 
-// ─── Read ──────────────────────────────────────────────────────────────────────
-
-export function reviewGetAll(): Review[] {
-  return storageReadArray<Review>(STORAGE_KEYS.REVIEWS);
+export async function reviewGetAll(): Promise<Review[]> {
+  const res = await fetch('/api/reviews');
+  if (!res.ok) return [];
+  return res.json();
 }
 
-export function reviewGetById(id: string): Review | undefined {
-  return reviewGetAll().find(r => r.id === id);
+export async function reviewGetById(id: string): Promise<Review | undefined> {
+  const res = await fetch(`/api/reviews/${id}`);
+  if (!res.ok) return undefined;
+  return res.json();
 }
 
-export function reviewGetByPreOrder(preOrderId: string): Review[] {
-  return reviewGetAll().filter(r => r.preOrderId === preOrderId);
+export async function reviewGetByPreOrder(preOrderId: string): Promise<Review[]> {
+  const res = await fetch(`/api/reviews/pre-order/${preOrderId}`);
+  if (!res.ok) return [];
+  return res.json();
 }
 
-export function reviewGetByReviewee(revieweeUserId: string): Review[] {
-  return reviewGetAll().filter(r => r.revieweeUserId === revieweeUserId);
+export async function reviewGetByReviewee(revieweeUserId: string): Promise<Review[]> {
+  const res = await fetch(`/api/reviews/reviewee/${revieweeUserId}`);
+  if (!res.ok) return [];
+  return res.json();
 }
 
-// ─── Write ─────────────────────────────────────────────────────────────────────
-
-export function reviewSaveAll(reviews: Review[]): void {
-  storageWrite(STORAGE_KEYS.REVIEWS, reviews);
+export async function reviewSaveAll(reviews: Review[]): Promise<void> {
+  await fetch('/api/reviews', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(reviews),
+  });
 }
 
-export function reviewAdd(review: Review): Review[] {
-  const updated = [...reviewGetAll(), review];
-  reviewSaveAll(updated);
-  return updated;
+export async function reviewAdd(review: Review): Promise<Review[]> {
+  await fetch('/api/reviews', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(review),
+  });
+  return reviewGetAll();
 }
 
-export function reviewClear(): void {
-  storageRemove(STORAGE_KEYS.REVIEWS);
+export async function reviewClear(): Promise<void> {
+  await fetch('/api/reviews/clear', { method: 'POST' });
 }

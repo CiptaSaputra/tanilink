@@ -3,87 +3,101 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * src/services/preOrderService.ts
- * ──────────────────────────────────────────────────────────────────────────────
- * Service layer untuk operasi data PreOrder dan HarvestBatch.
  */
-
 import { PreOrder, HarvestBatch } from '../types';
-import { STORAGE_KEYS, storageReadArray, storageWrite, storageRemove } from './storage';
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// PRE-ORDERS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export function preOrderGetAll(): PreOrder[] {
-  return storageReadArray<PreOrder>(STORAGE_KEYS.PRE_ORDERS);
+export async function preOrderGetAll(): Promise<PreOrder[]> {
+  const res = await fetch('/api/pre-orders');
+  if (!res.ok) return [];
+  return res.json();
 }
 
-export function preOrderGetById(id: string): PreOrder | undefined {
-  return preOrderGetAll().find(po => po.id === id);
+export async function preOrderGetById(id: string): Promise<PreOrder | undefined> {
+  const res = await fetch(`/api/pre-orders/${id}`);
+  if (!res.ok) return undefined;
+  return res.json();
 }
 
-export function preOrderSaveAll(preOrders: PreOrder[]): void {
-  storageWrite(STORAGE_KEYS.PRE_ORDERS, preOrders);
+export async function preOrderSaveAll(preOrders: PreOrder[]): Promise<void> {
+  await fetch('/api/pre-orders', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(preOrders),
+  });
 }
 
-export function preOrderAdd(preOrder: PreOrder): PreOrder[] {
-  const updated = [preOrder, ...preOrderGetAll()];
-  preOrderSaveAll(updated);
-  return updated;
+export async function preOrderAdd(preOrder: PreOrder): Promise<PreOrder[]> {
+  await fetch('/api/pre-orders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(preOrder),
+  });
+  return preOrderGetAll();
 }
 
-export function preOrderUpdate(id: string, patch: Partial<PreOrder>): PreOrder[] {
-  const updated = preOrderGetAll().map(po => po.id === id ? { ...po, ...patch } : po);
-  preOrderSaveAll(updated);
-  return updated;
+export async function preOrderUpdate(id: string, patch: Partial<PreOrder>): Promise<PreOrder[]> {
+  await fetch(`/api/pre-orders/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  return preOrderGetAll();
 }
 
-/** Update delivery mode untuk satu pre-order. */
-export function preOrderSetDeliveryMode(id: string, mode: 'direct' | 'consolidated'): PreOrder[] {
+export async function preOrderSetDeliveryMode(id: string, mode: 'direct' | 'consolidated'): Promise<PreOrder[]> {
   return preOrderUpdate(id, { deliveryMode: mode });
 }
 
-/** Tandai pre-order sebagai COMPLETED. */
-export function preOrderComplete(id: string): PreOrder[] {
+export async function preOrderComplete(id: string): Promise<PreOrder[]> {
   return preOrderUpdate(id, { status: 'COMPLETED' });
 }
 
-export function preOrderClear(): void {
-  storageRemove(STORAGE_KEYS.PRE_ORDERS);
+export async function preOrderClear(): Promise<void> {
+  await fetch('/api/pre-orders/clear', { method: 'POST' });
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// HARVEST BATCHES
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export function batchGetAll(): HarvestBatch[] {
-  return storageReadArray<HarvestBatch>(STORAGE_KEYS.HARVEST_BATCHES);
+export async function batchGetAll(): Promise<HarvestBatch[]> {
+  const res = await fetch('/api/harvest-batches');
+  if (!res.ok) return [];
+  return res.json();
 }
 
-export function batchGetById(id: string): HarvestBatch | undefined {
-  return batchGetAll().find(b => b.id === id);
+export async function batchGetById(id: string): Promise<HarvestBatch | undefined> {
+  const res = await fetch(`/api/harvest-batches/${id}`);
+  if (!res.ok) return undefined;
+  return res.json();
 }
 
-export function batchSaveAll(batches: HarvestBatch[]): void {
-  storageWrite(STORAGE_KEYS.HARVEST_BATCHES, batches);
+export async function batchSaveAll(batches: HarvestBatch[]): Promise<void> {
+  await fetch('/api/harvest-batches', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(batches),
+  });
 }
 
-export function batchAdd(batch: HarvestBatch): HarvestBatch[] {
-  const updated = [batch, ...batchGetAll()];
-  batchSaveAll(updated);
-  return updated;
+export async function batchAdd(batch: HarvestBatch): Promise<HarvestBatch[]> {
+  await fetch('/api/harvest-batches', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(batch),
+  });
+  return batchGetAll();
 }
 
-export function batchUpdate(id: string, patch: Partial<HarvestBatch>): HarvestBatch[] {
-  const updated = batchGetAll().map(b => b.id === id ? { ...b, ...patch } : b);
-  batchSaveAll(updated);
-  return updated;
+export async function batchUpdate(id: string, patch: Partial<HarvestBatch>): Promise<HarvestBatch[]> {
+  await fetch(`/api/harvest-batches/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  return batchGetAll();
 }
 
-export function batchUpdateStatus(id: string, status: HarvestBatch['status']): HarvestBatch[] {
+export async function batchUpdateStatus(id: string, status: HarvestBatch['status']): Promise<HarvestBatch[]> {
   return batchUpdate(id, { status });
 }
 
-export function batchClear(): void {
-  storageRemove(STORAGE_KEYS.HARVEST_BATCHES);
+export async function batchClear(): Promise<void> {
+  await fetch('/api/harvest-batches/clear', { method: 'POST' });
 }

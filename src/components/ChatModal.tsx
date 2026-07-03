@@ -33,12 +33,20 @@ export default function ChatModal({
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Find or create conversation for this match
-  const conversation: Conversation | undefined = conversations.find(c => c.matchId === matchId);
-  const conversationId = conversation?.id || startConversation(matchId, farmerUserId, buyerUserId);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const existing = conversations.find(c => c.matchId === matchId);
+    if (existing) {
+      setConversationId(existing.id);
+    } else if (!conversationId) {
+      startConversation(matchId, farmerUserId, buyerUserId).then(setConversationId).catch(console.error);
+    }
+  }, [matchId, conversations, farmerUserId, buyerUserId, startConversation, isOpen, conversationId]);
 
   // Get messages for this conversation
-  const chatMessages = messages.filter(m => m.conversationId === conversationId);
+  const chatMessages = conversationId ? messages.filter(m => m.conversationId === conversationId) : [];
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -46,7 +54,7 @@ export default function ChatModal({
   }, [chatMessages.length]);
 
   const handleSend = () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !conversationId) return;
     sendMessage(conversationId, currentUserId, newMessage.trim());
     setNewMessage('');
   };

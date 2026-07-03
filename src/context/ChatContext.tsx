@@ -19,18 +19,30 @@ import {
 interface ChatContextProps {
   conversations:    Conversation[];
   messages:         Message[];
-  sendMessage:      (conversationId: string, senderUserId: string, content: string) => void;
-  startConversation: (matchId: string, farmerUserId: string, buyerUserId: string) => string;
+  sendMessage:       (conversationId: string, senderUserId: string, content: string) => Promise<void>;
+  startConversation: (matchId: string, farmerUserId: string, buyerUserId: string) => Promise<string>;
 }
 
 const ChatContext = createContext<ChatContextProps | undefined>(undefined);
 
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [conversations, setConversations] = useState<Conversation[]>(() => conversationGetAll());
-  const [messages, setMessages]           = useState<Message[]>(() => messageGetAll());
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messages, setMessages]           = useState<Message[]>([]);
 
-  const startConversation = useCallback((matchId: string, farmerUserId: string, buyerUserId: string): string => {
-    const existing = conversationGetByMatchId(matchId);
+  React.useEffect(() => {
+    async function loadChat() {
+      const [convs, msgs] = await Promise.all([
+        conversationGetAll(),
+        messageGetAll()
+      ]);
+      setConversations(convs);
+      setMessages(msgs);
+    }
+    loadChat();
+  }, []);
+
+  const startConversation = useCallback(async (matchId: string, farmerUserId: string, buyerUserId: string): Promise<string> => {
+    const existing = await conversationGetByMatchId(matchId);
     if (existing) return existing.id;
 
     const newConv: Conversation = {
@@ -40,12 +52,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       buyerUserId,
       createdAt:    new Date().toISOString().split('T')[0],
     };
-    const { conversation } = conversationAdd(newConv);
-    setConversations(conversationGetAll());
+    const { conversation } = await conversationAdd(newConv);
+    const all = await conversationGetAll();
+    setConversations(all);
     return conversation.id;
   }, []);
 
-  const sendMessage = useCallback((conversationId: string, senderUserId: string, content: string) => {
+  const sendMessage = useCallback(async (conversationId: string, senderUserId: string, content: string) => {
     const newMsg: Message = {
       id:             `msg-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       conversationId,
@@ -53,7 +66,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       content,
       sentAt:         new Date().toISOString(),
     };
-    setMessages(messageAdd(newMsg));
+    const updated = await messageAdd(newMsg);
+    setMessages(updated);
   }, []);
 
   return (

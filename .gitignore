@@ -24,6 +24,10 @@ yarn-error.log*
 .env
 .env*.local
 
+# Database / Docker
+db_data/
+docker-compose.override.yml
+
 # IDE
 .vscode/
 .idea/

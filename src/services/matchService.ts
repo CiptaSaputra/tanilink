@@ -3,61 +3,45 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * src/services/matchService.ts
- * ──────────────────────────────────────────────────────────────────────────────
- * Service layer untuk operasi data Match.
- * Matches bersifat computed (tidak perlu persist ke DB nantinya),
- * tapi status update-nya perlu disimpan agar tidak hilang saat re-compute.
  */
-
 import { Match } from '../types';
-import { STORAGE_KEYS, storageReadArray, storageWrite, storageRemove } from './storage';
 
-// ─── Read ──────────────────────────────────────────────────────────────────────
-
-/** Ambil semua match yang tersimpan (status snapshot). */
-export function matchGetAll(): Match[] {
-  return storageReadArray<Match>(STORAGE_KEYS.MATCHES);
+export async function matchGetAll(): Promise<Match[]> {
+  const res = await fetch('/api/matches');
+  if (!res.ok) return [];
+  return res.json();
 }
 
-/** Cari match berdasarkan ID. */
-export function matchGetById(id: string): Match | undefined {
-  return matchGetAll().find(m => m.id === id);
+export async function matchGetById(id: string): Promise<Match | undefined> {
+  const res = await fetch(`/api/matches/${id}`);
+  if (!res.ok) return undefined;
+  return res.json();
 }
 
-// ─── Write ─────────────────────────────────────────────────────────────────────
-
-/** Simpan seluruh array match. */
-export function matchSaveAll(matches: Match[]): void {
-  storageWrite(STORAGE_KEYS.MATCHES, matches);
+export async function matchSaveAll(matches: Match[]): Promise<void> {
+  await fetch('/api/matches', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(matches),
+  });
 }
 
-/**
- * Update status satu match berdasarkan ID.
- * Hanya menyimpan status — komputasi skor tetap di AppContext.
- */
-export function matchUpdateStatus(id: string, status: Match['status']): void {
-  const all = matchGetAll();
-  const updated = all.map(m => m.id === id ? { ...m, status } : m);
-  // Jika match belum tersimpan, tambahkan sebagai stub status saja
-  if (!all.find(m => m.id === id)) {
-    // Tidak ditambahkan — hanya update yang sudah ada
-    return;
-  }
-  matchSaveAll(updated);
+export async function matchUpdateStatus(id: string, status: Match['status']): Promise<void> {
+  await fetch(`/api/matches/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
 }
 
-/** Upsert: update jika ada, tambah jika belum ada. */
-export function matchUpsert(match: Match): void {
-  const all = matchGetAll();
-  const exists = all.find(m => m.id === match.id);
-  if (exists) {
-    matchSaveAll(all.map(m => m.id === match.id ? match : m));
-  } else {
-    matchSaveAll([...all, match]);
-  }
+export async function matchUpsert(match: Match): Promise<void> {
+  await fetch(`/api/matches/${match.id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(match),
+  });
 }
 
-/** Hapus semua match (dipanggil saat reset data). */
-export function matchClear(): void {
-  storageRemove(STORAGE_KEYS.MATCHES);
+export async function matchClear(): Promise<void> {
+  await fetch('/api/matches/clear', { method: 'POST' });
 }
