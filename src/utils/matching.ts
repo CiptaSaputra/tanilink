@@ -5,11 +5,16 @@
  * Pure matching functions — no side effects, no context dependency.
  */
 
-import { COMMODITY_WEIGHTS } from '../constants/commodities';
-import type { Harvest, Demand, Match } from '../types';
+import { COMMODITY_WEIGHTS } from "../constants/commodities";
+import type { Harvest, Demand, Match } from "../types";
 
 /** Haversine distance antara dua koordinat, hasil dalam km. */
-export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+export function calculateDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
@@ -26,15 +31,22 @@ export function calculateDistance(lat1: number, lon1: number, lat2: number, lon2
 /** Hitung skor matching antara satu harvest dan satu demand. Pure function. */
 export function scoreMatch(harvest: Harvest, demand: Demand): Match {
   const distanceKm = calculateDistance(
-    harvest.latitude, harvest.longitude,
-    demand.latitude,  demand.longitude
+    harvest.latitude,
+    harvest.longitude,
+    demand.latitude,
+    demand.longitude,
   );
 
-  const weights = COMMODITY_WEIGHTS[harvest.commodity] ?? { wLocation: 0.4, wVolume: 0.3, wPrice: 0.3 };
+  const weights = COMMODITY_WEIGHTS[harvest.commodity] ?? {
+    wLocation: 0.4,
+    wVolume: 0.3,
+    wPrice: 0.3,
+  };
 
   let distanceScore = 0;
-  if (distanceKm <= 5)        distanceScore = 100;
-  else if (distanceKm < 150)  distanceScore = Math.round(100 * (1 - (distanceKm - 5) / 145));
+  if (distanceKm <= 5) distanceScore = 100;
+  else if (distanceKm < 150)
+    distanceScore = Math.round(100 * (1 - (distanceKm - 5) / 145));
 
   const minVol = Math.min(harvest.expectedVolume, demand.requiredVolume);
   const maxVol = Math.max(harvest.expectedVolume, demand.requiredVolume);
@@ -50,18 +62,24 @@ export function scoreMatch(harvest: Harvest, demand: Demand): Match {
 
   const totalScore = Math.round(
     weights.wLocation * distanceScore +
-    weights.wVolume   * volumeScore +
-    weights.wPrice    * priceScore
+      weights.wVolume * volumeScore +
+      weights.wPrice * priceScore,
   );
 
   return {
     id: `match-${harvest.id}-${demand.id}`,
     harvestId: harvest.id,
-    demandId:  demand.id,
-    score:     totalScore,
+    demandId: demand.id,
+    score: totalScore,
     distanceKm,
-    scoreDetails: { distanceScore, volumeScore, priceScore, totalScore, distanceKm },
-    status:    'PENDING',
-    createdAt: new Date().toISOString().split('T')[0],
+    scoreDetails: {
+      distanceScore,
+      volumeScore,
+      priceScore,
+      totalScore,
+      distanceKm,
+    },
+    status: "PENDING",
+    createdAt: new Date().toISOString().split("T")[0],
   };
 }

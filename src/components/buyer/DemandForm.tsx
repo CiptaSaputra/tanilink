@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, MapPin } from 'lucide-react';
-import { COMMODITY_LIST } from '../../constants/commodities';
-import type { Komoditas } from '../../types';
-import { useData } from '../../context/DataContext';
-import { useUI } from '../../context/UIContext';
+import React, { useState, useEffect } from "react";
+import { Plus, MapPin } from "lucide-react";
+import { COMMODITY_LIST } from "../../constants/commodities";
+import type { Komoditas } from "../../types";
+import { useData } from "../../context/DataContext";
+import { useUI } from "../../context/UIContext";
 
 interface DemandFormProps {
   mapLat?: number;
@@ -12,29 +12,37 @@ interface DemandFormProps {
   clearMapSelection?: () => void;
 }
 
-export const DemandForm: React.FC<DemandFormProps> = ({ mapLat, mapLng, mapRegion, clearMapSelection }) => {
+export const DemandForm: React.FC<DemandFormProps> = ({
+  mapLat,
+  mapLng,
+  mapRegion,
+  clearMapSelection,
+}) => {
   const { addDemand } = useData();
   const { showNotification } = useUI();
 
-  const [commodity, setCommodity] = useState<Komoditas>('Bawang Merah');
+  const [commodity, setCommodity] = useState<Komoditas>("Bawang Merah");
   const [requiredVolume, setRequiredVolume] = useState<number>(10000);
   const [offerPrice, setOfferPrice] = useState<number>(27000);
   const [dateRequired, setDateRequired] = useState<string>(() => {
     const d = new Date();
     d.setDate(d.getDate() + 30);
-    return d.toISOString().split('T')[0];
+    return d.toISOString().split("T")[0];
   });
   const [latitude, setLatitude] = useState<number>(-6.865);
   const [longitude, setLongitude] = useState<number>(109.035);
-  const [region, setRegion] = useState<string>('Brebes');
-  const [notes, setNotes] = useState<string>('');
+  const [region, setRegion] = useState<string>("Brebes");
+  const [notes, setNotes] = useState<string>("");
 
   useEffect(() => {
     if (mapLat && mapLng && mapRegion) {
       setLatitude(mapLat);
       setLongitude(mapLng);
       setRegion(mapRegion);
-      showNotification(`Koordinat terpilih dari peta: ${mapLat}, ${mapLng} (${mapRegion})`, 'info');
+      showNotification(
+        `Koordinat terpilih dari peta: ${mapLat}, ${mapLng} (${mapRegion})`,
+        "info",
+      );
     }
   }, [mapLat, mapLng, mapRegion, showNotification]);
 
@@ -54,14 +62,17 @@ export const DemandForm: React.FC<DemandFormProps> = ({ mapLat, mapLng, mapRegio
           const lng = Math.round(position.coords.longitude * 1000) / 1000;
           setLatitude(lat);
           setLongitude(lng);
-          showNotification('Lokasi GPS Anda berhasil disinkronkan!', 'success');
+          showNotification("Lokasi GPS Anda berhasil disinkronkan!", "success");
         },
         () => {
-          showNotification('Gagal mendapatkan lokasi GPS. Silakan tentukan manual atau klik pada peta.', 'warning');
-        }
+          showNotification(
+            "Gagal mendapatkan lokasi GPS. Silakan tentukan manual atau klik pada peta.",
+            "warning",
+          );
+        },
       );
     } else {
-      showNotification('Fitur GPS tidak didukung di peramban ini.', 'warning');
+      showNotification("Fitur GPS tidak didukung di peramban ini.", "warning");
     }
   };
 
@@ -78,7 +89,7 @@ export const DemandForm: React.FC<DemandFormProps> = ({ mapLat, mapLng, mapRegio
       notes,
     });
     if (clearMapSelection) clearMapSelection();
-    setNotes('');
+    setNotes("");
   };
 
   return (
@@ -90,32 +101,42 @@ export const DemandForm: React.FC<DemandFormProps> = ({ mapLat, mapLng, mapRegio
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-bold text-nat-text mb-1">Pilih Komoditas</label>
+          <label className="block text-xs font-bold text-nat-text mb-1">
+            Pilih Komoditas
+          </label>
           <select
             value={commodity}
             onChange={(e) => handleCommodityChange(e.target.value as Komoditas)}
             className="w-full bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green"
           >
             {Object.keys(COMMODITY_LIST).map((key) => (
-              <option key={key} value={key}>{key}</option>
+              <option key={key} value={key}>
+                {key}
+              </option>
             ))}
           </select>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-bold text-nat-text mb-1">Volume Dibutuhkan (Kg)</label>
+            <label className="block text-xs font-bold text-nat-text mb-1">
+              Volume Dibutuhkan (Kg)
+            </label>
             <input
               type="number"
               min="50"
               step="500"
               value={requiredVolume}
-              onChange={(e) => setRequiredVolume(parseInt(e.target.value) || 1000)}
+              onChange={(e) =>
+                setRequiredVolume(parseInt(e.target.value) || 1000)
+              }
               className="w-full bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-xs text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green font-bold"
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-nat-text mb-1">Harga Penawaran (Rp/Kg)</label>
+            <label className="block text-xs font-bold text-nat-text mb-1">
+              Harga Penawaran (Rp/Kg)
+            </label>
             <input
               type="number"
               step="500"
@@ -128,7 +149,9 @@ export const DemandForm: React.FC<DemandFormProps> = ({ mapLat, mapLng, mapRegio
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-nat-text mb-1">Dibutuhkan Paling Lambat</label>
+          <label className="block text-xs font-bold text-nat-text mb-1">
+            Dibutuhkan Paling Lambat
+          </label>
           <input
             type="date"
             value={dateRequired}
@@ -146,7 +169,9 @@ export const DemandForm: React.FC<DemandFormProps> = ({ mapLat, mapLng, mapRegio
 
           <div className="grid grid-cols-2 gap-2 text-[11px]">
             <div>
-              <span className="text-nat-sage font-semibold block">Latitude</span>
+              <span className="text-nat-sage font-semibold block">
+                Latitude
+              </span>
               <input
                 type="number"
                 step="0.001"
@@ -156,7 +181,9 @@ export const DemandForm: React.FC<DemandFormProps> = ({ mapLat, mapLng, mapRegio
               />
             </div>
             <div>
-              <span className="text-nat-sage font-semibold block">Longitude</span>
+              <span className="text-nat-sage font-semibold block">
+                Longitude
+              </span>
               <input
                 type="number"
                 step="0.001"
@@ -169,7 +196,9 @@ export const DemandForm: React.FC<DemandFormProps> = ({ mapLat, mapLng, mapRegio
 
           <div className="grid grid-cols-2 gap-2 text-[11px]">
             <div>
-              <span className="text-nat-sage font-semibold block">Nama Wilayah</span>
+              <span className="text-nat-sage font-semibold block">
+                Nama Wilayah
+              </span>
               <input
                 type="text"
                 value={region}
@@ -190,7 +219,9 @@ export const DemandForm: React.FC<DemandFormProps> = ({ mapLat, mapLng, mapRegio
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-nat-text mb-1">Catatan Tambahan (Opsional)</label>
+          <label className="block text-xs font-bold text-nat-text mb-1">
+            Catatan Tambahan (Opsional)
+          </label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}

@@ -30,8 +30,8 @@
  *      - Efek harga pasar historis (demand pull) sebagai proxy
  */
 
-import { COMMODITY_LIST } from '../constants/commodities';
-import type { Komoditas, Harvest } from '../types';
+import { COMMODITY_LIST } from "../constants/commodities";
+import type { Komoditas, Harvest } from "../types";
 
 // ---------------------------------------------------------------------------
 // Public types (backward-compatible)
@@ -55,7 +55,7 @@ export interface RegionForecast {
   region: string;
   commodity: Komoditas;
   forecasts: ForecastPoint[];
-  trend: 'UP' | 'DOWN' | 'STABLE';
+  trend: "UP" | "DOWN" | "STABLE";
   growthRate: number;
   /** Root Mean Squared Error on in-sample fit (lower = better) */
   rmse: number;
@@ -82,54 +82,54 @@ interface CommoditySeasonalParams {
 }
 
 const COMMODITY_SEASONAL: Record<Komoditas, CommoditySeasonalParams> = {
-  'Bawang Merah': {
+  "Bawang Merah": {
     weeklyFourier: [0.18, -0.12, 0.08, 0.05],
     trendSlopePerHa: 120,
-    peakMonth: 6,   // July
+    peakMonth: 6, // July
     offSeasonDamp: 0.62,
     rainSensitivity: 0.55,
   },
-  'Cabai Merah': {
-    weeklyFourier: [-0.10, 0.22, 0.05, -0.08],
+  "Cabai Merah": {
+    weeklyFourier: [-0.1, 0.22, 0.05, -0.08],
     trendSlopePerHa: 85,
-    peakMonth: 7,   // August
-    offSeasonDamp: 0.70,
-    rainSensitivity: 0.40,
+    peakMonth: 7, // August
+    offSeasonDamp: 0.7,
+    rainSensitivity: 0.4,
   },
-  'Tomat': {
-    weeklyFourier: [0.12, 0.15, -0.06, 0.10],
+  Tomat: {
+    weeklyFourier: [0.12, 0.15, -0.06, 0.1],
     trendSlopePerHa: 200,
     peakMonth: 8,
     offSeasonDamp: 0.75,
     rainSensitivity: 0.35,
   },
-  'Kentang': {
+  Kentang: {
     weeklyFourier: [0.08, -0.08, 0.12, 0.04],
     trendSlopePerHa: 160,
     peakMonth: 5,
-    offSeasonDamp: 0.80,
+    offSeasonDamp: 0.8,
     rainSensitivity: 0.25,
   },
-  'Kubis': {
-    weeklyFourier: [0.05, 0.10, -0.04, 0.08],
+  Kubis: {
+    weeklyFourier: [0.05, 0.1, -0.04, 0.08],
     trendSlopePerHa: 220,
     peakMonth: 7,
     offSeasonDamp: 0.72,
-    rainSensitivity: 0.30,
+    rainSensitivity: 0.3,
   },
-  'Padi': {
-    weeklyFourier: [0.20, -0.05, 0.10, -0.12],
+  Padi: {
+    weeklyFourier: [0.2, -0.05, 0.1, -0.12],
     trendSlopePerHa: 50,
-    peakMonth: 3,   // April (MH season)
-    offSeasonDamp: 0.50,
+    peakMonth: 3, // April (MH season)
+    offSeasonDamp: 0.5,
     rainSensitivity: -0.15, // rain is beneficial for padi
   },
-  'Jagung': {
-    weeklyFourier: [0.10, 0.08, 0.06, -0.05],
+  Jagung: {
+    weeklyFourier: [0.1, 0.08, 0.06, -0.05],
     trendSlopePerHa: 70,
     peakMonth: 4,
     offSeasonDamp: 0.65,
-    rainSensitivity: 0.20,
+    rainSensitivity: 0.2,
   },
 };
 
@@ -158,7 +158,9 @@ function getRegionCorrection(region: string): number {
 // Jan–Mar high, Apr–Jun moderate, Jul–Sep low (dry), Oct–Dec rising
 // ---------------------------------------------------------------------------
 
-const MONTHLY_RAIN_INDEX = [0.85, 0.80, 0.72, 0.60, 0.50, 0.42, 0.30, 0.25, 0.38, 0.58, 0.72, 0.80];
+const MONTHLY_RAIN_INDEX = [
+  0.85, 0.8, 0.72, 0.6, 0.5, 0.42, 0.3, 0.25, 0.38, 0.58, 0.72, 0.8,
+];
 
 function getRainFactor(month: number, commodity: Komoditas): number {
   const rain = MONTHLY_RAIN_INDEX[month] ?? 0.5;
@@ -173,7 +175,10 @@ function getRainFactor(month: number, commodity: Komoditas): number {
 // P = 4 weeks (monthly cycle)
 // ---------------------------------------------------------------------------
 
-function fourierSeasonal(h: number, coeff: [number, number, number, number]): number {
+function fourierSeasonal(
+  h: number,
+  coeff: [number, number, number, number],
+): number {
   const P = 4;
   const [a1, b1, a2, b2] = coeff;
   return (
@@ -192,7 +197,7 @@ function fourierSeasonal(h: number, coeff: [number, number, number, number]): nu
 function holtsInit(
   data: number[],
   alpha = 0.35,
-  beta = 0.12
+  beta = 0.12,
 ): { level: number; trend: number } {
   if (data.length === 0) return { level: 0, trend: 0 };
   if (data.length === 1) return { level: data[0], trend: 0 };
@@ -217,7 +222,7 @@ function computeResidualSigma(
   level0: number,
   trend0: number,
   alpha: number,
-  beta: number
+  beta: number,
 ): number {
   if (observations.length < 2) return observations[0] * 0.12 || 1000;
 
@@ -242,7 +247,7 @@ function computeResidualSigma(
 export function generateHarvestForecast(
   harvests: Harvest[],
   region: string,
-  commodity: Komoditas
+  commodity: Komoditas,
 ): RegionForecast {
   const params = COMMODITY_SEASONAL[commodity];
   const regionCorr = getRegionCorrection(region);
@@ -250,13 +255,18 @@ export function generateHarvestForecast(
 
   // ---- 1. Gather in-sample observations ----
   const regionalHarvests = harvests.filter(
-    h => h.region.toLowerCase() === region.toLowerCase() && h.commodity === commodity
+    (h) =>
+      h.region.toLowerCase() === region.toLowerCase() &&
+      h.commodity === commodity,
   );
 
   // Build a time-ordered array of observed volumes (use expectedVolume as proxy)
   const observations: number[] = regionalHarvests
-    .sort((a, b) => new Date(a.plantingDate).getTime() - new Date(b.plantingDate).getTime())
-    .map(h => h.expectedVolume);
+    .sort(
+      (a, b) =>
+        new Date(a.plantingDate).getTime() - new Date(b.plantingDate).getTime(),
+    )
+    .map((h) => h.expectedVolume);
 
   // Fallback: seed with commodity average × 1 Ha if no data
   const avgYield = commodityMeta.typicalYieldKgPerHectare;
@@ -269,7 +279,11 @@ export function generateHarvestForecast(
   // ---- 2. Holt's init from observations ----
   const ALPHA = 0.35;
   const BETA = 0.12;
-  const { level: initLevel, trend: initTrend } = holtsInit(observations, ALPHA, BETA);
+  const { level: initLevel, trend: initTrend } = holtsInit(
+    observations,
+    ALPHA,
+    BETA,
+  );
 
   // Apply total area factor and commodity trend slope
   const areaFactor = Math.max(1, totalHa);
@@ -277,7 +291,13 @@ export function generateHarvestForecast(
   let trend = initTrend + params.trendSlopePerHa * areaFactor * 0.01;
 
   // ---- 3. Residual sigma for CI ----
-  const sigma = computeResidualSigma(observations, initLevel, initTrend, ALPHA, BETA);
+  const sigma = computeResidualSigma(
+    observations,
+    initLevel,
+    initTrend,
+    ALPHA,
+    BETA,
+  );
 
   // ---- 4. Current month for seasonality & rain ----
   const today = new Date();
@@ -285,10 +305,12 @@ export function generateHarvestForecast(
   const peakMonth = params.peakMonth;
   const monthDiff = Math.min(
     Math.abs(currentMonth - peakMonth),
-    12 - Math.abs(currentMonth - peakMonth)
+    12 - Math.abs(currentMonth - peakMonth),
   );
   // Off-season dampening: full in peak month, damp at 6-month offset
-  const seasonGain = params.offSeasonDamp + (1 - params.offSeasonDamp) * Math.max(0, 1 - monthDiff / 6);
+  const seasonGain =
+    params.offSeasonDamp +
+    (1 - params.offSeasonDamp) * Math.max(0, 1 - monthDiff / 6);
 
   // ---- 5. Forecast loop (h = 1..4 weeks) ----
   const forecasts: ForecastPoint[] = [];
@@ -324,7 +346,10 @@ export function generateHarvestForecast(
 
     forecasts.push({
       week: h,
-      date: forecastDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }),
+      date: forecastDate.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+      }),
       predictedVolume: predicted,
       confidenceLower,
       confidenceUpper,
@@ -340,14 +365,15 @@ export function generateHarvestForecast(
   const startVol = forecasts[0].predictedVolume;
   const endVol = forecasts[3].predictedVolume;
   const growthRate = Math.round(((endVol - startVol) / startVol) * 100);
-  const trendDir: 'UP' | 'DOWN' | 'STABLE' =
-    growthRate > 3 ? 'UP' : growthRate < -3 ? 'DOWN' : 'STABLE';
+  const trendDir: "UP" | "DOWN" | "STABLE" =
+    growthRate > 3 ? "UP" : growthRate < -3 ? "DOWN" : "STABLE";
 
   // ---- 7. In-sample RMSE ----
   const rmse = Math.round(
     Math.sqrt(
-      observations.reduce((s, o) => s + (o - initLevel) ** 2, 0) / observations.length
-    )
+      observations.reduce((s, o) => s + (o - initLevel) ** 2, 0) /
+        observations.length,
+    ),
   );
 
   return {

@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Upload } from 'lucide-react';
-import { usePayment } from '../../context/PaymentContext';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Upload } from "lucide-react";
+import { usePayment } from "../../context/PaymentContext";
 
 interface PaymentModalProps {
   preOrderId: string | null;
   onClose: () => void;
 }
 
-export const PaymentModal: React.FC<PaymentModalProps> = ({ preOrderId, onClose }) => {
+export const PaymentModal: React.FC<PaymentModalProps> = ({
+  preOrderId,
+  onClose,
+}) => {
   const { addPaymentConfirmation } = usePayment();
-  const [payProofUrl, setPayProofUrl] = useState('');
+  const [payProofUrl, setPayProofUrl] = useState("");
 
   return (
     <AnimatePresence>
@@ -34,11 +37,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ preOrderId, onClose 
               Upload Bukti Pembayaran (Opsional)
             </h3>
             <p className="text-[11px] text-nat-sage mb-4">
-              Transaksi dilakukan di luar sistem. Upload bukti bayar bersifat opsional.
+              Transaksi dilakukan di luar sistem. Upload bukti bayar bersifat
+              opsional.
             </p>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-nat-text mb-1">URL Bukti Transfer</label>
+                <label className="block text-xs font-bold text-nat-text mb-1">
+                  URL Bukti Transfer
+                </label>
                 <input
                   type="text"
                   value={payProofUrl}
@@ -46,16 +52,24 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ preOrderId, onClose 
                   placeholder="https://..."
                   className="w-full bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green"
                 />
-                <p className="text-[9px] text-nat-sage mt-1">Atau kirim bukti bayar langsung lewat chat ke pembeli.</p>
+                <p className="text-[9px] text-nat-sage mt-1">
+                  Atau kirim bukti bayar langsung lewat chat ke pembeli.
+                </p>
               </div>
               <div className="flex gap-2">
-                <button onClick={onClose} className="flex-1 py-2 rounded-xl bg-nat-light-cream text-nat-text text-xs font-bold border border-nat-border hover:bg-nat-cream transition-colors cursor-pointer">
+                <button
+                  onClick={onClose}
+                  className="flex-1 py-2 rounded-xl bg-nat-light-cream text-nat-text text-xs font-bold border border-nat-border hover:bg-nat-cream transition-colors cursor-pointer"
+                >
                   Tutup
                 </button>
                 <button
                   onClick={() => {
-                    addPaymentConfirmation(preOrderId, payProofUrl || undefined);
-                    setPayProofUrl('');
+                    addPaymentConfirmation(
+                      preOrderId,
+                      payProofUrl || undefined,
+                    );
+                    setPayProofUrl("");
                     onClose();
                   }}
                   className="flex-1 py-2 rounded-xl bg-nat-green text-white text-xs font-bold hover:bg-nat-green-hover transition-colors shadow-sm cursor-pointer"

@@ -8,10 +8,10 @@
  * fallback UI. Wrap di setiap role view agar crash tidak mematikan seluruh app.
  */
 
-'use client';
+"use client";
 
-import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Component, type ErrorInfo, type ReactNode } from "react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -26,7 +26,10 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export default class ErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -37,7 +40,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    const label = this.props.name ?? 'Unknown';
+    const label = this.props.name ?? "Unknown";
     console.error(`[ErrorBoundary:${label}]`, error, info.componentStack);
   }
 
@@ -49,7 +52,7 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
 
-      const label = this.props.name ?? 'komponen';
+      const label = this.props.name ?? "komponen";
 
       return (
         <div className="flex flex-col items-center justify-center py-16 px-4 text-center">

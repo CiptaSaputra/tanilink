@@ -7,21 +7,29 @@
  * Reviews and ratings.
  */
 
-'use client';
+"use client";
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Review } from '../types';
-import { reviewGetAll, reviewAdd, reviewClear } from '../services';
-import { useUI } from './UIContext';
+import React, { createContext, useContext, useState, useCallback } from "react";
+import { Review } from "../types";
+import { reviewGetAll, reviewAdd, reviewClear } from "../services";
+import { useUI } from "./UIContext";
 
 interface ReviewContextProps {
-  reviews:   Review[];
-  addReview: (preOrderId: string, reviewerUserId: string, revieweeUserId: string, rating: number, comment?: string) => Promise<void>;
+  reviews: Review[];
+  addReview: (
+    preOrderId: string,
+    reviewerUserId: string,
+    revieweeUserId: string,
+    rating: number,
+    comment?: string,
+  ) => Promise<void>;
 }
 
 const ReviewContext = createContext<ReviewContextProps | undefined>(undefined);
 
-export const ReviewProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const ReviewProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [reviews, setReviews] = useState<Review[]>([]);
 
   React.useEffect(() => {
@@ -30,21 +38,27 @@ export const ReviewProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const { showNotification } = useUI();
 
   const addReview = useCallback(
-    async (preOrderId: string, reviewerUserId: string, revieweeUserId: string, rating: number, comment?: string) => {
+    async (
+      preOrderId: string,
+      reviewerUserId: string,
+      revieweeUserId: string,
+      rating: number,
+      comment?: string,
+    ) => {
       const newReview: Review = {
-        id:             `rev-${Date.now()}`,
+        id: `rev-${Date.now()}`,
         preOrderId,
         reviewerUserId,
         revieweeUserId,
         rating,
         comment,
-        createdAt:      new Date().toISOString().split('T')[0],
+        createdAt: new Date().toISOString().split("T")[0],
       };
       const updated = await reviewAdd(newReview);
       setReviews(updated);
-      showNotification('Ulasan & rating berhasil dikirim!', 'success');
+      showNotification("Ulasan & rating berhasil dikirim!", "success");
     },
-    [showNotification]
+    [showNotification],
   );
 
   return (
@@ -56,6 +70,7 @@ export const ReviewProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 export const useReview = (): ReviewContextProps => {
   const ctx = useContext(ReviewContext);
-  if (!ctx) throw new Error('useReview harus digunakan di dalam ReviewProvider');
+  if (!ctx)
+    throw new Error("useReview harus digunakan di dalam ReviewProvider");
   return ctx;
 };

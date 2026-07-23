@@ -3,12 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion } from 'motion/react';
-import { Sprout, Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-import { LoginCredentials } from '../../types';
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { motion } from "motion/react";
+import {
+  Sprout,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { LoginCredentials } from "../../types";
 
 interface LoginPageProps {
   onNavigateToRegister: () => void;
@@ -18,14 +26,17 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
   const { login } = useAuth();
   const router = useRouter();
 
-  const [credentials, setCredentials] = useState<LoginCredentials>({ email: '', password: '' });
+  const [credentials, setCredentials] = useState<LoginCredentials>({
+    email: "",
+    password: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setCredentials(prev => ({ ...prev, [name]: value }));
+    setCredentials((prev) => ({ ...prev, [name]: value }));
     if (error) setError(null);
   };
 
@@ -36,9 +47,9 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
 
     const result = await login(credentials);
     if (result.success) {
-      router.replace('/');
+      router.replace("/");
     } else {
-      setError(result.error ?? 'Login gagal. Silakan coba lagi.');
+      setError(result.error ?? "Login gagal. Silakan coba lagi.");
     }
     setIsSubmitting(false);
   };
@@ -46,22 +57,46 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
   const handleDemoLogin = async (email: string) => {
     setIsSubmitting(true);
     setError(null);
-    const result = await login({ email, password: 'demo123' });
+    const result = await login({ email, password: "demo123" });
     if (result.success) {
-      router.replace('/');
+      router.replace("/");
     } else {
-      setError(result.error ?? 'Login gagal.');
+      setError(result.error ?? "Login gagal.");
     }
     setIsSubmitting(false);
   };
 
   const demoAccounts = [
-    { label: 'Petani', email: 'petani@demo.com', color: 'text-nat-green border-nat-green/30 hover:bg-nat-green/5' },
-    { label: 'Pembeli', email: 'pembeli@demo.com', color: 'text-nat-brown border-nat-brown/30 hover:bg-nat-brown/5' },
-    { label: 'PPL', email: 'ppl@demo.com', color: 'text-teal-700 border-teal-300 hover:bg-teal-50' },
-    { label: 'Kolektor', email: 'kolektor@demo.com', color: 'text-amber-700 border-amber-300 hover:bg-amber-50' },
-    { label: 'Dinas', email: 'dinas@demo.com', color: 'text-nat-dark border-nat-border hover:bg-nat-light-cream' },
-    { label: 'Admin', email: 'admin@demo.com', color: 'text-nat-sage border-nat-sage/30 hover:bg-nat-sage/5' },
+    {
+      label: "Petani",
+      email: "petani@demo.com",
+      color: "text-nat-green border-nat-green/30 hover:bg-nat-green/5",
+    },
+    {
+      label: "Pembeli",
+      email: "pembeli@demo.com",
+      color: "text-nat-brown border-nat-brown/30 hover:bg-nat-brown/5",
+    },
+    {
+      label: "PPL",
+      email: "ppl@demo.com",
+      color: "text-teal-700 border-teal-300 hover:bg-teal-50",
+    },
+    {
+      label: "Kolektor",
+      email: "kolektor@demo.com",
+      color: "text-amber-700 border-amber-300 hover:bg-amber-50",
+    },
+    {
+      label: "Dinas",
+      email: "dinas@demo.com",
+      color: "text-nat-dark border-nat-border hover:bg-nat-light-cream",
+    },
+    {
+      label: "Admin",
+      email: "admin@demo.com",
+      color: "text-nat-sage border-nat-sage/30 hover:bg-nat-sage/5",
+    },
   ];
 
   return (
@@ -77,8 +112,12 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
           <div className="inline-flex items-center justify-center w-14 h-14 bg-nat-green rounded-2xl shadow-lg shadow-nat-green/20 mb-4">
             <Sprout className="w-7 h-7 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-nat-dark">Masuk ke TaniLink</h1>
-          <p className="text-sm text-nat-sage mt-1">Platform Sinergi Hulu-Hilir Pertanian</p>
+          <h1 className="text-2xl font-bold text-nat-dark">
+            Masuk ke TaniLink
+          </h1>
+          <p className="text-sm text-nat-sage mt-1">
+            Platform Sinergi Hulu-Hilir Pertanian
+          </p>
         </div>
 
         {/* Card */}
@@ -98,7 +137,10 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
 
             {/* Email */}
             <div className="space-y-1.5">
-              <label htmlFor="email" className="block text-sm font-medium text-nat-dark">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-nat-dark"
+              >
                 Email
               </label>
               <div className="relative">
@@ -119,7 +161,10 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
 
             {/* Password */}
             <div className="space-y-1.5">
-              <label htmlFor="password" className="block text-sm font-medium text-nat-dark">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-nat-dark"
+              >
                 Password
               </label>
               <div className="relative">
@@ -127,7 +172,7 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
                 <input
                   id="password"
                   name="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
                   value={credentials.password}
@@ -137,11 +182,17 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(v => !v)}
+                  onClick={() => setShowPassword((v) => !v)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-nat-sage hover:text-nat-dark transition-colors cursor-pointer"
-                  aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                  aria-label={
+                    showPassword ? "Sembunyikan password" : "Tampilkan password"
+                  }
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -149,7 +200,9 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
             {/* Submit */}
             <button
               type="submit"
-              disabled={isSubmitting || !credentials.email || !credentials.password}
+              disabled={
+                isSubmitting || !credentials.email || !credentials.password
+              }
               className="w-full flex items-center justify-center gap-2 bg-nat-green hover:bg-nat-green-hover text-white font-semibold py-2.5 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-sm"
             >
               {isSubmitting ? (
@@ -158,14 +211,14 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
                   <span>Memproses...</span>
                 </>
               ) : (
-                'Masuk'
+                "Masuk"
               )}
             </button>
           </form>
 
           {/* Register link */}
           <p className="mt-5 text-center text-sm text-nat-sage">
-            Belum punya akun?{' '}
+            Belum punya akun?{" "}
             <button
               onClick={onNavigateToRegister}
               className="font-semibold text-nat-green hover:text-nat-green-hover transition-colors cursor-pointer"
@@ -181,7 +234,7 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
             Akun Demo — klik untuk langsung masuk
           </p>
           <div className="grid grid-cols-3 gap-2">
-            {demoAccounts.map(acc => (
+            {demoAccounts.map((acc) => (
               <button
                 key={acc.email}
                 type="button"
@@ -193,7 +246,12 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
               </button>
             ))}
           </div>
-          <p className="text-center text-[11px] text-nat-sage/70 mt-2">Password semua: <code className="bg-nat-light-cream px-1 py-0.5 rounded text-nat-dark">demo123</code></p>
+          <p className="text-center text-[11px] text-nat-sage/70 mt-2">
+            Password semua:{" "}
+            <code className="bg-nat-light-cream px-1 py-0.5 rounded text-nat-dark">
+              demo123
+            </code>
+          </p>
         </div>
       </motion.div>
     </div>

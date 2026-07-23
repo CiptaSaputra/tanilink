@@ -18,21 +18,21 @@
 // ─── Storage Keys ─────────────────────────────────────────────────────────────
 
 export const STORAGE_KEYS = {
-  ACTIVE_ROLE:      'flw_active_role',
-  HARVESTS:         'flw_harvests',
-  DEMANDS:          'flw_demands',
-  MATCHES:          'flw_matches',
-  PRE_ORDERS:       'flw_pre_orders',
-  HARVEST_BATCHES:  'flw_harvest_batches',
-  CONVERSATIONS:    'flw_conversations',
-  MESSAGES:         'flw_messages',
-  PAYMENTS:         'flw_payments',
-  REVIEWS:          'flw_reviews',
-  AUTH_SESSION:     'flw_auth_session',
-  USERS:            'flw_users',
+  ACTIVE_ROLE: "flw_active_role",
+  HARVESTS: "flw_harvests",
+  DEMANDS: "flw_demands",
+  MATCHES: "flw_matches",
+  PRE_ORDERS: "flw_pre_orders",
+  HARVEST_BATCHES: "flw_harvest_batches",
+  CONVERSATIONS: "flw_conversations",
+  MESSAGES: "flw_messages",
+  PAYMENTS: "flw_payments",
+  REVIEWS: "flw_reviews",
+  AUTH_SESSION: "flw_auth_session",
+  USERS: "flw_users",
 } as const;
 
-export type StorageKey = typeof STORAGE_KEYS[keyof typeof STORAGE_KEYS];
+export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
 
 // ─── Core Helpers ─────────────────────────────────────────────────────────────
 
@@ -42,8 +42,8 @@ export type StorageKey = typeof STORAGE_KEYS[keyof typeof STORAGE_KEYS];
  * SSR-safe: returns null if window is undefined.
  */
 export function storageRead<T>(key: StorageKey): T | null {
-  if (typeof window === 'undefined') return null;
-  
+  if (typeof window === "undefined") return null;
+
   try {
     const raw = localStorage.getItem(key);
     if (raw === null) return null;
@@ -60,8 +60,8 @@ export function storageRead<T>(key: StorageKey): T | null {
  * SSR-safe: does nothing if window is undefined.
  */
 export function storageWrite<T>(key: StorageKey, value: T): void {
-  if (typeof window === 'undefined') return;
-  
+  if (typeof window === "undefined") return;
+
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (err) {
@@ -74,8 +74,8 @@ export function storageWrite<T>(key: StorageKey, value: T): void {
  * SSR-safe.
  */
 export function storageRemove(key: StorageKey): void {
-  if (typeof window === 'undefined') return;
-  
+  if (typeof window === "undefined") return;
+
   try {
     localStorage.removeItem(key);
   } catch (err) {

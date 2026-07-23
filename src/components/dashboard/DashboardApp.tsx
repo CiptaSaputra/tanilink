@@ -8,28 +8,28 @@
  * tidak di-render di server (mencegah "window is not defined").
  */
 
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'motion/react';
-import { Info, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "motion/react";
+import { Info, X, CheckCircle, AlertCircle } from "lucide-react";
 
-import { AuthProvider, useAuth } from '@/context/AuthContext';
-import { UIProvider, useUI } from '@/context/UIContext';
-import { DataProvider } from '@/context/DataContext';
-import { ChatProvider } from '@/context/ChatContext';
-import { PaymentProvider } from '@/context/PaymentContext';
-import { ReviewProvider } from '@/context/ReviewContext';
-import ErrorBoundary from '@/components/shared/ErrorBoundary';
-import Navbar from '@/components/Navbar';
-import InteractiveMap from '@/components/InteractiveMap';
-import FarmerView from '@/components/FarmerView';
-import BuyerView from '@/components/BuyerView';
-import DinasView from '@/components/DinasView';
-import AdminView from '@/components/AdminView';
-import PPLView from '@/components/PPLView';
-import KolektorView from '@/components/KolektorView';
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { UIProvider, useUI } from "@/context/UIContext";
+import { DataProvider } from "@/context/DataContext";
+import { ChatProvider } from "@/context/ChatContext";
+import { PaymentProvider } from "@/context/PaymentContext";
+import { ReviewProvider } from "@/context/ReviewContext";
+import ErrorBoundary from "@/components/shared/ErrorBoundary";
+import Navbar from "@/components/Navbar";
+import InteractiveMap from "@/components/InteractiveMap";
+import FarmerView from "@/components/FarmerView";
+import BuyerView from "@/components/BuyerView";
+import DinasView from "@/components/DinasView";
+import AdminView from "@/components/AdminView";
+import PPLView from "@/components/PPLView";
+import KolektorView from "@/components/KolektorView";
 
 // ─── Auth Gate ─────────────────────────────────────────────────────────────────
 
@@ -39,7 +39,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.replace('/login');
+      router.replace("/login");
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -48,7 +48,9 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen bg-nat-light-cream/50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-4 border-nat-green border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-medium text-nat-sage">Memverifikasi sesi...</p>
+          <p className="text-sm font-medium text-nat-sage">
+            Memverifikasi sesi...
+          </p>
         </div>
       </div>
     );
@@ -88,7 +90,9 @@ function DashboardContent() {
         <ErrorBoundary name="InteractiveMap">
           <InteractiveMap
             onSelectCoords={
-              activeRole === 'PETANI' || activeRole === 'PEMBELI' || activeRole === 'PPL'
+              activeRole === "PETANI" ||
+              activeRole === "PEMBELI" ||
+              activeRole === "PPL"
                 ? handleSelectCoords
                 : undefined
             }
@@ -105,12 +109,46 @@ function DashboardContent() {
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.18 }}
           >
-            {activeRole === 'PETANI'   && <ErrorBoundary name="FarmerView"><FarmerView mapLat={mapLat} mapLng={mapLng} mapRegion={mapRegion} clearMapSelection={handleClearCoords} /></ErrorBoundary>}
-            {activeRole === 'PEMBELI'  && <ErrorBoundary name="BuyerView"><BuyerView  mapLat={mapLat} mapLng={mapLng} mapRegion={mapRegion} clearMapSelection={handleClearCoords} /></ErrorBoundary>}
-            {activeRole === 'PPL'      && <ErrorBoundary name="PPLView"><PPLView /></ErrorBoundary>}
-            {activeRole === 'DINAS'    && <ErrorBoundary name="DinasView"><DinasView /></ErrorBoundary>}
-            {activeRole === 'ADMIN'    && <ErrorBoundary name="AdminView"><AdminView /></ErrorBoundary>}
-            {activeRole === 'KOLEKTOR' && <ErrorBoundary name="KolektorView"><KolektorView /></ErrorBoundary>}
+            {activeRole === "PETANI" && (
+              <ErrorBoundary name="FarmerView">
+                <FarmerView
+                  mapLat={mapLat}
+                  mapLng={mapLng}
+                  mapRegion={mapRegion}
+                  clearMapSelection={handleClearCoords}
+                />
+              </ErrorBoundary>
+            )}
+            {activeRole === "PEMBELI" && (
+              <ErrorBoundary name="BuyerView">
+                <BuyerView
+                  mapLat={mapLat}
+                  mapLng={mapLng}
+                  mapRegion={mapRegion}
+                  clearMapSelection={handleClearCoords}
+                />
+              </ErrorBoundary>
+            )}
+            {activeRole === "PPL" && (
+              <ErrorBoundary name="PPLView">
+                <PPLView />
+              </ErrorBoundary>
+            )}
+            {activeRole === "DINAS" && (
+              <ErrorBoundary name="DinasView">
+                <DinasView />
+              </ErrorBoundary>
+            )}
+            {activeRole === "ADMIN" && (
+              <ErrorBoundary name="AdminView">
+                <AdminView />
+              </ErrorBoundary>
+            )}
+            {activeRole === "KOLEKTOR" && (
+              <ErrorBoundary name="KolektorView">
+                <KolektorView />
+              </ErrorBoundary>
+            )}
           </motion.div>
         </AnimatePresence>
       </main>
@@ -123,21 +161,31 @@ function DashboardContent() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 30, transition: { duration: 0.15 } }}
             className={`fixed top-20 right-6 z-[9999] flex items-center space-x-3 px-4 py-3.5 rounded-xl shadow-xl border border-nat-border text-xs font-semibold select-none min-w-[320px] max-w-md transition-all ${
-              notification.type === 'success'  ? 'bg-nat-light-cream text-emerald-900 border-l-4 border-l-nat-green'
-              : notification.type === 'warning' ? 'bg-nat-light-cream text-amber-900 border-l-4 border-l-nat-brown'
-              : 'bg-sky-50 text-sky-900 border-l-4 border-l-sky-500'
+              notification.type === "success"
+                ? "bg-nat-light-cream text-emerald-900 border-l-4 border-l-nat-green"
+                : notification.type === "warning"
+                  ? "bg-nat-light-cream text-amber-900 border-l-4 border-l-nat-brown"
+                  : "bg-sky-50 text-sky-900 border-l-4 border-l-sky-500"
             }`}
           >
-            {notification.type === 'success' && <CheckCircle className="w-4 h-4 text-nat-green shrink-0" />}
-            {notification.type === 'warning' && <AlertCircle className="w-4 h-4 text-nat-brown shrink-0" />}
-            {notification.type === 'info'    && <Info className="w-4 h-4 text-sky-600 shrink-0" />}
+            {notification.type === "success" && (
+              <CheckCircle className="w-4 h-4 text-nat-green shrink-0" />
+            )}
+            {notification.type === "warning" && (
+              <AlertCircle className="w-4 h-4 text-nat-brown shrink-0" />
+            )}
+            {notification.type === "info" && (
+              <Info className="w-4 h-4 text-sky-600 shrink-0" />
+            )}
             <span className="flex-1 font-medium">{notification.message}</span>
             <button
               onClick={dismissNotification}
               className={`p-1 rounded-lg transition-colors cursor-pointer ${
-                notification.type === 'success'  ? 'hover:bg-nat-cream text-nat-green'
-                : notification.type === 'warning' ? 'hover:bg-nat-cream text-nat-brown'
-                : 'hover:bg-sky-100 text-sky-600'
+                notification.type === "success"
+                  ? "hover:bg-nat-cream text-nat-green"
+                  : notification.type === "warning"
+                    ? "hover:bg-nat-cream text-nat-brown"
+                    : "hover:bg-sky-100 text-sky-600"
               }`}
             >
               <X className="w-3.5 h-3.5" />

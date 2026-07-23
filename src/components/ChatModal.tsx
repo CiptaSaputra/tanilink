@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useChat } from '../context/ChatContext';
-import { Message, Conversation } from '../types';
-import { X, Send, MessageSquare, Phone } from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import { useChat } from "../context/ChatContext";
+import { Message, Conversation } from "../types";
+import { X, Send, MessageSquare, Phone } from "lucide-react";
 
 interface ChatModalProps {
   matchId: string;
@@ -30,37 +30,49 @@ export default function ChatModal({
   onClose,
 }: ChatModalProps) {
   const { conversations, messages, sendMessage, startConversation } = useChat();
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [conversationId, setConversationId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
-    const existing = conversations.find(c => c.matchId === matchId);
+    const existing = conversations.find((c) => c.matchId === matchId);
     if (existing) {
       setConversationId(existing.id);
     } else if (!conversationId) {
-      startConversation(matchId, farmerUserId, buyerUserId).then(setConversationId).catch(console.error);
+      startConversation(matchId, farmerUserId, buyerUserId)
+        .then(setConversationId)
+        .catch(console.error);
     }
-  }, [matchId, conversations, farmerUserId, buyerUserId, startConversation, isOpen, conversationId]);
+  }, [
+    matchId,
+    conversations,
+    farmerUserId,
+    buyerUserId,
+    startConversation,
+    isOpen,
+    conversationId,
+  ]);
 
   // Get messages for this conversation
-  const chatMessages = conversationId ? messages.filter(m => m.conversationId === conversationId) : [];
+  const chatMessages = conversationId
+    ? messages.filter((m) => m.conversationId === conversationId)
+    : [];
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages.length]);
 
   const handleSend = () => {
     if (!newMessage.trim() || !conversationId) return;
     sendMessage(conversationId, currentUserId, newMessage.trim());
-    setNewMessage('');
+    setNewMessage("");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
@@ -82,7 +94,10 @@ export default function ChatModal({
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-lg transition-colors cursor-pointer">
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -93,23 +108,33 @@ export default function ChatModal({
             <div className="flex flex-col items-center justify-center h-full text-center text-nat-sage">
               <MessageSquare className="w-8 h-8 mb-2 opacity-50" />
               <p className="text-xs font-bold">Belum ada pesan</p>
-              <p className="text-[11px] mt-1">Mulai negosiasi harga, volume, atau jadwal pengiriman.</p>
+              <p className="text-[11px] mt-1">
+                Mulai negosiasi harga, volume, atau jadwal pengiriman.
+              </p>
             </div>
           ) : (
             chatMessages.map((msg) => {
               const isMine = msg.senderUserId === currentUserId;
               return (
-                <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  key={msg.id}
+                  className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                >
                   <div
                     className={`max-w-[80%] px-3 py-2 rounded-xl text-xs ${
                       isMine
-                        ? 'bg-nat-green text-white rounded-br-sm'
-                        : 'bg-white text-nat-dark border border-nat-border rounded-bl-sm'
+                        ? "bg-nat-green text-white rounded-br-sm"
+                        : "bg-white text-nat-dark border border-nat-border rounded-bl-sm"
                     }`}
                   >
                     <p className="leading-relaxed">{msg.content}</p>
-                    <p className={`text-[9px] mt-1 ${isMine ? 'text-white/70' : 'text-nat-sage'}`}>
-                      {new Date(msg.sentAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                    <p
+                      className={`text-[9px] mt-1 ${isMine ? "text-white/70" : "text-nat-sage"}`}
+                    >
+                      {new Date(msg.sentAt).toLocaleTimeString("id-ID", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </p>
                   </div>
                 </div>

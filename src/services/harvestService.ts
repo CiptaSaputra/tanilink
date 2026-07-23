@@ -4,52 +4,57 @@
  *
  * src/services/harvestService.ts
  */
-import { Harvest } from '../types';
+import { Harvest } from "../types";
 
 export async function harvestGetAll(): Promise<Harvest[]> {
-  const res = await fetch('/api/harvests');
+  const res = await fetch("/api/harvests");
   if (!res.ok) return [];
-  return res.json();
+  const json = await res.json();
+  return json.data !== undefined ? json.data : json;
 }
 
 export async function harvestGetById(id: string): Promise<Harvest | undefined> {
   const res = await fetch(`/api/harvests/${id}`);
   if (!res.ok) return undefined;
-  return res.json();
+  const json = await res.json();
+  return json.data !== undefined ? json.data : json;
 }
 
 export async function harvestSaveAll(harvests: Harvest[]): Promise<void> {
-  await fetch('/api/harvests', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+  await fetch("/api/harvests", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(harvests),
   });
 }
 
 export async function harvestAdd(harvest: Harvest): Promise<Harvest[]> {
-  await fetch('/api/harvests', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  await fetch("/api/harvests", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(harvest),
   });
   return harvestGetAll();
 }
 
-export async function harvestUpdate(id: string, patch: Partial<Harvest>): Promise<Harvest[]> {
+export async function harvestUpdate(
+  id: string,
+  patch: Partial<Harvest>,
+): Promise<Harvest[]> {
   await fetch(`/api/harvests/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(patch),
   });
   return harvestGetAll();
 }
 
 export async function harvestRemove(id: string): Promise<Harvest[]> {
-  await fetch(`/api/harvests/${id}`, { method: 'DELETE' });
+  await fetch(`/api/harvests/${id}`, { method: "DELETE" });
   return harvestGetAll();
 }
 
 export async function harvestReset(): Promise<Harvest[]> {
-  await fetch('/api/harvests/reset', { method: 'POST' });
+  await fetch("/api/harvests/reset", { method: "POST" });
   return harvestGetAll();
 }

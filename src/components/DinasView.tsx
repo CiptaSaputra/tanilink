@@ -3,21 +3,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from 'react';
-import { useData } from '../context/DataContext';
-import { COMMODITY_LIST } from '../constants/commodities';
-import type { Komoditas, Harvest, Demand } from '../types';
-import { generateHarvestForecast } from '../utils/forecasting';
-import { optimizeCollectorRoutes, optimizeBatchRoutes, calculateHaversineDistance } from '../utils/routeOptimizer';
-import { 
-  Layers, 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle, 
-  ShieldCheck, 
-  BadgePercent, 
-  Scale, 
-  Activity, 
+import React, { useState, useMemo } from "react";
+import { useData } from "../context/DataContext";
+import { COMMODITY_LIST } from "../constants/commodities";
+import type { Komoditas, Harvest, Demand } from "../types";
+import { generateHarvestForecast } from "../utils/forecasting";
+import {
+  optimizeCollectorRoutes,
+  optimizeBatchRoutes,
+  calculateHaversineDistance,
+} from "../utils/routeOptimizer";
+import {
+  Layers,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  ShieldCheck,
+  BadgePercent,
+  Scale,
+  Activity,
   MapPin,
   Leaf,
   Calendar,
@@ -26,20 +30,23 @@ import {
   HelpCircle,
   Clock,
   CheckCircle2,
-  Navigation
-} from 'lucide-react';
+  Navigation,
+} from "lucide-react";
 
 export default function DinasView() {
   const { harvests, demands, matches, harvestBatches } = useData();
-  const [activeTab, setActiveTab] = useState<'monitoring' | 'forecasting' | 'routing'>('monitoring');
+  const [activeTab, setActiveTab] = useState<
+    "monitoring" | "forecasting" | "routing"
+  >("monitoring");
 
   // --- TAB 2: FORECASTING STATES ---
-  const [forecastRegion, setForecastRegion] = useState<string>('Brebes');
-  const [forecastCommodity, setForecastCommodity] = useState<Komoditas>('Bawang Merah');
+  const [forecastRegion, setForecastRegion] = useState<string>("Brebes");
+  const [forecastCommodity, setForecastCommodity] =
+    useState<Komoditas>("Bawang Merah");
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   // --- TAB 3: ROUTING STATES ---
-  const [depotRegion, setDepotRegion] = useState<string>('Brebes');
+  const [depotRegion, setDepotRegion] = useState<string>("Brebes");
   const [vehicleCapacity, setVehicleCapacity] = useState<number>(5000);
   const [numVehicles, setNumVehicles] = useState<number>(3);
   const [isRoutingOptimized, setIsRoutingOptimized] = useState<boolean>(false);
@@ -47,23 +54,31 @@ export default function DinasView() {
   // Dynamic list of unique regions in the system
   const regionsList = useMemo(() => {
     const regionSet = new Set<string>();
-    ['Brebes', 'Garut', 'Malang', 'Cianjur', 'Lampung'].forEach(r => regionSet.add(r));
-    
-    harvests.forEach(h => {
+    ["Brebes", "Garut", "Malang", "Cianjur", "Lampung"].forEach((r) =>
+      regionSet.add(r),
+    );
+
+    harvests.forEach((h) => {
       if (h.region) {
         const rClean = h.region.trim();
         if (rClean) {
-          const formatted = rClean.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+          const formatted = rClean
+            .split(" ")
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+            .join(" ");
           regionSet.add(formatted);
         }
       }
     });
 
-    demands.forEach(d => {
+    demands.forEach((d) => {
       if (d.region) {
         const rClean = d.region.trim();
         if (rClean) {
-          const formatted = rClean.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+          const formatted = rClean
+            .split(" ")
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+            .join(" ");
           regionSet.add(formatted);
         }
       }
@@ -75,17 +90,20 @@ export default function DinasView() {
   // Dynamic depot coordinates registry computed from default values and registered harvests
   const DEPOT_COORDINATES = useMemo(() => {
     const registry: Record<string, { lat: number; lng: number }> = {
-      'Brebes': { lat: -6.871, lng: 109.042 },
-      'Garut': { lat: -7.227, lng: 107.908 },
-      'Malang': { lat: -7.982, lng: 112.630 },
-      'Cianjur': { lat: -6.822, lng: 107.138 },
-      'Lampung': { lat: -5.402, lng: 105.263 }
+      Brebes: { lat: -6.871, lng: 109.042 },
+      Garut: { lat: -7.227, lng: 107.908 },
+      Malang: { lat: -7.982, lng: 112.63 },
+      Cianjur: { lat: -6.822, lng: 107.138 },
+      Lampung: { lat: -5.402, lng: 105.263 },
     };
 
-    harvests.forEach(h => {
+    harvests.forEach((h) => {
       if (h.region) {
         const key = h.region.trim();
-        const formattedKey = key.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+        const formattedKey = key
+          .split(" ")
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(" ");
         if (!registry[formattedKey] && h.latitude && h.longitude) {
           registry[formattedKey] = { lat: h.latitude, lng: h.longitude };
         }
@@ -95,65 +113,103 @@ export default function DinasView() {
     return registry;
   }, [harvests]);
 
-  const currentDepotCoords = DEPOT_COORDINATES[depotRegion] || DEPOT_COORDINATES['Brebes'];
+  const currentDepotCoords =
+    DEPOT_COORDINATES[depotRegion] || DEPOT_COORDINATES["Brebes"];
 
   // --- TAB 1: MONITORING AGGREGATES ---
   const stats = useMemo(() => {
-    const activeHarvests = harvests.filter(h => h.status !== 'EXPIRED');
-    const activeDemands = demands.filter(d => d.status !== 'CANCELLED');
+    const activeHarvests = harvests.filter((h) => h.status !== "EXPIRED");
+    const activeDemands = demands.filter((d) => d.status !== "CANCELLED");
 
-    const totalHarvestKg = activeHarvests.reduce((sum, h) => sum + h.expectedVolume, 0);
-    const totalDemandKg = activeDemands.reduce((sum, d) => sum + d.requiredVolume, 0);
+    const totalHarvestKg = activeHarvests.reduce(
+      (sum, h) => sum + h.expectedVolume,
+      0,
+    );
+    const totalDemandKg = activeDemands.reduce(
+      (sum, d) => sum + d.requiredVolume,
+      0,
+    );
 
-    const matchedHarvests = harvests.filter(h => h.status === 'MATCHED');
-    const foodLossAvoidedKg = matchedHarvests.reduce((sum, h) => sum + h.expectedVolume, 0);
+    const matchedHarvests = harvests.filter((h) => h.status === "MATCHED");
+    const foodLossAvoidedKg = matchedHarvests.reduce(
+      (sum, h) => sum + h.expectedVolume,
+      0,
+    );
 
-    const activeMatches = matches.filter(m => m.score > 0);
-    const avgMatchScore = activeMatches.length > 0 
-      ? Math.round(activeMatches.reduce((sum, m) => sum + m.score, 0) / activeMatches.length)
-      : 0;
+    const activeMatches = matches.filter((m) => m.score > 0);
+    const avgMatchScore =
+      activeMatches.length > 0
+        ? Math.round(
+            activeMatches.reduce((sum, m) => sum + m.score, 0) /
+              activeMatches.length,
+          )
+        : 0;
 
     return {
       totalHarvestKg,
       totalDemandKg,
       foodLossAvoidedKg,
       avgMatchScore,
-      activeFarmersCount: new Set(activeHarvests.map(h => h.farmerId)).size,
-      activeBuyersCount: new Set(activeDemands.map(d => d.buyerId)).size,
+      activeFarmersCount: new Set(activeHarvests.map((h) => h.farmerId)).size,
+      activeBuyersCount: new Set(activeDemands.map((d) => d.buyerId)).size,
     };
   }, [harvests, demands, matches]);
 
   const commodityChartData = useMemo(() => {
     const crops = Object.keys(COMMODITY_LIST) as Komoditas[];
-    
-    return crops.map(crop => {
-      const cropHarvests = harvests.filter(h => h.commodity === crop && h.status !== 'EXPIRED');
-      const cropDemands = demands.filter(d => d.commodity === crop && d.status !== 'CANCELLED');
 
-      const harvestVol = cropHarvests.reduce((sum, h) => sum + h.expectedVolume, 0);
-      const demandVol = cropDemands.reduce((sum, d) => sum + d.requiredVolume, 0);
-      
+    return crops.map((crop) => {
+      const cropHarvests = harvests.filter(
+        (h) => h.commodity === crop && h.status !== "EXPIRED",
+      );
+      const cropDemands = demands.filter(
+        (d) => d.commodity === crop && d.status !== "CANCELLED",
+      );
+
+      const harvestVol = cropHarvests.reduce(
+        (sum, h) => sum + h.expectedVolume,
+        0,
+      );
+      const demandVol = cropDemands.reduce(
+        (sum, d) => sum + d.requiredVolume,
+        0,
+      );
+
       return {
         name: crop,
         harvest: harvestVol,
         demand: demandVol,
-        color: COMMODITY_LIST[crop].color
+        color: COMMODITY_LIST[crop].color,
       };
     });
   }, [harvests, demands]);
 
   const regionalSurplusData = useMemo(() => {
-    return regionsList.map(regName => {
-      const regHarvests = harvests.filter(h => h.region.toLowerCase() === regName.toLowerCase() && h.status !== 'EXPIRED');
-      const regDemands = demands.filter(d => d.region.toLowerCase() === regName.toLowerCase() && d.status !== 'CANCELLED');
+    return regionsList.map((regName) => {
+      const regHarvests = harvests.filter(
+        (h) =>
+          h.region.toLowerCase() === regName.toLowerCase() &&
+          h.status !== "EXPIRED",
+      );
+      const regDemands = demands.filter(
+        (d) =>
+          d.region.toLowerCase() === regName.toLowerCase() &&
+          d.status !== "CANCELLED",
+      );
 
-      const harvestVol = regHarvests.reduce((sum, h) => sum + h.expectedVolume, 0);
-      const demandVol = regDemands.reduce((sum, d) => sum + d.requiredVolume, 0);
+      const harvestVol = regHarvests.reduce(
+        (sum, h) => sum + h.expectedVolume,
+        0,
+      );
+      const demandVol = regDemands.reduce(
+        (sum, d) => sum + d.requiredVolume,
+        0,
+      );
 
       const unmatchedSurplus = Math.max(0, harvestVol - demandVol);
-      
-      let perishabilityFactor = 1.0; 
-      regHarvests.forEach(h => {
+
+      let perishabilityFactor = 1.0;
+      regHarvests.forEach((h) => {
         const shelfLife = COMMODITY_LIST[h.commodity]?.shelfLifeDays || 15;
         if (shelfLife <= 8) perishabilityFactor = 2.0;
         else if (shelfLife <= 15) perishabilityFactor = 1.5;
@@ -161,15 +217,18 @@ export default function DinasView() {
         else perishabilityFactor = 0.5;
       });
 
-      const ratio = harvestVol > 0 ? (unmatchedSurplus / harvestVol) : 0;
-      const surplusRiskIndex = Math.min(100, Math.round(ratio * 50 * perishabilityFactor));
+      const ratio = harvestVol > 0 ? unmatchedSurplus / harvestVol : 0;
+      const surplusRiskIndex = Math.min(
+        100,
+        Math.round(ratio * 50 * perishabilityFactor),
+      );
 
       return {
         regionName: regName,
         totalHarvestKg: harvestVol,
         totalDemandKg: demandVol,
-        activeFarmers: new Set(regHarvests.map(h => h.farmerId)).size,
-        activeBuyers: new Set(regDemands.map(d => d.buyerId)).size,
+        activeFarmers: new Set(regHarvests.map((h) => h.farmerId)).size,
+        activeBuyers: new Set(regDemands.map((d) => d.buyerId)).size,
         unmatchedSurplusKg: unmatchedSurplus,
         surplusRiskIndex,
       };
@@ -177,7 +236,7 @@ export default function DinasView() {
   }, [harvests, demands]);
 
   const maxChartValue = useMemo(() => {
-    const vals = commodityChartData.flatMap(d => [d.harvest, d.demand]);
+    const vals = commodityChartData.flatMap((d) => [d.harvest, d.demand]);
     const maxVal = Math.max(...vals, 10000);
     return Math.ceil(maxVal / 5000) * 5000;
   }, [commodityChartData]);
@@ -190,7 +249,7 @@ export default function DinasView() {
   // Forecast Max for dynamic SVG plotting
   const maxForecastVal = useMemo(() => {
     const points = activeForecast.forecasts;
-    const maxVal = Math.max(...points.map(p => p.confidenceUpper), 1000);
+    const maxVal = Math.max(...points.map((p) => p.confidenceUpper), 1000);
     return Math.ceil(maxVal / 2000) * 2000;
   }, [activeForecast]);
 
@@ -198,7 +257,9 @@ export default function DinasView() {
   const optimizedRoutes = useMemo(() => {
     // Prefer ready-to-ship batches if they exist; fall back to ACTIVE plantings for planning
     const regionalBatches = harvestBatches.filter(
-      b => b.region.toLowerCase() === depotRegion.toLowerCase() && b.status === 'READY'
+      (b) =>
+        b.region.toLowerCase() === depotRegion.toLowerCase() &&
+        b.status === "READY",
     );
 
     if (regionalBatches.length > 0) {
@@ -207,29 +268,42 @@ export default function DinasView() {
         currentDepotCoords.lat,
         currentDepotCoords.lng,
         vehicleCapacity,
-        numVehicles
+        numVehicles,
       );
     }
 
     // Fall back to active plantings for pre-harvest logistics planning
     const regionalHarvests = harvests.filter(
-      h => h.region.toLowerCase() === depotRegion.toLowerCase() && h.status === 'ACTIVE'
+      (h) =>
+        h.region.toLowerCase() === depotRegion.toLowerCase() &&
+        h.status === "ACTIVE",
     );
     return optimizeCollectorRoutes(
       regionalHarvests,
       currentDepotCoords.lat,
       currentDepotCoords.lng,
       vehicleCapacity,
-      numVehicles
+      numVehicles,
     );
-  }, [harvests, harvestBatches, depotRegion, currentDepotCoords, vehicleCapacity, numVehicles]);
+  }, [
+    harvests,
+    harvestBatches,
+    depotRegion,
+    currentDepotCoords,
+    vehicleCapacity,
+    numVehicles,
+  ]);
 
   const totalRoutingStops = useMemo(() => {
     return optimizedRoutes.reduce((sum, r) => sum + r.routeStops.length, 0);
   }, [optimizedRoutes]);
 
   const totalRoutingDistance = useMemo(() => {
-    return Math.round(optimizedRoutes.reduce((sum, r) => sum + r.totalDistanceKm, 0) * 10) / 10;
+    return (
+      Math.round(
+        optimizedRoutes.reduce((sum, r) => sum + r.totalDistanceKm, 0) * 10,
+      ) / 10
+    );
   }, [optimizedRoutes]);
 
   const totalRoutingVolume = useMemo(() => {
@@ -243,47 +317,50 @@ export default function DinasView() {
         <div>
           <h2 className="text-base font-bold text-nat-dark tracking-tight flex items-center gap-2">
             <Layers className="w-4 h-4 text-nat-green" />
-            Sistem Pengurangan Food Loss — Pengawasan & Peramalan Logistik Nasional
+            Sistem Pengurangan Food Loss — Pengawasan & Peramalan Logistik
+            Nasional
           </h2>
           <p className="text-xs text-nat-sage mt-0.5 font-medium">
-            Sistem peramalan cerdas, alokasi kendaraan VRP, dan deteksi dini food loss hortikultura terpadu.
+            Sistem peramalan cerdas, alokasi kendaraan VRP, dan deteksi dini
+            food loss hortikultura terpadu.
           </p>
         </div>
         <div className="text-[11px] text-nat-sage bg-nat-light-cream px-3 py-1.5 rounded-lg border border-nat-border font-bold shrink-0">
-          Sinkronisasi Terakhir: <span className="font-bold text-nat-dark">Real-time (GMT+7)</span>
+          Sinkronisasi Terakhir:{" "}
+          <span className="font-bold text-nat-dark">Real-time (GMT+7)</span>
         </div>
       </div>
 
       {/* Tabs Navigation */}
       <div className="flex border-b border-nat-border gap-2">
         <button
-          onClick={() => setActiveTab('monitoring')}
+          onClick={() => setActiveTab("monitoring")}
           className={`px-4 py-2 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 cursor-pointer ${
-            activeTab === 'monitoring'
-              ? 'border-nat-green text-nat-green'
-              : 'border-transparent text-nat-sage hover:text-nat-dark'
+            activeTab === "monitoring"
+              ? "border-nat-green text-nat-green"
+              : "border-transparent text-nat-sage hover:text-nat-dark"
           }`}
         >
           <Activity className="w-4 h-4" />
           Indeks Pengawasan Nasional
         </button>
         <button
-          onClick={() => setActiveTab('forecasting')}
+          onClick={() => setActiveTab("forecasting")}
           className={`px-4 py-2 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 cursor-pointer ${
-            activeTab === 'forecasting'
-              ? 'border-nat-green text-nat-green'
-              : 'border-transparent text-nat-sage hover:text-nat-dark'
+            activeTab === "forecasting"
+              ? "border-nat-green text-nat-green"
+              : "border-transparent text-nat-sage hover:text-nat-dark"
           }`}
         >
           <LineChart className="w-4 h-4" />
           Peramalan Time-Series (FBProphet)
         </button>
         <button
-          onClick={() => setActiveTab('routing')}
+          onClick={() => setActiveTab("routing")}
           className={`px-4 py-2 text-xs font-bold transition-all border-b-2 flex items-center gap-1.5 cursor-pointer ${
-            activeTab === 'routing'
-              ? 'border-nat-green text-nat-green'
-              : 'border-transparent text-nat-sage hover:text-nat-dark'
+            activeTab === "routing"
+              ? "border-nat-green text-nat-green"
+              : "border-transparent text-nat-sage hover:text-nat-dark"
           }`}
         >
           <Truck className="w-4 h-4" />
@@ -292,7 +369,7 @@ export default function DinasView() {
       </div>
 
       {/* TAB CONTENT RENDERING */}
-      {activeTab === 'monitoring' && (
+      {activeTab === "monitoring" && (
         <div className="space-y-6">
           {/* Aggregate Indicators */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -302,10 +379,12 @@ export default function DinasView() {
                 Total Volume Tanam
               </p>
               <p className="text-lg font-bold text-nat-dark mt-1.5">
-                {stats.totalHarvestKg.toLocaleString('id-ID')} Kg
+                {stats.totalHarvestKg.toLocaleString("id-ID")} Kg
               </p>
               <div className="flex items-center space-x-1.5 text-[10px] text-nat-text mt-2">
-                <span className="font-bold text-nat-green">{stats.activeFarmersCount} Petani</span>
+                <span className="font-bold text-nat-green">
+                  {stats.activeFarmersCount} Petani
+                </span>
                 <span>aktif melapor lahan</span>
               </div>
             </div>
@@ -316,10 +395,12 @@ export default function DinasView() {
                 Total Permintaan Pasar
               </p>
               <p className="text-lg font-bold text-nat-dark mt-1.5">
-                {stats.totalDemandKg.toLocaleString('id-ID')} Kg
+                {stats.totalDemandKg.toLocaleString("id-ID")} Kg
               </p>
               <div className="flex items-center space-x-1.5 text-[10px] text-nat-text mt-2">
-                <span className="font-bold text-nat-brown">{stats.activeBuyersCount} Hub Koperasi</span>
+                <span className="font-bold text-nat-brown">
+                  {stats.activeBuyersCount} Hub Koperasi
+                </span>
                 <span>aktif mencari pasokan</span>
               </div>
             </div>
@@ -330,11 +411,14 @@ export default function DinasView() {
                 Food Loss Terselamatkan
               </p>
               <p className="text-lg font-bold text-nat-green mt-1.5">
-                {stats.foodLossAvoidedKg.toLocaleString('id-ID')} Kg
+                {stats.foodLossAvoidedKg.toLocaleString("id-ID")} Kg
               </p>
               <div className="flex items-center space-x-1 text-[10px] text-nat-green mt-2 font-bold">
                 <Leaf className="w-3 h-3 shrink-0" />
-                <span>±{Math.round(stats.foodLossAvoidedKg * 1.9)} Kg Emisi CO2 diredam</span>
+                <span>
+                  ±{Math.round(stats.foodLossAvoidedKg * 1.9)} Kg Emisi CO2
+                  diredam
+                </span>
               </div>
             </div>
 
@@ -347,7 +431,10 @@ export default function DinasView() {
                 {stats.avgMatchScore}% Match
               </p>
               <div className="w-full bg-nat-light-cream h-1.5 rounded-full mt-2.5 overflow-hidden">
-                <div className="bg-nat-green h-full rounded-full" style={{ width: `${stats.avgMatchScore}%` }} />
+                <div
+                  className="bg-nat-green h-full rounded-full"
+                  style={{ width: `${stats.avgMatchScore}%` }}
+                />
               </div>
             </div>
           </div>
@@ -367,36 +454,51 @@ export default function DinasView() {
                   return (
                     <div key={data.name} className="space-y-1.5">
                       <div className="flex justify-between items-center text-xs">
-                        <span className="font-bold text-nat-dark">{data.name}</span>
+                        <span className="font-bold text-nat-dark">
+                          {data.name}
+                        </span>
                         <span className="text-[10px] text-nat-sage font-semibold">
-                          Tanam: <span className="text-nat-text font-bold">{data.harvest.toLocaleString('id-ID')} Kg</span> | 
-                          Minta: <span className="text-nat-brown font-bold">{data.demand.toLocaleString('id-ID')} Kg</span>
+                          Tanam:{" "}
+                          <span className="text-nat-text font-bold">
+                            {data.harvest.toLocaleString("id-ID")} Kg
+                          </span>{" "}
+                          | Minta:{" "}
+                          <span className="text-nat-brown font-bold">
+                            {data.demand.toLocaleString("id-ID")} Kg
+                          </span>
                         </span>
                       </div>
 
                       <div className="space-y-1">
                         {/* Harvest Bar */}
                         <div className="flex items-center gap-2">
-                          <div className="w-16 text-[9px] text-nat-sage font-bold uppercase shrink-0">Produksi</div>
+                          <div className="w-16 text-[9px] text-nat-sage font-bold uppercase shrink-0">
+                            Produksi
+                          </div>
                           <div className="flex-1 bg-nat-light-cream h-3.5 rounded-md overflow-hidden border border-nat-border relative">
-                            <div 
-                              className="h-full rounded-md transition-all duration-300" 
-                              style={{ 
+                            <div
+                              className="h-full rounded-md transition-all duration-300"
+                              style={{
                                 width: `${Math.max(2, harvestWidth)}%`,
                                 backgroundColor: data.color,
-                                opacity: 0.8
-                              }} 
+                                opacity: 0.8,
+                              }}
                             />
                           </div>
                         </div>
 
                         {/* Demand Bar */}
                         <div className="flex items-center gap-2">
-                          <div className="w-16 text-[9px] text-nat-sage font-bold uppercase shrink-0">Daya Serap</div>
+                          <div className="w-16 text-[9px] text-nat-sage font-bold uppercase shrink-0">
+                            Daya Serap
+                          </div>
                           <div className="flex-1 bg-nat-light-cream h-3.5 rounded-md overflow-hidden border border-nat-border relative">
-                            <div 
-                              className="h-full bg-nat-brown rounded-md transition-all duration-300" 
-                              style={{ width: `${Math.max(2, demandWidth)}%`, opacity: 0.8 }} 
+                            <div
+                              className="h-full bg-nat-brown rounded-md transition-all duration-300"
+                              style={{
+                                width: `${Math.max(2, demandWidth)}%`,
+                                opacity: 0.8,
+                              }}
                             />
                           </div>
                         </div>
@@ -409,8 +511,10 @@ export default function DinasView() {
               {/* Chart Axis Labels */}
               <div className="flex justify-between text-[9px] text-nat-sage pt-4 border-t border-nat-light-cream mt-6 font-bold">
                 <span>0 Kg</span>
-                <span>{(maxChartValue / 2).toLocaleString('id-ID')} Kg</span>
-                <span>{maxChartValue.toLocaleString('id-ID')} Kg (Skala Penuh)</span>
+                <span>{(maxChartValue / 2).toLocaleString("id-ID")} Kg</span>
+                <span>
+                  {maxChartValue.toLocaleString("id-ID")} Kg (Skala Penuh)
+                </span>
               </div>
             </div>
 
@@ -423,22 +527,27 @@ export default function DinasView() {
 
               <div className="space-y-4">
                 {regionalSurplusData.map((reg) => {
-                  let riskLevel = 'RENDAH';
-                  let badgeColor = 'bg-nat-light-cream text-nat-green border-nat-border';
-                  let progressColor = 'bg-nat-green';
+                  let riskLevel = "RENDAH";
+                  let badgeColor =
+                    "bg-nat-light-cream text-nat-green border-nat-border";
+                  let progressColor = "bg-nat-green";
 
                   if (reg.surplusRiskIndex >= 70) {
-                    riskLevel = 'TINGGI (AWAS)';
-                    badgeColor = 'bg-red-50 text-red-700 border-red-200';
-                    progressColor = 'bg-red-500';
+                    riskLevel = "TINGGI (AWAS)";
+                    badgeColor = "bg-red-50 text-red-700 border-red-200";
+                    progressColor = "bg-red-500";
                   } else if (reg.surplusRiskIndex >= 40) {
-                    riskLevel = 'SEDANG (SIAGA)';
-                    badgeColor = 'bg-nat-cream text-nat-brown border-nat-border';
-                    progressColor = 'bg-nat-brown';
+                    riskLevel = "SEDANG (SIAGA)";
+                    badgeColor =
+                      "bg-nat-cream text-nat-brown border-nat-border";
+                    progressColor = "bg-nat-brown";
                   }
 
                   return (
-                    <div key={reg.regionName} className="border border-nat-border rounded-xl p-3 bg-nat-light-cream/35">
+                    <div
+                      key={reg.regionName}
+                      className="border border-nat-border rounded-xl p-3 bg-nat-light-cream/35"
+                    >
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h4 className="text-xs font-bold text-nat-dark flex items-center gap-1">
@@ -446,37 +555,51 @@ export default function DinasView() {
                             Kabupaten {reg.regionName}
                           </h4>
                           <span className="text-[10px] text-nat-sage font-bold mt-0.5 inline-block">
-                            {reg.activeFarmers} Petani • {reg.activeBuyers} Koperasi Pembeli
+                            {reg.activeFarmers} Petani • {reg.activeBuyers}{" "}
+                            Koperasi Pembeli
                           </span>
                         </div>
 
-                        <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${badgeColor}`}>
+                        <span
+                          className={`px-2 py-0.5 rounded text-[9px] font-bold border ${badgeColor}`}
+                        >
                           {riskLevel}
                         </span>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2 text-[11px] mb-2 border-t border-b border-nat-border py-1.5 text-nat-text">
                         <div>
-                          <span className="text-nat-sage block">Surplus Tak Terserap:</span>
+                          <span className="text-nat-sage block">
+                            Surplus Tak Terserap:
+                          </span>
                           <span className="font-bold text-nat-dark">
-                            {reg.unmatchedSurplusKg.toLocaleString('id-ID')} Kg
+                            {reg.unmatchedSurplusKg.toLocaleString("id-ID")} Kg
                           </span>
                         </div>
                         <div>
-                          <span className="text-nat-sage block">Total Panen Daerah:</span>
+                          <span className="text-nat-sage block">
+                            Total Panen Daerah:
+                          </span>
                           <span className="font-semibold text-nat-text">
-                            {reg.totalHarvestKg.toLocaleString('id-ID')} Kg
+                            {reg.totalHarvestKg.toLocaleString("id-ID")} Kg
                           </span>
                         </div>
                       </div>
 
                       <div className="space-y-1">
                         <div className="flex justify-between items-center text-[10px]">
-                          <span className="text-nat-sage font-bold">Persentase Risiko Pembusukan Lahan:</span>
-                          <span className="font-bold text-nat-dark">{reg.surplusRiskIndex}%</span>
+                          <span className="text-nat-sage font-bold">
+                            Persentase Risiko Pembusukan Lahan:
+                          </span>
+                          <span className="font-bold text-nat-dark">
+                            {reg.surplusRiskIndex}%
+                          </span>
                         </div>
                         <div className="w-full bg-nat-cream h-1.5 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${progressColor}`} style={{ width: `${reg.surplusRiskIndex}%` }} />
+                          <div
+                            className={`h-full rounded-full ${progressColor}`}
+                            style={{ width: `${reg.surplusRiskIndex}%` }}
+                          />
                         </div>
                       </div>
                     </div>
@@ -489,7 +612,12 @@ export default function DinasView() {
                   <Leaf className="w-3.5 h-3.5 text-nat-sand" />
                   <span>Rekomendasi Kebijakan Dinas (Intervensi Logistik)</span>
                 </div>
-                Jika wilayah terpantau memiliki indeks <span className="font-bold text-white">SIAGA</span> atau <span className="font-bold text-white">AWAS</span>, Dinas disarankan menginstruksikan pengoperasian armada berpendingin (cold chain) subsidi daerah ke titik koordinat bersangkutan guna memperpanjang daya simpan hingga 30 hari.
+                Jika wilayah terpantau memiliki indeks{" "}
+                <span className="font-bold text-white">SIAGA</span> atau{" "}
+                <span className="font-bold text-white">AWAS</span>, Dinas
+                disarankan menginstruksikan pengoperasian armada berpendingin
+                (cold chain) subsidi daerah ke titik koordinat bersangkutan guna
+                memperpanjang daya simpan hingga 30 hari.
               </div>
             </div>
           </div>
@@ -497,47 +625,69 @@ export default function DinasView() {
       )}
 
       {/* TAB 2: TIME-SERIES FORECASTING */}
-      {activeTab === 'forecasting' && (
+      {activeTab === "forecasting" && (
         <div className="space-y-6">
           {/* Controls Panel */}
           <div className="bg-white border border-nat-border rounded-2xl p-5 shadow-sm">
             <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-light-cream flex items-center gap-1.5">
               <LineChart className="w-4 h-4 text-nat-green" />
-              Forecasting Engine — SARIMA-proxy (Holt-Winters + Fourier Seasonal + Rain Exog)
+              Forecasting Engine — SARIMA-proxy (Holt-Winters + Fourier Seasonal
+              + Rain Exog)
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-bold text-nat-text mb-1">Pilih Kabupaten Analisis</label>
+                <label className="block text-xs font-bold text-nat-text mb-1">
+                  Pilih Kabupaten Analisis
+                </label>
                 <select
                   value={forecastRegion}
                   onChange={(e) => setForecastRegion(e.target.value)}
                   className="w-full bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green"
                 >
                   {regionsList.map((reg) => (
-                    <option key={reg} value={reg}>{reg}</option>
+                    <option key={reg} value={reg}>
+                      {reg}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-nat-text mb-1">Komoditas Tani</label>
+                <label className="block text-xs font-bold text-nat-text mb-1">
+                  Komoditas Tani
+                </label>
                 <select
                   value={forecastCommodity}
-                  onChange={(e) => setForecastCommodity(e.target.value as Komoditas)}
+                  onChange={(e) =>
+                    setForecastCommodity(e.target.value as Komoditas)
+                  }
                   className="w-full bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green"
                 >
                   {Object.keys(COMMODITY_LIST).map((key) => (
-                    <option key={key} value={key}>{key}</option>
+                    <option key={key} value={key}>
+                      {key}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div className="flex items-end">
                 <div className="text-[10px] text-nat-sage leading-relaxed bg-nat-light-cream p-3 rounded-xl border border-nat-border space-y-1.5">
-                  <p><span className="font-bold text-nat-dark">Model aktif:</span> Holt's Double ES (α=0.35, β=0.12) + Fourier Seasonal K=2 + Rain Exogenous.</p>
-                  <p className="font-mono text-[9px] text-nat-dark bg-white border border-nat-border px-2 py-1 rounded break-all">{activeForecast.modelDesc}</p>
-                  <p className="text-nat-sage italic">*Produksi: diganti panggilan ke FBProphet / SARIMA di backend Python.</p>
+                  <p>
+                    <span className="font-bold text-nat-dark">
+                      Model aktif:
+                    </span>{" "}
+                    Holt's Double ES (α=0.35, β=0.12) + Fourier Seasonal K=2 +
+                    Rain Exogenous.
+                  </p>
+                  <p className="font-mono text-[9px] text-nat-dark bg-white border border-nat-border px-2 py-1 rounded break-all">
+                    {activeForecast.modelDesc}
+                  </p>
+                  <p className="text-nat-sage italic">
+                    *Produksi: diganti panggilan ke FBProphet / SARIMA di
+                    backend Python.
+                  </p>
                 </div>
               </div>
             </div>
@@ -548,9 +698,14 @@ export default function DinasView() {
             <div className="lg:col-span-3 bg-white border border-nat-border rounded-2xl p-5 shadow-sm space-y-4">
               <div>
                 <h4 className="text-xs font-bold text-nat-dark uppercase tracking-wider">
-                  Proyeksi Kurva Hasil Panen {forecastCommodity.toUpperCase()} ({forecastRegion})
+                  Proyeksi Kurva Hasil Panen {forecastCommodity.toUpperCase()} (
+                  {forecastRegion})
                 </h4>
-                <p className="text-[11px] text-nat-sage">Garis solid merepresentasikan target peramalan, area transparan merepresentasikan batas keyakinan 95% (Confidence Interval).</p>
+                <p className="text-[11px] text-nat-sage">
+                  Garis solid merepresentasikan target peramalan, area
+                  transparan merepresentasikan batas keyakinan 95% (Confidence
+                  Interval).
+                </p>
               </div>
 
               {/* Responsive SVG Sparkline Plot */}
@@ -567,41 +722,63 @@ export default function DinasView() {
                   // Confidence Upper Bounds
                   const upperCoords = points.map((p, idx) => {
                     const x = xStart + idx * (chartWidth / 3);
-                    const y = yEnd - (p.confidenceUpper / maxForecastVal) * chartHeight;
+                    const y =
+                      yEnd - (p.confidenceUpper / maxForecastVal) * chartHeight;
                     return `${x},${y}`;
                   });
 
                   // Confidence Lower Bounds
-                  const lowerCoords = points.map((p, idx) => {
-                    const x = xStart + idx * (chartWidth / 3);
-                    const y = yEnd - (p.confidenceLower / maxForecastVal) * chartHeight;
-                    return `${x},${y}`;
-                  }).reverse();
+                  const lowerCoords = points
+                    .map((p, idx) => {
+                      const x = xStart + idx * (chartWidth / 3);
+                      const y =
+                        yEnd -
+                        (p.confidenceLower / maxForecastVal) * chartHeight;
+                      return `${x},${y}`;
+                    })
+                    .reverse();
 
-                  const polygonPoints = [...upperCoords, ...lowerCoords].join(' ');
+                  const polygonPoints = [...upperCoords, ...lowerCoords].join(
+                    " ",
+                  );
 
                   // Main Prediction Path
-                  const predPath = points.map((p, idx) => {
-                    const x = xStart + idx * (chartWidth / 3);
-                    const y = yEnd - (p.predictedVolume / maxForecastVal) * chartHeight;
-                    return `${idx === 0 ? 'M' : 'L'} ${x} ${y}`;
-                  }).join(' ');
+                  const predPath = points
+                    .map((p, idx) => {
+                      const x = xStart + idx * (chartWidth / 3);
+                      const y =
+                        yEnd -
+                        (p.predictedVolume / maxForecastVal) * chartHeight;
+                      return `${idx === 0 ? "M" : "L"} ${x} ${y}`;
+                    })
+                    .join(" ");
 
-                  const upperPath = points.map((p, idx) => {
-                    const x = xStart + idx * (chartWidth / 3);
-                    const y = yEnd - (p.confidenceUpper / maxForecastVal) * chartHeight;
-                    return `${idx === 0 ? 'M' : 'L'} ${x} ${y}`;
-                  }).join(' ');
+                  const upperPath = points
+                    .map((p, idx) => {
+                      const x = xStart + idx * (chartWidth / 3);
+                      const y =
+                        yEnd -
+                        (p.confidenceUpper / maxForecastVal) * chartHeight;
+                      return `${idx === 0 ? "M" : "L"} ${x} ${y}`;
+                    })
+                    .join(" ");
 
-                  const lowerPath = points.map((p, idx) => {
-                    const x = xStart + idx * (chartWidth / 3);
-                    const y = yEnd - (p.confidenceLower / maxForecastVal) * chartHeight;
-                    return `${idx === 0 ? 'M' : 'L'} ${x} ${y}`;
-                  }).join(' ');
+                  const lowerPath = points
+                    .map((p, idx) => {
+                      const x = xStart + idx * (chartWidth / 3);
+                      const y =
+                        yEnd -
+                        (p.confidenceLower / maxForecastVal) * chartHeight;
+                      return `${idx === 0 ? "M" : "L"} ${x} ${y}`;
+                    })
+                    .join(" ");
 
                   return (
                     <>
-                      <svg className="w-full h-full overflow-visible" viewBox="0 0 520 250">
+                      <svg
+                        className="w-full h-full overflow-visible"
+                        viewBox="0 0 520 250"
+                      >
                         {/* Grid Lines and Y-Axis Ticks */}
                         {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
                           const yVal = yEnd - ratio * chartHeight;
@@ -623,7 +800,7 @@ export default function DinasView() {
                                 textAnchor="end"
                                 className="text-[9px] font-mono font-bold fill-slate-400"
                               >
-                                {tickVal.toLocaleString('id-ID')}
+                                {tickVal.toLocaleString("id-ID")}
                               </text>
                             </g>
                           );
@@ -683,7 +860,9 @@ export default function DinasView() {
                         {/* Interactive Data Nodes */}
                         {points.map((p, idx) => {
                           const x = xStart + idx * (chartWidth / 3);
-                          const y = yEnd - (p.predictedVolume / maxForecastVal) * chartHeight;
+                          const y =
+                            yEnd -
+                            (p.predictedVolume / maxForecastVal) * chartHeight;
                           const isHovered = hoveredIdx === idx;
                           return (
                             <g key={idx}>
@@ -721,7 +900,7 @@ export default function DinasView() {
                                 y={yEnd + 18}
                                 textAnchor="middle"
                                 className={`text-[10px] font-black tracking-wide transition-colors ${
-                                  isHovered ? 'fill-nat-dark' : 'fill-slate-500'
+                                  isHovered ? "fill-nat-dark" : "fill-slate-500"
                                 }`}
                               >
                                 M{p.week}
@@ -731,7 +910,9 @@ export default function DinasView() {
                                 y={yEnd + 30}
                                 textAnchor="middle"
                                 className={`text-[8.5px] font-bold transition-colors ${
-                                  isHovered ? 'fill-slate-600' : 'fill-slate-400'
+                                  isHovered
+                                    ? "fill-slate-600"
+                                    : "fill-slate-400"
                                 }`}
                               >
                                 ({p.date})
@@ -744,8 +925,12 @@ export default function DinasView() {
                         {points.map((p, idx) => {
                           const colWidth = chartWidth / 3;
                           const xCenter = xStart + idx * colWidth;
-                          const xLeft = idx === 0 ? xStart - 15 : xCenter - colWidth / 2;
-                          const xRight = idx === points.length - 1 ? xEnd + 15 : xCenter + colWidth / 2;
+                          const xLeft =
+                            idx === 0 ? xStart - 15 : xCenter - colWidth / 2;
+                          const xRight =
+                            idx === points.length - 1
+                              ? xEnd + 15
+                              : xCenter + colWidth / 2;
                           return (
                             <rect
                               key={`hover-zone-${idx}`}
@@ -764,33 +949,49 @@ export default function DinasView() {
 
                       {/* Floating Elegant Glassmorphic Interactive Tooltip */}
                       {hoveredIdx !== null && points[hoveredIdx] && (
-                        <div 
+                        <div
                           className="absolute bg-slate-900/95 text-white text-[10px] p-2.5 rounded-xl shadow-xl pointer-events-none border border-slate-700/50 flex flex-col space-y-1 z-20 transition-all duration-150 animate-fade-in"
                           style={{
                             left: `${((xStart + hoveredIdx * (chartWidth / 3)) / 520) * 100}%`,
                             top: `${((yEnd - (points[hoveredIdx].predictedVolume / maxForecastVal) * chartHeight) / 250) * 100 - 12}%`,
-                            transform: 'translate(-50%, -100%)',
+                            transform: "translate(-50%, -100%)",
                           }}
                         >
                           <div className="font-bold border-b border-slate-700 pb-1 mb-1 text-center text-slate-200">
-                            M{points[hoveredIdx].week} ({points[hoveredIdx].date})
+                            M{points[hoveredIdx].week} (
+                            {points[hoveredIdx].date})
                           </div>
                           <div className="flex justify-between gap-3">
-                            <span className="text-slate-400">Target Prediksi:</span>
+                            <span className="text-slate-400">
+                              Target Prediksi:
+                            </span>
                             <span className="font-bold text-emerald-400">
-                              {points[hoveredIdx].predictedVolume.toLocaleString('id-ID')} Kg
+                              {points[
+                                hoveredIdx
+                              ].predictedVolume.toLocaleString("id-ID")}{" "}
+                              Kg
                             </span>
                           </div>
                           <div className="flex justify-between gap-3">
-                            <span className="text-slate-400">Batas Atas (95%):</span>
+                            <span className="text-slate-400">
+                              Batas Atas (95%):
+                            </span>
                             <span className="font-semibold text-slate-300">
-                              {points[hoveredIdx].confidenceUpper.toLocaleString('id-ID')} Kg
+                              {points[
+                                hoveredIdx
+                              ].confidenceUpper.toLocaleString("id-ID")}{" "}
+                              Kg
                             </span>
                           </div>
                           <div className="flex justify-between gap-3">
-                            <span className="text-slate-400">Batas Bawah (95%):</span>
+                            <span className="text-slate-400">
+                              Batas Bawah (95%):
+                            </span>
                             <span className="font-semibold text-slate-300">
-                              {points[hoveredIdx].confidenceLower.toLocaleString('id-ID')} Kg
+                              {points[
+                                hoveredIdx
+                              ].confidenceLower.toLocaleString("id-ID")}{" "}
+                              Kg
                             </span>
                           </div>
                         </div>
@@ -798,7 +999,7 @@ export default function DinasView() {
 
                       {/* Axis Titles */}
                       <div className="absolute top-2 left-2 text-[8px] font-mono font-bold bg-slate-900/10 text-slate-600 px-1.5 py-0.5 rounded tracking-wider uppercase">
-                        Skala Maks: {maxForecastVal.toLocaleString('id-ID')} Kg
+                        Skala Maks: {maxForecastVal.toLocaleString("id-ID")} Kg
                       </div>
                     </>
                   );
@@ -816,13 +1017,15 @@ export default function DinasView() {
                   </h4>
 
                   <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-nat-sage font-bold">Tren:</span>
-                    {activeForecast.trend === 'UP' ? (
+                    <span className="text-[10px] text-nat-sage font-bold">
+                      Tren:
+                    </span>
+                    {activeForecast.trend === "UP" ? (
                       <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-[10px] font-extrabold border border-emerald-100 flex items-center gap-0.5">
-                        <TrendingUp className="w-3 h-3" />
-                        +{activeForecast.growthRate}%
+                        <TrendingUp className="w-3 h-3" />+
+                        {activeForecast.growthRate}%
                       </span>
-                    ) : activeForecast.trend === 'DOWN' ? (
+                    ) : activeForecast.trend === "DOWN" ? (
                       <span className="bg-red-50 text-red-700 px-2 py-0.5 rounded text-[10px] font-extrabold border border-red-100 flex items-center gap-0.5">
                         <TrendingDown className="w-3 h-3" />
                         {activeForecast.growthRate}%
@@ -837,23 +1040,33 @@ export default function DinasView() {
 
                 <div className="divide-y divide-nat-light-cream">
                   {activeForecast.forecasts.map((p, idx) => (
-                    <div key={idx} className="py-2.5 flex justify-between items-center text-xs">
+                    <div
+                      key={idx}
+                      className="py-2.5 flex justify-between items-center text-xs"
+                    >
                       <div>
-                        <p className="font-extrabold text-nat-dark">Minggu Ke-{p.week}</p>
-                        <p className="text-[10px] text-nat-sage font-semibold">Tgl Sedia: {p.date}</p>
+                        <p className="font-extrabold text-nat-dark">
+                          Minggu Ke-{p.week}
+                        </p>
+                        <p className="text-[10px] text-nat-sage font-semibold">
+                          Tgl Sedia: {p.date}
+                        </p>
                         {p.components && (
                           <p className="text-[9px] text-slate-400 font-mono mt-0.5">
-                            T:{p.components.trend.toLocaleString('id-ID')} S:{p.components.seasonal.toLocaleString('id-ID')} X:{p.components.exogenous.toLocaleString('id-ID')}
+                            T:{p.components.trend.toLocaleString("id-ID")} S:
+                            {p.components.seasonal.toLocaleString("id-ID")} X:
+                            {p.components.exogenous.toLocaleString("id-ID")}
                           </p>
                         )}
                       </div>
 
                       <div className="text-right">
                         <p className="font-black text-nat-dark text-sm">
-                          {p.predictedVolume.toLocaleString('id-ID')} Kg
+                          {p.predictedVolume.toLocaleString("id-ID")} Kg
                         </p>
                         <p className="text-[10px] text-emerald-600 font-mono font-bold">
-                          95% CI: [{p.confidenceLower.toLocaleString('id-ID')} – {p.confidenceUpper.toLocaleString('id-ID')}]
+                          95% CI: [{p.confidenceLower.toLocaleString("id-ID")} –{" "}
+                          {p.confidenceUpper.toLocaleString("id-ID")}]
                         </p>
                       </div>
                     </div>
@@ -863,17 +1076,25 @@ export default function DinasView() {
                 {/* RMSE badge */}
                 <div className="mt-3 pt-3 border-t border-nat-light-cream flex items-center justify-between text-[10px] text-nat-sage">
                   <span>In-sample RMSE:</span>
-                  <span className="font-mono font-bold text-nat-dark">{activeForecast.rmse.toLocaleString('id-ID')} Kg</span>
+                  <span className="font-mono font-bold text-nat-dark">
+                    {activeForecast.rmse.toLocaleString("id-ID")} Kg
+                  </span>
                 </div>
               </div>
 
               {/* Dynamic Surplus Warning */}
               {(() => {
-                const totalPredictedSum = activeForecast.forecasts.reduce((sum, p) => sum + p.predictedVolume, 0);
-                const regData = regionalSurplusData.find(r => r.regionName.toLowerCase() === forecastRegion.toLowerCase());
+                const totalPredictedSum = activeForecast.forecasts.reduce(
+                  (sum, p) => sum + p.predictedVolume,
+                  0,
+                );
+                const regData = regionalSurplusData.find(
+                  (r) =>
+                    r.regionName.toLowerCase() === forecastRegion.toLowerCase(),
+                );
                 const currentDemand = regData ? regData.totalDemandKg : 5000;
-                
-                const isOverSupply = totalPredictedSum > (currentDemand * 1.3);
+
+                const isOverSupply = totalPredictedSum > currentDemand * 1.3;
 
                 return isOverSupply ? (
                   <div className="bg-red-50 border border-red-200/60 text-red-900 rounded-2xl p-4 text-xs space-y-1.5 shadow-sm">
@@ -882,10 +1103,30 @@ export default function DinasView() {
                       ALARM PREDIKSI OVER-SUPPLY (Risiko FLW)
                     </p>
                     <p className="text-[11px] text-red-800 leading-relaxed">
-                      Peramalan pergerakan panen <span className="font-bold">{forecastCommodity}</span> di <span className="font-bold">{forecastRegion}</span> menunjukkan total volume 4 minggu ke depan (<span className="font-bold">{totalPredictedSum.toLocaleString('id-ID')} Kg</span>) melampaui daya serap pasar (<span className="font-bold">{currentDemand.toLocaleString('id-ID')} Kg</span>) hingga <span className="font-black text-red-700">+{Math.round((totalPredictedSum / (currentDemand || 1) - 1) * 100)}%</span>.
+                      Peramalan pergerakan panen{" "}
+                      <span className="font-bold">{forecastCommodity}</span> di{" "}
+                      <span className="font-bold">{forecastRegion}</span>{" "}
+                      menunjukkan total volume 4 minggu ke depan (
+                      <span className="font-bold">
+                        {totalPredictedSum.toLocaleString("id-ID")} Kg
+                      </span>
+                      ) melampaui daya serap pasar (
+                      <span className="font-bold">
+                        {currentDemand.toLocaleString("id-ID")} Kg
+                      </span>
+                      ) hingga{" "}
+                      <span className="font-black text-red-700">
+                        +
+                        {Math.round(
+                          (totalPredictedSum / (currentDemand || 1) - 1) * 100,
+                        )}
+                        %
+                      </span>
+                      .
                     </p>
                     <p className="text-[10px] font-bold text-red-900 italic">
-                      Kebijakan: Subsidi distribusi trans-daerah segera diaktifkan untuk relokasi hasil tanam ke wilayah defisit!
+                      Kebijakan: Subsidi distribusi trans-daerah segera
+                      diaktifkan untuk relokasi hasil tanam ke wilayah defisit!
                     </p>
                   </div>
                 ) : (
@@ -895,7 +1136,10 @@ export default function DinasView() {
                       Proyeksi Suplai Seimbang (Optimal)
                     </p>
                     <p className="text-[11px] text-emerald-800 leading-relaxed">
-                      Volume tanam {forecastCommodity} di wilayah {forecastRegion} berada dalam tingkat wajar aman. Tidak ada indikasi penumpukan sisa panen berlebih untuk 4 minggu mendatang.
+                      Volume tanam {forecastCommodity} di wilayah{" "}
+                      {forecastRegion} berada dalam tingkat wajar aman. Tidak
+                      ada indikasi penumpukan sisa panen berlebih untuk 4 minggu
+                      mendatang.
                     </p>
                   </div>
                 );
@@ -906,7 +1150,7 @@ export default function DinasView() {
       )}
 
       {/* TAB 3: ROUTE OPTIMIZATION */}
-      {activeTab === 'routing' && (
+      {activeTab === "routing" && (
         <div className="space-y-6">
           {/* Configuration Panel */}
           <div className="bg-white border border-nat-border rounded-2xl p-5 shadow-sm space-y-4">
@@ -916,13 +1160,18 @@ export default function DinasView() {
                 Routing Optimizer Sistem Pengurangan Food Loss (VRP Solver)
               </h3>
               <p className="text-xs text-nat-sage mt-0.5 font-medium">
-                Sistem optimasi penjemputan hasil tani hulu. Mengalokasikan rute optimal dengan kapasitas boks truk (payload) dan pengurutan prioritas tanggal panen (time windows) untuk mencegah makanan terbuang di lahan.
+                Sistem optimasi penjemputan hasil tani hulu. Mengalokasikan rute
+                optimal dengan kapasitas boks truk (payload) dan pengurutan
+                prioritas tanggal panen (time windows) untuk mencegah makanan
+                terbuang di lahan.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-2">
               <div>
-                <label className="block text-xs font-bold text-nat-text mb-1">Pilih Pusat Hub/Depot</label>
+                <label className="block text-xs font-bold text-nat-text mb-1">
+                  Pilih Pusat Hub/Depot
+                </label>
                 <select
                   value={depotRegion}
                   onChange={(e) => {
@@ -935,7 +1184,8 @@ export default function DinasView() {
                     const coords = DEPOT_COORDINATES[reg] || { lat: 0, lng: 0 };
                     return (
                       <option key={reg} value={reg}>
-                        Depot {reg} (Lat: {coords.lat.toFixed(3)}, Lng: {coords.lng.toFixed(3)})
+                        Depot {reg} (Lat: {coords.lat.toFixed(3)}, Lng:{" "}
+                        {coords.lng.toFixed(3)})
                       </option>
                     );
                   })}
@@ -943,7 +1193,9 @@ export default function DinasView() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-nat-text mb-1">Kapasitas Box Kendaraan (Kg)</label>
+                <label className="block text-xs font-bold text-nat-text mb-1">
+                  Kapasitas Box Kendaraan (Kg)
+                </label>
                 <input
                   type="number"
                   step="500"
@@ -959,7 +1211,9 @@ export default function DinasView() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-nat-text mb-1">Jumlah Armada Tersedia</label>
+                <label className="block text-xs font-bold text-nat-text mb-1">
+                  Jumlah Armada Tersedia
+                </label>
                 <input
                   type="number"
                   min="1"
@@ -990,34 +1244,63 @@ export default function DinasView() {
               {/* Routing Dashboard Statistics */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-white border border-nat-border p-4 rounded-xl shadow-sm text-center space-y-1">
-                  <span className="text-[10px] text-nat-sage font-extrabold uppercase tracking-wider block">Efisiensi Bahan Bakar</span>
-                  <p className="text-xl font-bold text-nat-dark">{totalRoutingDistance} Km Rute</p>
+                  <span className="text-[10px] text-nat-sage font-extrabold uppercase tracking-wider block">
+                    Efisiensi Bahan Bakar
+                  </span>
+                  <p className="text-xl font-bold text-nat-dark">
+                    {totalRoutingDistance} Km Rute
+                  </p>
                   <span className="text-[9px] text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded-full inline-block">
                     Optimasi Terpendek
                   </span>
                 </div>
 
                 <div className="bg-white border border-nat-border p-4 rounded-xl shadow-sm text-center space-y-1">
-                  <span className="text-[10px] text-nat-sage font-extrabold uppercase tracking-wider block">Total Panen Terangkut</span>
-                  <p className="text-xl font-bold text-nat-dark">{totalRoutingVolume.toLocaleString('id-ID')} Kg</p>
-                  <span className="text-[9px] text-slate-500 font-medium block">Dari {totalRoutingStops} titik lahan tani</span>
+                  <span className="text-[10px] text-nat-sage font-extrabold uppercase tracking-wider block">
+                    Total Panen Terangkut
+                  </span>
+                  <p className="text-xl font-bold text-nat-dark">
+                    {totalRoutingVolume.toLocaleString("id-ID")} Kg
+                  </p>
+                  <span className="text-[9px] text-slate-500 font-medium block">
+                    Dari {totalRoutingStops} titik lahan tani
+                  </span>
                 </div>
 
                 <div className="bg-white border border-nat-border p-4 rounded-xl shadow-sm text-center space-y-1 col-span-2">
-                  <span className="text-[10px] text-nat-sage font-extrabold uppercase tracking-wider block">Mesin Algoritma VRP</span>
+                  <span className="text-[10px] text-nat-sage font-extrabold uppercase tracking-wider block">
+                    Mesin Algoritma VRP
+                  </span>
                   <p className="text-xs text-nat-dark leading-relaxed font-medium">
-                    <span className="font-bold text-nat-green">Clarke-Wright Savings</span> membangun rute gabungan optimal, lalu <span className="font-bold text-nat-green">2-opt Local Search</span> memperbaiki urutan hingga konvergen.
+                    <span className="font-bold text-nat-green">
+                      Clarke-Wright Savings
+                    </span>{" "}
+                    membangun rute gabungan optimal, lalu{" "}
+                    <span className="font-bold text-nat-green">
+                      2-opt Local Search
+                    </span>{" "}
+                    memperbaiki urutan hingga konvergen.
                   </p>
                   <div className="flex justify-center gap-4 mt-1">
                     <span className="text-[9px] text-nat-green font-bold bg-nat-light-cream px-2 py-0.5 rounded-full border border-nat-border">
-                      Total Savings: {Math.round(optimizedRoutes.reduce((s, r) => s + r.savingsKm, 0) * 10) / 10} Km
+                      Total Savings:{" "}
+                      {Math.round(
+                        optimizedRoutes.reduce((s, r) => s + r.savingsKm, 0) *
+                          10,
+                      ) / 10}{" "}
+                      Km
                     </span>
                     <span className="text-[9px] text-nat-brown font-bold bg-nat-cream px-2 py-0.5 rounded-full border border-nat-border">
-                      2-opt itr: {optimizedRoutes.reduce((s, r) => s + r.twoOptIterations, 0)}
+                      2-opt itr:{" "}
+                      {optimizedRoutes.reduce(
+                        (s, r) => s + r.twoOptIterations,
+                        0,
+                      )}
                     </span>
                   </div>
                   <span className="text-[9px] text-nat-sage font-semibold italic block mt-1">
-                    *Produksi: diganti panggilan ke Google OR-Tools CP-SAT / VROOM di backend.
+                    *Produksi: diganti panggilan ke Google OR-Tools CP-SAT /
+                    VROOM di backend.
                   </span>
                 </div>
               </div>
@@ -1026,7 +1309,10 @@ export default function DinasView() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {optimizedRoutes.map((route, rIdx) => {
                   return (
-                    <div key={route.vehicleId} className="bg-white border border-nat-border rounded-2xl overflow-hidden shadow-sm flex flex-col">
+                    <div
+                      key={route.vehicleId}
+                      className="bg-white border border-nat-border rounded-2xl overflow-hidden shadow-sm flex flex-col"
+                    >
                       {/* Vehicle Header */}
                       <div className="bg-slate-900 text-white p-4 flex justify-between items-center">
                         <div className="flex items-center gap-2">
@@ -1034,8 +1320,13 @@ export default function DinasView() {
                             <Truck className="w-4 h-4" />
                           </div>
                           <div>
-                            <h4 className="font-bold text-xs">{route.vehicleName}</h4>
-                            <p className="text-[9px] text-slate-400">Maksimal Load: {route.capacityKg.toLocaleString('id-ID')} Kg</p>
+                            <h4 className="font-bold text-xs">
+                              {route.vehicleName}
+                            </h4>
+                            <p className="text-[9px] text-slate-400">
+                              Maksimal Load:{" "}
+                              {route.capacityKg.toLocaleString("id-ID")} Kg
+                            </p>
                           </div>
                         </div>
 
@@ -1056,7 +1347,10 @@ export default function DinasView() {
                         {route.routeStops.length > 0 ? (
                           <div className="space-y-4 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-[1.5px] before:bg-slate-100">
                             {route.routeStops.map((stop, sIdx) => (
-                              <div key={stop.harvestId} className="flex gap-3 items-start relative pl-6">
+                              <div
+                                key={stop.harvestId}
+                                className="flex gap-3 items-start relative pl-6"
+                              >
                                 {/* Stop Dot */}
                                 <div className="absolute left-1 top-1 w-4 h-4 rounded-full border border-slate-300 bg-white flex items-center justify-center text-[9px] font-bold text-slate-500">
                                   {sIdx + 1}
@@ -1064,14 +1358,22 @@ export default function DinasView() {
 
                                 <div className="space-y-0.5 text-xs">
                                   <div className="flex justify-between items-center w-full">
-                                    <p className="font-bold text-nat-dark">{stop.farmerName}</p>
-                                    <span className="text-[10px] text-nat-sage font-mono">#{stop.harvestId}</span>
+                                    <p className="font-bold text-nat-dark">
+                                      {stop.farmerName}
+                                    </p>
+                                    <span className="text-[10px] text-nat-sage font-mono">
+                                      #{stop.harvestId}
+                                    </span>
                                   </div>
                                   <p className="text-[10px] text-nat-text">
-                                    {stop.commodity} • <span className="font-bold">{stop.volumeKg.toLocaleString('id-ID')} Kg</span>
+                                    {stop.commodity} •{" "}
+                                    <span className="font-bold">
+                                      {stop.volumeKg.toLocaleString("id-ID")} Kg
+                                    </span>
                                   </p>
                                   <p className="text-[9px] text-emerald-600 font-bold flex items-center gap-0.5">
-                                    <Calendar className="w-2.5 h-2.5" /> Est. Sedia: {stop.expectedDate}
+                                    <Calendar className="w-2.5 h-2.5" /> Est.
+                                    Sedia: {stop.expectedDate}
                                   </p>
                                 </div>
                               </div>
@@ -1083,14 +1385,19 @@ export default function DinasView() {
                                 H
                               </div>
                               <div className="text-xs space-y-0.5 py-0.5">
-                                <p className="font-bold text-nat-green">Kembali ke Pusat Hub Depot</p>
-                                <p className="text-[9px] text-nat-sage">Selesai Bongkar Muatan Cold Storage</p>
+                                <p className="font-bold text-nat-green">
+                                  Kembali ke Pusat Hub Depot
+                                </p>
+                                <p className="text-[9px] text-nat-sage">
+                                  Selesai Bongkar Muatan Cold Storage
+                                </p>
                               </div>
                             </div>
                           </div>
                         ) : (
                           <div className="text-center py-6 text-nat-sage italic text-xs">
-                            Armada ini tidak ditugaskan (idle / cadangan mitigasi over-supply).
+                            Armada ini tidak ditugaskan (idle / cadangan
+                            mitigasi over-supply).
                           </div>
                         )}
                       </div>
@@ -1102,9 +1409,16 @@ export default function DinasView() {
           ) : (
             <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-8 text-center max-w-lg mx-auto space-y-3">
               <Truck className="w-10 h-10 text-slate-400 mx-auto" />
-              <h4 className="font-bold text-sm text-slate-700">Rute Belum Dioptimalkan</h4>
+              <h4 className="font-bold text-sm text-slate-700">
+                Rute Belum Dioptimalkan
+              </h4>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Silakan verifikasi atau ubah kapasitas kendaraan di atas, lalu klik tombol <strong className="text-slate-800">"Hitung Rute Terpendek VRP"</strong> untuk menjalankan modul pencarian rute logistik terkompresi.
+                Silakan verifikasi atau ubah kapasitas kendaraan di atas, lalu
+                klik tombol{" "}
+                <strong className="text-slate-800">
+                  "Hitung Rute Terpendek VRP"
+                </strong>{" "}
+                untuk menjalankan modul pencarian rute logistik terkompresi.
               </p>
             </div>
           )}

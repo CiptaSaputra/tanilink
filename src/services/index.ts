@@ -8,11 +8,11 @@
  *   import { harvestGetAll, demandAdd, preOrderComplete } from '../services';
  */
 
-export * from './storage';
-export * from './harvestService';
-export * from './demandService';
-export * from './matchService';
-export * from './preOrderService';
-export * from './chatService';
-export * from './paymentService';
-export * from './reviewService';
+export * from "./storage";
+export * from "./harvestService";
+export * from "./demandService";
+export * from "./matchService";
+export * from "./preOrderService";
+export * from "./chatService";
+export * from "./paymentService";
+export * from "./reviewService";

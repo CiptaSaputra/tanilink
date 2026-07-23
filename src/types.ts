@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export type Role = 'PETANI' | 'PEMBELI' | 'PPL' | 'DINAS' | 'ADMIN' | 'KOLEKTOR';
+export type Role =
+  "PETANI" | "PEMBELI" | "PPL" | "DINAS" | "ADMIN" | "KOLEKTOR";
 
 // ─── Auth Types ────────────────────────────────────────────────────────────────
 
@@ -20,7 +21,7 @@ export interface User {
 }
 
 /** User aktif yang tersedia di session — tanpa passwordHash */
-export type AuthUser = Omit<User, 'passwordHash'>;
+export type AuthUser = Omit<User, "passwordHash">;
 
 export interface LoginCredentials {
   email: string;
@@ -32,7 +33,7 @@ export interface RegisterData {
   email: string;
   password: string;
   confirmPassword: string;
-  role: Extract<Role, 'PETANI' | 'PEMBELI' | 'PPL' | 'KOLEKTOR'>; // Admin & Dinas tidak bisa self-register
+  role: Extract<Role, "PETANI" | "PEMBELI" | "PPL" | "KOLEKTOR">; // Admin & Dinas tidak bisa self-register
   region: string;
 }
 
@@ -40,19 +41,23 @@ export interface AuthContextProps {
   currentUser: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: LoginCredentials) => Promise<{ success: boolean; error?: string }>;
-  register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
+  login: (
+    credentials: LoginCredentials,
+  ) => Promise<{ success: boolean; error?: string }>;
+  register: (
+    data: RegisterData,
+  ) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
 }
 
-export type Komoditas = 
-  | 'Cabai Merah' 
-  | 'Bawang Merah' 
-  | 'Tomat' 
-  | 'Kentang' 
-  | 'Kubis' 
-  | 'Padi' 
-  | 'Jagung';
+export type Komoditas =
+  | "Cabai Merah"
+  | "Bawang Merah"
+  | "Tomat"
+  | "Kentang"
+  | "Kubis"
+  | "Padi"
+  | "Jagung";
 
 export interface CommodityMetadata {
   name: Komoditas;
@@ -62,7 +67,6 @@ export interface CommodityMetadata {
   averagePricePerKg: number; // in IDR
   color: string; // for UI charts
 }
-
 
 export interface Harvest {
   id: string;
@@ -78,7 +82,7 @@ export interface Harvest {
   plantingDate: string; // YYYY-MM-DD
   expectedHarvestDate: string; // YYYY-MM-DD
   isPublished: boolean; // opt-in publikasi
-  status: 'ACTIVE' | 'MATCHED' | 'HARVESTED' | 'EXPIRED';
+  status: "ACTIVE" | "MATCHED" | "HARVESTED" | "EXPIRED";
   notes?: string;
 }
 
@@ -93,7 +97,7 @@ export interface Demand {
   longitude: number;
   region: string;
   dateRequired: string; // YYYY-MM-DD
-  status: 'ACTIVE' | 'FULFILLED' | 'CANCELLED';
+  status: "ACTIVE" | "FULFILLED" | "CANCELLED";
   notes?: string;
 }
 
@@ -112,16 +116,20 @@ export interface Match {
   score: number; // Overall Score 0 - 100
   distanceKm: number;
   scoreDetails: MatchScoreDetails;
-  status: 'PENDING' | 'ACCEPTED_BY_FARMER' | 'ACCEPTED_BY_BUYER' | 'CONFIRMED' | 'DISPUTED';
+  status:
+    | "PENDING"
+    | "ACCEPTED_BY_FARMER"
+    | "ACCEPTED_BY_BUYER"
+    | "CONFIRMED"
+    | "DISPUTED";
   createdAt: string;
 }
 
 export interface MatchWeights {
   wLocation: number; // e.g., 0.4
-  wVolume: number;   // e.g., 0.3
-  wPrice: number;    // e.g., 0.3
+  wVolume: number; // e.g., 0.3
+  wPrice: number; // e.g., 0.3
 }
-
 
 export interface RegionStats {
   regionName: string;
@@ -143,8 +151,8 @@ export interface PreOrder {
   farmerName: string;
   buyerName: string;
   commodity: Komoditas;
-  deliveryMode: 'direct' | 'consolidated'; // jual langsung atau ikut konsolidasi
-  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+  deliveryMode: "direct" | "consolidated"; // jual langsung atau ikut konsolidasi
+  status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
   createdAt: string;
 }
 
@@ -168,7 +176,7 @@ export interface PaymentConfirmation {
   id: string;
   preOrderId: string;
   proofImageUrl?: string;
-  status: 'not_submitted' | 'submitted' | 'confirmed';
+  status: "not_submitted" | "submitted" | "confirmed";
   notes?: string;
 }
 
@@ -196,6 +204,6 @@ export interface HarvestBatch {
   harvestDate: string; // YYYY-MM-DD
   shelfLifeDays: number;
   priorityScore: number; // computed: 0-100, higher = more urgent
-  status: 'READY' | 'IN_TRANSIT' | 'DELIVERED' | 'PICKED_UP_DIRECTLY'; // PICKED_UP_DIRECTLY = pembeli jemput langsung
+  status: "READY" | "IN_TRANSIT" | "DELIVERED" | "PICKED_UP_DIRECTLY"; // PICKED_UP_DIRECTLY = pembeli jemput langsung
   createdAt: string;
 }

@@ -21,7 +21,7 @@
  *      mendapat bonus negatif pada distance-cost agar lebih cepat dipilih.
  */
 
-import { Harvest, HarvestBatch } from '../types';
+import { Harvest, HarvestBatch } from "../types";
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -73,8 +73,10 @@ interface SolverNode {
 // ---------------------------------------------------------------------------
 
 export function calculateHaversineDistance(
-  lat1: number, lon1: number,
-  lat2: number, lon2: number
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
 ): number {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -82,9 +84,11 @@ export function calculateHaversineDistance(
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos((lat1 * Math.PI) / 180) *
-    Math.cos((lat2 * Math.PI) / 180) *
-    Math.sin(dLon / 2) ** 2;
-  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+  return (
+    Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -92,22 +96,30 @@ export function calculateHaversineDistance(
 // ---------------------------------------------------------------------------
 
 function buildDistMatrix(
-  depotLat: number, depotLng: number,
-  nodes: SolverNode[]
+  depotLat: number,
+  depotLng: number,
+  nodes: SolverNode[],
 ): number[][] {
   const n = nodes.length + 1; // 0 = depot
-  const dist: number[][] = Array.from({ length: n }, () => new Array(n).fill(0));
+  const dist: number[][] = Array.from({ length: n }, () =>
+    new Array(n).fill(0),
+  );
 
   for (let i = 1; i < n; i++) {
     dist[0][i] = dist[i][0] = calculateHaversineDistance(
-      depotLat, depotLng, nodes[i - 1].lat, nodes[i - 1].lng
+      depotLat,
+      depotLng,
+      nodes[i - 1].lat,
+      nodes[i - 1].lng,
     );
   }
   for (let i = 1; i < n; i++) {
     for (let j = i + 1; j < n; j++) {
       const d = calculateHaversineDistance(
-        nodes[i - 1].lat, nodes[i - 1].lng,
-        nodes[j - 1].lat, nodes[j - 1].lng
+        nodes[i - 1].lat,
+        nodes[i - 1].lng,
+        nodes[j - 1].lat,
+        nodes[j - 1].lng,
       );
       dist[i][j] = dist[j][i] = d;
     }
@@ -131,7 +143,8 @@ function computeSavings(dist: number[][], n: number): Saving[] {
   for (let i = 1; i <= n; i++) {
     for (let j = i + 1; j <= n; j++) {
       savings.push({
-        i, j,
+        i,
+        j,
         value: dist[0][i] + dist[0][j] - dist[i][j],
       });
     }
@@ -157,7 +170,10 @@ function tourDistance(tour: number[], dist: number[][]): number {
 // Swaps two edges and keeps the change if it reduces total distance.
 // ---------------------------------------------------------------------------
 
-function twoOpt(tour: number[], dist: number[][]): { tour: number[]; iterations: number } {
+function twoOpt(
+  tour: number[],
+  dist: number[][],
+): { tour: number[]; iterations: number } {
   let improved = true;
   let iterations = 0;
   let best = tour.slice();
@@ -192,7 +208,7 @@ function solveCVRP(
   depotLat: number,
   depotLng: number,
   vehicleCapacityKg: number,
-  numVehicles: number
+  numVehicles: number,
 ): VehicleRoute[] {
   if (nodes.length === 0) return [];
 
@@ -206,7 +222,7 @@ function solveCVRP(
   // routeOf[i] = index into routes array
   const routes: number[][] = nodes.map((_, i) => [i + 1]); // 1-based
   const routeOf: number[] = nodes.map((_, i) => i); // maps nodeIdx → routeIdx
-  const routeLoad: number[] = nodes.map(nd => nd.demandKg);
+  const routeLoad: number[] = nodes.map((nd) => nd.demandKg);
   // Track which routes are still "open" (can be merged)
   const open: boolean[] = new Array(n).fill(true);
 
@@ -257,7 +273,7 @@ function solveCVRP(
     const distAfter = tourDistance(optimizedTour, dist);
     const savingsKm = Math.round((naiveDist - distAfter) * 10) / 10;
 
-    const stops: RouteStop[] = optimizedTour.map(ni => {
+    const stops: RouteStop[] = optimizedTour.map((ni) => {
       const node = nodes[ni - 1];
       return {
         harvestId: node.id,
@@ -313,11 +329,11 @@ export function optimizeBatchRoutes(
   depotLat: number,
   depotLng: number,
   vehicleCapacityKg: number,
-  numVehicles: number = 3
+  numVehicles: number = 3,
 ): VehicleRoute[] {
   const nodes: SolverNode[] = batches
-    .filter(b => b.status === 'READY')
-    .map(b => ({
+    .filter((b) => b.status === "READY")
+    .map((b) => ({
       id: b.id,
       farmerName: b.farmerName,
       commodity: b.commodity,
@@ -341,16 +357,18 @@ export function optimizeCollectorRoutes(
   depotLat: number,
   depotLng: number,
   vehicleCapacityKg: number,
-  numVehicles: number = 3
+  numVehicles: number = 3,
 ): VehicleRoute[] {
   // Sort chronologically so earlier harvests get priority
   const sorted = [...harvests]
-    .filter(h => h.status === 'ACTIVE')
-    .sort((a, b) =>
-      new Date(a.expectedHarvestDate).getTime() - new Date(b.expectedHarvestDate).getTime()
+    .filter((h) => h.status === "ACTIVE")
+    .sort(
+      (a, b) =>
+        new Date(a.expectedHarvestDate).getTime() -
+        new Date(b.expectedHarvestDate).getTime(),
     );
 
-  const nodes: SolverNode[] = sorted.map(h => ({
+  const nodes: SolverNode[] = sorted.map((h) => ({
     id: h.id,
     farmerName: h.farmerName,
     commodity: h.commodity,

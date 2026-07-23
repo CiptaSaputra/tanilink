@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
-import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 
 function AuthRedirect() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -17,9 +17,9 @@ function AuthRedirect() {
   useEffect(() => {
     if (!isLoading) {
       if (isAuthenticated) {
-        router.replace('/dashboard');
+        router.replace("/dashboard");
       } else {
-        router.replace('/login');
+        router.replace("/login");
       }
     }
   }, [isAuthenticated, isLoading, router]);

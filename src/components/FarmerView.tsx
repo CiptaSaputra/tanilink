@@ -3,26 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { useData } from '../context/DataContext';
-import { useUI } from '../context/UIContext';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { useData } from "../context/DataContext";
+import { useUI } from "../context/UIContext";
+import { COMMODITY_LIST } from "../constants/commodities";
+import type { Komoditas, Harvest, Match } from "../types";
 import {
-  COMMODITY_LIST,
-} from '../constants/commodities';
-import type {
-  Komoditas,
-  Harvest,
-  Match,
-} from '../types';
-import { 
-  Sprout, 
-  Plus, 
-  MapPin, 
-  Calendar, 
-  BadgeAlert, 
-  BadgePercent, 
-  CheckCircle, 
+  Sprout,
+  Plus,
+  MapPin,
+  Calendar,
+  BadgeAlert,
+  BadgePercent,
+  CheckCircle,
   TrendingUp,
   User,
   Activity,
@@ -36,9 +30,8 @@ import {
   RefreshCw,
   AlertCircle,
   Trash2,
-  Layers
-} from 'lucide-react';
-
+  Layers,
+} from "lucide-react";
 
 interface FarmerViewProps {
   mapLat?: number;
@@ -47,15 +40,26 @@ interface FarmerViewProps {
   clearMapSelection?: () => void;
 }
 
-export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelection }: FarmerViewProps) {
+export default function FarmerView({
+  mapLat,
+  mapLng,
+  mapRegion,
+  clearMapSelection,
+}: FarmerViewProps) {
   const {
-    harvests, demands, matches,
-    addHarvest, updateMatchStatus, activeUser,
-    createHarvestBatch, harvestBatches,
+    harvests,
+    demands,
+    matches,
+    addHarvest,
+    updateMatchStatus,
+    activeUser,
+    createHarvestBatch,
+    harvestBatches,
   } = useData();
   const { showNotification } = useUI();
 
-  const [selectedTraceHarvest, setSelectedTraceHarvest] = useState<Harvest | null>(null);
+  const [selectedTraceHarvest, setSelectedTraceHarvest] =
+    useState<Harvest | null>(null);
 
   // Harvest batch creation modal states
   const [showHarvestModal, setShowHarvestModal] = useState(false);
@@ -63,17 +67,17 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
   const [actualVolume, setActualVolume] = useState<number>(0);
 
   // Form states
-  const [commodity, setCommodity] = useState<Komoditas>('Bawang Merah');
+  const [commodity, setCommodity] = useState<Komoditas>("Bawang Merah");
   const [landArea, setLandArea] = useState<number>(1.0);
   const [expectedVolume, setExpectedVolume] = useState<number>(10000);
   const [askingPrice, setAskingPrice] = useState<number>(25000);
-  const [plantingDate, setPlantingDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [plantingDate, setPlantingDate] = useState<string>(
+    () => new Date().toISOString().split("T")[0],
+  );
   const [latitude, setLatitude] = useState<number>(-6.871);
   const [longitude, setLongitude] = useState<number>(109.042);
-  const [region, setRegion] = useState<string>('Brebes');
-  const [notes, setNotes] = useState<string>('');
-
-
+  const [region, setRegion] = useState<string>("Brebes");
+  const [notes, setNotes] = useState<string>("");
 
   // Auto update coordinates and region if selected on map
   useEffect(() => {
@@ -81,7 +85,10 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
       setLatitude(mapLat);
       setLongitude(mapLng);
       setRegion(mapRegion);
-      showNotification(`Koordinat terpilih dari peta: ${mapLat}, ${mapLng} (${mapRegion})`, 'info');
+      showNotification(
+        `Koordinat terpilih dari peta: ${mapLat}, ${mapLng} (${mapRegion})`,
+        "info",
+      );
     }
   }, [mapLat, mapLng, mapRegion]);
 
@@ -100,7 +107,9 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
     const metadata = COMMODITY_LIST[crop];
     if (metadata) {
       setAskingPrice(metadata.averagePricePerKg);
-      setExpectedVolume(Math.round(landArea * metadata.typicalYieldKgPerHectare));
+      setExpectedVolume(
+        Math.round(landArea * metadata.typicalYieldKgPerHectare),
+      );
     }
   };
 
@@ -113,25 +122,28 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
           const lng = Math.round(position.coords.longitude * 1000) / 1000;
           setLatitude(lat);
           setLongitude(lng);
-          showNotification('Lokasi GPS Anda berhasil disinkronkan!', 'success');
+          showNotification("Lokasi GPS Anda berhasil disinkronkan!", "success");
         },
         (error) => {
-          showNotification('Gagal mendapatkan lokasi GPS. Silakan tentukan manual atau klik pada peta.', 'warning');
-        }
+          showNotification(
+            "Gagal mendapatkan lokasi GPS. Silakan tentukan manual atau klik pada peta.",
+            "warning",
+          );
+        },
       );
     } else {
-      showNotification('Fitur GPS tidak didukung di peramban ini.', 'warning');
+      showNotification("Fitur GPS tidak didukung di peramban ini.", "warning");
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Auto estimate harvest date based on typical duration
     const metadata = COMMODITY_LIST[commodity];
     const pDate = new Date(plantingDate);
     pDate.setDate(pDate.getDate() + metadata.typicalDurationDays);
-    const expectedHarvestDate = pDate.toISOString().split('T')[0];
+    const expectedHarvestDate = pDate.toISOString().split("T")[0];
 
     addHarvest({
       commodity,
@@ -149,19 +161,20 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
 
     // Reset coordinates picker if any
     if (clearMapSelection) clearMapSelection();
-    setNotes('');
+    setNotes("");
   };
 
   // Farmer's own harvests — exclude any legacy H-LIVE simulator entries
-  const myHarvests = harvests.filter(h =>
-    h.farmerId === activeUser.PETANI.id &&
-    !h.id.startsWith('H-LIVE-') &&
-    !h.id.startsWith('h-live-')
+  const myHarvests = harvests.filter(
+    (h) =>
+      h.farmerId === activeUser.PETANI.id &&
+      !h.id.startsWith("H-LIVE-") &&
+      !h.id.startsWith("h-live-"),
   );
 
   // Matches involving this farmer's harvests
-  const myMatches = matches.filter(m => {
-    const h = harvests.find(harv => harv.id === m.harvestId);
+  const myMatches = matches.filter((m) => {
+    const h = harvests.find((harv) => harv.id === m.harvestId);
     return h?.farmerId === activeUser.PETANI.id;
   });
 
@@ -174,22 +187,36 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
             <User className="w-3.5 h-3.5" />
             <span>AKUN MITRA PETANI</span>
           </div>
-          <h2 className="text-xl font-bold tracking-tight">Selamat Datang, {activeUser.PETANI.name}</h2>
+          <h2 className="text-xl font-bold tracking-tight">
+            Selamat Datang, {activeUser.PETANI.name}
+          </h2>
           <p className="text-xs text-nat-light-cream mt-1">
-            Wilayah Poktan: <span className="font-semibold text-white">{activeUser.PETANI.region}, Jawa Tengah</span> | ID Anggota: <span className="font-mono text-nat-sand">#F-0912</span>
+            Wilayah Poktan:{" "}
+            <span className="font-semibold text-white">
+              {activeUser.PETANI.region}, Jawa Tengah
+            </span>{" "}
+            | ID Anggota:{" "}
+            <span className="font-mono text-nat-sand">#F-0912</span>
           </p>
         </div>
 
         {/* Ambient loss reduction stats */}
         <div className="flex gap-4">
           <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
-            <p className="text-[10px] text-nat-light-cream uppercase tracking-wider font-semibold">Tanam Sedia</p>
-            <p className="text-lg font-bold">{myHarvests.filter(h => h.status === 'ACTIVE').length} Lahan</p>
+            <p className="text-[10px] text-nat-light-cream uppercase tracking-wider font-semibold">
+              Tanam Sedia
+            </p>
+            <p className="text-lg font-bold">
+              {myHarvests.filter((h) => h.status === "ACTIVE").length} Lahan
+            </p>
           </div>
           <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
-            <p className="text-[10px] text-nat-light-cream uppercase tracking-wider font-semibold">Berhasil Sinergi</p>
+            <p className="text-[10px] text-nat-light-cream uppercase tracking-wider font-semibold">
+              Berhasil Sinergi
+            </p>
             <p className="text-lg font-bold text-nat-sand">
-              {myHarvests.filter(h => h.status === 'MATCHED').length} Transaksi
+              {myHarvests.filter((h) => h.status === "MATCHED").length}{" "}
+              Transaksi
             </p>
           </div>
         </div>
@@ -199,9 +226,16 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
       <div className="bg-nat-light-cream border border-nat-border/60 rounded-xl p-4 flex gap-3 text-xs text-amber-900">
         <BadgeAlert className="w-5 h-5 text-nat-brown shrink-0 mt-0.5" />
         <div>
-          <p className="font-bold">Peringatan Risiko Busuk (Weather Guard FLW):</p>
+          <p className="font-bold">
+            Peringatan Risiko Busuk (Weather Guard FLW):
+          </p>
           <p className="mt-1 text-nat-brown leading-relaxed">
-            Curah hujan tinggi diprediksi melanda wilayah <span className="font-semibold">Brebes</span> dalam 10 hari ke depan. Komoditas <span className="font-semibold">Bawang Merah</span> yang mendekati masa panen sangat berisiko terkena busuk umbi. Segera laporkan rencana panen Anda di form bawah untuk langsung dihubungkan dengan cold storage pembeli terdekat!
+            Curah hujan tinggi diprediksi melanda wilayah{" "}
+            <span className="font-semibold">Brebes</span> dalam 10 hari ke
+            depan. Komoditas <span className="font-semibold">Bawang Merah</span>{" "}
+            yang mendekati masa panen sangat berisiko terkena busuk umbi. Segera
+            laporkan rencana panen Anda di form bawah untuk langsung dihubungkan
+            dengan cold storage pembeli terdekat!
           </p>
         </div>
       </div>
@@ -219,7 +253,9 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Date field (Shared by both) */}
             <div>
-              <label className="block text-xs font-bold text-nat-text mb-1">Tanggal Tanam</label>
+              <label className="block text-xs font-bold text-nat-text mb-1">
+                Tanggal Tanam
+              </label>
               <input
                 type="date"
                 value={plantingDate}
@@ -231,41 +267,60 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
             {/* Form fields */}
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-nat-text mb-1">Komoditas</label>
+                <label className="block text-xs font-bold text-nat-text mb-1">
+                  Komoditas
+                </label>
                 <select
                   value={commodity}
-                  onChange={(e) => handleCommodityChange(e.target.value as Komoditas)}
+                  onChange={(e) =>
+                    handleCommodityChange(e.target.value as Komoditas)
+                  }
                   className="w-full bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green"
                 >
                   {Object.keys(COMMODITY_LIST).map((key) => (
-                    <option key={key} value={key}>{key}</option>
+                    <option key={key} value={key}>
+                      {key}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-nat-text mb-1">Luas Lahan (Ha)</label>
+                  <label className="block text-xs font-bold text-nat-text mb-1">
+                    Luas Lahan (Ha)
+                  </label>
                   <input
                     type="number"
                     step="0.1"
                     min="0.1"
                     max="50"
                     value={landArea}
-                    onChange={(e) => handleLandAreaChange(parseFloat(e.target.value) || 0.1)}
+                    onChange={(e) =>
+                      handleLandAreaChange(parseFloat(e.target.value) || 0.1)
+                    }
                     className="w-full bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green"
                   />
                 </div>
                 <div className="bg-nat-light-cream rounded-lg p-2.5 text-[11px] text-nat-green border border-nat-border flex flex-col justify-center">
-                  <span className="font-bold block text-[10px] text-nat-sage uppercase tracking-wider">Estimasi Panen</span>
+                  <span className="font-bold block text-[10px] text-nat-sage uppercase tracking-wider">
+                    Estimasi Panen
+                  </span>
                   <span className="font-bold text-[11px] text-nat-green">
                     {(() => {
                       try {
                         const d = new Date(plantingDate);
-                        d.setDate(d.getDate() + COMMODITY_LIST[commodity].typicalDurationDays);
-                        return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                        d.setDate(
+                          d.getDate() +
+                            COMMODITY_LIST[commodity].typicalDurationDays,
+                        );
+                        return d.toLocaleDateString("id-ID", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        });
                       } catch {
-                        return '-';
+                        return "-";
                       }
                     })()}
                   </span>
@@ -274,27 +329,42 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-nat-text mb-1">Estimasi Hasil (Kg)</label>
+                  <label className="block text-xs font-bold text-nat-text mb-1">
+                    Estimasi Hasil (Kg)
+                  </label>
                   <input
                     type="number"
                     min="50"
                     value={expectedVolume}
-                    onChange={(e) => setExpectedVolume(parseInt(e.target.value) || 0)}
+                    onChange={(e) =>
+                      setExpectedVolume(parseInt(e.target.value) || 0)
+                    }
                     className="w-full bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-xs text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green font-bold"
                   />
-                  <span className="text-[10px] text-nat-sage font-medium">Saran: Rata-rata komoditas</span>
+                  <span className="text-[10px] text-nat-sage font-medium">
+                    Saran: Rata-rata komoditas
+                  </span>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-nat-text mb-1">Harga Harapan (Rp/Kg)</label>
+                  <label className="block text-xs font-bold text-nat-text mb-1">
+                    Harga Harapan (Rp/Kg)
+                  </label>
                   <input
                     type="number"
                     step="500"
                     min="1000"
                     value={askingPrice}
-                    onChange={(e) => setAskingPrice(parseInt(e.target.value) || 0)}
+                    onChange={(e) =>
+                      setAskingPrice(parseInt(e.target.value) || 0)
+                    }
                     className="w-full bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-xs text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green font-bold"
                   />
-                  <span className="text-[10px] text-nat-sage font-medium">HPP Acuan: Rp{COMMODITY_LIST[commodity].averagePricePerKg.toLocaleString('id-ID')}</span>
+                  <span className="text-[10px] text-nat-sage font-medium">
+                    HPP Acuan: Rp
+                    {COMMODITY_LIST[commodity].averagePricePerKg.toLocaleString(
+                      "id-ID",
+                    )}
+                  </span>
                 </div>
               </div>
             </div>
@@ -317,22 +387,30 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
 
               <div className="grid grid-cols-2 gap-2 text-[11px]">
                 <div>
-                  <span className="text-nat-sage font-semibold block">Latitude</span>
+                  <span className="text-nat-sage font-semibold block">
+                    Latitude
+                  </span>
                   <input
                     type="number"
                     step="0.001"
                     value={latitude}
-                    onChange={(e) => setLatitude(parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      setLatitude(parseFloat(e.target.value) || 0)
+                    }
                     className="w-full bg-white border border-nat-border rounded px-2 py-1 text-nat-dark font-mono focus:outline-none focus:ring-1 focus:ring-nat-green"
                   />
                 </div>
                 <div>
-                  <span className="text-nat-sage font-semibold block">Longitude</span>
+                  <span className="text-nat-sage font-semibold block">
+                    Longitude
+                  </span>
                   <input
                     type="number"
                     step="0.001"
                     value={longitude}
-                    onChange={(e) => setLongitude(parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      setLongitude(parseFloat(e.target.value) || 0)
+                    }
                     className="w-full bg-white border border-nat-border rounded px-2 py-1 text-nat-dark font-mono focus:outline-none focus:ring-1 focus:ring-nat-green"
                   />
                 </div>
@@ -340,7 +418,9 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
 
               <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
                 <div>
-                  <span className="text-nat-sage font-semibold block">Wilayah / Kabupaten</span>
+                  <span className="text-nat-sage font-semibold block">
+                    Wilayah / Kabupaten
+                  </span>
                   <input
                     type="text"
                     value={region}
@@ -356,10 +436,10 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
               </div>
             </div>
 
-
-
             <div>
-              <label className="block text-xs font-bold text-nat-text mb-1">Catatan Kondisi Lahan & Mutu</label>
+              <label className="block text-xs font-bold text-nat-text mb-1">
+                Catatan Kondisi Lahan & Mutu
+              </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -406,26 +486,36 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
                     {myHarvests.map((h) => {
                       const crop = COMMODITY_LIST[h.commodity];
                       return (
-                        <tr key={h.id} className="border-b border-nat-light-cream hover:bg-nat-light-cream/35 transition-colors">
+                        <tr
+                          key={h.id}
+                          className="border-b border-nat-light-cream hover:bg-nat-light-cream/35 transition-colors"
+                        >
                           <td className="py-3 font-bold text-nat-dark">
                             <div className="flex items-center gap-1.5 font-bold">
-                              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: crop.color }} />
+                              <span
+                                className="w-2.5 h-2.5 rounded-full"
+                                style={{ backgroundColor: crop.color }}
+                              />
                               {h.commodity}
                             </div>
                           </td>
                           <td className="py-3 text-nat-text">
                             <div>{h.landArea} Ha</div>
-                            <div className="text-[10px] text-nat-sage font-semibold">{h.expectedVolume.toLocaleString('id-ID')} Kg</div>
+                            <div className="text-[10px] text-nat-sage font-semibold">
+                              {h.expectedVolume.toLocaleString("id-ID")} Kg
+                            </div>
                           </td>
                           <td className="py-3 text-nat-text">
                             <div className="font-semibold flex items-center gap-1">
                               <Calendar className="w-3.5 h-3.5 text-nat-sage" />
                               {h.expectedHarvestDate}
                             </div>
-                            <div className="text-[10px] text-nat-sage">Tanam: {h.plantingDate}</div>
+                            <div className="text-[10px] text-nat-sage">
+                              Tanam: {h.plantingDate}
+                            </div>
                           </td>
                           <td className="py-3 font-bold text-nat-dark">
-                            Rp{h.askingPrice.toLocaleString('id-ID')}/Kg
+                            Rp{h.askingPrice.toLocaleString("id-ID")}/Kg
                           </td>
                           <td className="py-3">
                             <button
@@ -439,18 +529,27 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
                           </td>
                           <td className="py-3 text-right">
                             <div className="flex flex-col items-end gap-1.5">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
-                                h.status === 'ACTIVE' 
-                                  ? 'bg-nat-light-cream text-nat-green border-nat-border' 
-                                  : h.status === 'MATCHED'
-                                  ? 'bg-nat-cream text-nat-brown border-nat-border'
-                                  : h.status === 'HARVESTED'
-                                  ? 'bg-nat-cream text-nat-green-hover border-nat-border'
-                                  : 'bg-nat-slate text-nat-text border-nat-border'
-                              }`}>
-                                {h.status === 'ACTIVE' ? 'Aktif' : h.status === 'MATCHED' ? 'Terhubung' : h.status === 'HARVESTED' ? 'Dipanen' : h.status}
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
+                                  h.status === "ACTIVE"
+                                    ? "bg-nat-light-cream text-nat-green border-nat-border"
+                                    : h.status === "MATCHED"
+                                      ? "bg-nat-cream text-nat-brown border-nat-border"
+                                      : h.status === "HARVESTED"
+                                        ? "bg-nat-cream text-nat-green-hover border-nat-border"
+                                        : "bg-nat-slate text-nat-text border-nat-border"
+                                }`}
+                              >
+                                {h.status === "ACTIVE"
+                                  ? "Aktif"
+                                  : h.status === "MATCHED"
+                                    ? "Terhubung"
+                                    : h.status === "HARVESTED"
+                                      ? "Dipanen"
+                                      : h.status}
                               </span>
-                              {(h.status === 'ACTIVE' || h.status === 'MATCHED') && (
+                              {(h.status === "ACTIVE" ||
+                                h.status === "MATCHED") && (
                                 <button
                                   onClick={() => {
                                     setHarvestingId(h.id);
@@ -474,7 +573,8 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
               </div>
             ) : (
               <div className="text-center py-6 text-nat-sage italic">
-                Belum ada laporan rencana tanam. Silakan gunakan form sebelah kiri untuk melapor.
+                Belum ada laporan rencana tanam. Silakan gunakan form sebelah
+                kiri untuk melapor.
               </div>
             )}
           </div>
@@ -494,44 +594,64 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
             {myMatches.length > 0 ? (
               <div className="space-y-4">
                 {myMatches.map((match) => {
-                  const harvest = harvests.find(h => h.id === match.harvestId)!;
-                  const demand = demands.find(d => d.id === match.demandId)!;
+                  const harvest = harvests.find(
+                    (h) => h.id === match.harvestId,
+                  )!;
+                  const demand = demands.find((d) => d.id === match.demandId)!;
                   if (!harvest || !demand) return null;
 
                   return (
-                    <motion.div 
+                    <motion.div
                       layout
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                      key={match.id} 
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 30,
+                      }}
+                      key={match.id}
                       className={`border rounded-xl p-4 transition-all ${
-                        match.status !== 'PENDING'
-                          ? 'border-nat-border bg-nat-light-cream/40'
-                          : 'border-nat-border hover:border-nat-sage/50 bg-white hover:shadow-sm'
+                        match.status !== "PENDING"
+                          ? "border-nat-border bg-nat-light-cream/40"
+                          : "border-nat-border hover:border-nat-sage/50 bg-white hover:shadow-sm"
                       }`}
                       id={`match-card-${match.id}`}
                     >
                       {/* Match header */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                         <div className="flex items-center space-x-2">
-                          <span className="w-3.5 h-3.5 rounded-full" style={{ backgroundColor: COMMODITY_LIST[harvest.commodity].color }} />
-                          <h4 className="text-xs font-bold text-nat-dark">{demand.buyerName}</h4>
-                          <span className="text-[10px] text-nat-sage font-medium">• Wilayah: {demand.region}</span>
+                          <span
+                            className="w-3.5 h-3.5 rounded-full"
+                            style={{
+                              backgroundColor:
+                                COMMODITY_LIST[harvest.commodity].color,
+                            }}
+                          />
+                          <h4 className="text-xs font-bold text-nat-dark">
+                            {demand.buyerName}
+                          </h4>
+                          <span className="text-[10px] text-nat-sage font-medium">
+                            • Wilayah: {demand.region}
+                          </span>
                         </div>
 
                         {/* Matching Score Circle Badge */}
                         <div className="flex items-center space-x-1">
                           <BadgePercent className="w-3.5 h-3.5 text-nat-green" />
-                          <span className="text-xs font-bold text-nat-sage">Kecocokan: </span>
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
-                            match.score >= 80 
-                              ? 'bg-nat-green text-white border-transparent' 
-                              : match.score >= 60
-                              ? 'bg-nat-cream text-nat-brown border-nat-border'
-                              : 'bg-nat-slate text-nat-text border-nat-border'
-                          }`}>
+                          <span className="text-xs font-bold text-nat-sage">
+                            Kecocokan:{" "}
+                          </span>
+                          <span
+                            className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
+                              match.score >= 80
+                                ? "bg-nat-green text-white border-transparent"
+                                : match.score >= 60
+                                  ? "bg-nat-cream text-nat-brown border-nat-border"
+                                  : "bg-nat-slate text-nat-text border-nat-border"
+                            }`}
+                          >
                             {match.score}%
                           </span>
                         </div>
@@ -541,36 +661,67 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-nat-light-cream p-2.5 rounded-lg text-[11px] mb-3 text-nat-text border border-nat-border">
                         {/* 1. Jarak */}
                         <div>
-                          <p className="text-nat-sage font-bold uppercase text-[9px]">Jarak Logistik</p>
-                          <p className="font-bold text-nat-dark mt-0.5">{match.distanceKm} Km</p>
+                          <p className="text-nat-sage font-bold uppercase text-[9px]">
+                            Jarak Logistik
+                          </p>
+                          <p className="font-bold text-nat-dark mt-0.5">
+                            {match.distanceKm} Km
+                          </p>
                           <div className="w-full bg-nat-cream h-1 rounded-full mt-1 overflow-hidden">
-                            <div className="bg-nat-green h-full rounded-full" style={{ width: `${match.scoreDetails.distanceScore}%` }} />
+                            <div
+                              className="bg-nat-green h-full rounded-full"
+                              style={{
+                                width: `${match.scoreDetails.distanceScore}%`,
+                              }}
+                            />
                           </div>
-                          <span className="text-[9px] text-nat-sage font-medium">Skor: {match.scoreDetails.distanceScore}/100</span>
+                          <span className="text-[9px] text-nat-sage font-medium">
+                            Skor: {match.scoreDetails.distanceScore}/100
+                          </span>
                         </div>
 
                         {/* 2. Kesesuaian Volume */}
                         <div>
-                          <p className="text-nat-sage font-bold uppercase text-[9px]">Kesesuaian Volume</p>
+                          <p className="text-nat-sage font-bold uppercase text-[9px]">
+                            Kesesuaian Volume
+                          </p>
                           <p className="font-bold text-nat-dark mt-0.5">
-                            {harvest.expectedVolume.toLocaleString('id-ID')} Kg / {demand.requiredVolume.toLocaleString('id-ID')} Kg
+                            {harvest.expectedVolume.toLocaleString("id-ID")} Kg
+                            / {demand.requiredVolume.toLocaleString("id-ID")} Kg
                           </p>
                           <div className="w-full bg-nat-cream h-1 rounded-full mt-1 overflow-hidden">
-                            <div className="bg-nat-green h-full rounded-full" style={{ width: `${match.scoreDetails.volumeScore}%` }} />
+                            <div
+                              className="bg-nat-green h-full rounded-full"
+                              style={{
+                                width: `${match.scoreDetails.volumeScore}%`,
+                              }}
+                            />
                           </div>
-                          <span className="text-[9px] text-nat-sage font-medium">Skor: {match.scoreDetails.volumeScore}/100</span>
+                          <span className="text-[9px] text-nat-sage font-medium">
+                            Skor: {match.scoreDetails.volumeScore}/100
+                          </span>
                         </div>
 
                         {/* 3. Kesesuaian Harga */}
                         <div>
-                          <p className="text-nat-sage font-bold uppercase text-[9px]">Kesesuaian Harga</p>
+                          <p className="text-nat-sage font-bold uppercase text-[9px]">
+                            Kesesuaian Harga
+                          </p>
                           <p className="font-bold text-nat-dark mt-0.5">
-                            Rp{demand.offerPrice.toLocaleString('id-ID')} / Rp{harvest.askingPrice.toLocaleString('id-ID')}
+                            Rp{demand.offerPrice.toLocaleString("id-ID")} / Rp
+                            {harvest.askingPrice.toLocaleString("id-ID")}
                           </p>
                           <div className="w-full bg-nat-cream h-1 rounded-full mt-1 overflow-hidden">
-                            <div className="bg-nat-green h-full rounded-full" style={{ width: `${match.scoreDetails.priceScore}%` }} />
+                            <div
+                              className="bg-nat-green h-full rounded-full"
+                              style={{
+                                width: `${match.scoreDetails.priceScore}%`,
+                              }}
+                            />
                           </div>
-                          <span className="text-[9px] text-nat-sage font-medium">Skor: {match.scoreDetails.priceScore}/100</span>
+                          <span className="text-[9px] text-nat-sage font-medium">
+                            Skor: {match.scoreDetails.priceScore}/100
+                          </span>
                         </div>
                       </div>
 
@@ -583,65 +734,91 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
                       {/* Matching action workflow */}
                       <div className="flex justify-between items-center pt-2 border-t border-nat-border">
                         <div className="text-[10px] text-nat-sage font-medium">
-                          Batas Kebutuhan Buyer: <span className="font-semibold text-nat-text">{demand.dateRequired}</span>
+                          Batas Kebutuhan Buyer:{" "}
+                          <span className="font-semibold text-nat-text">
+                            {demand.dateRequired}
+                          </span>
                         </div>
 
                         <div className="flex space-x-2">
                           <AnimatePresence mode="wait">
-                            {match.status === 'PENDING' ? (
+                            {match.status === "PENDING" ? (
                               <motion.button
                                 key="pending"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 500,
+                                  damping: 30,
+                                }}
                                 id={`accept-btn-farmer-${match.id}`}
-                                onClick={() => updateMatchStatus(match.id, 'ACCEPTED_BY_FARMER')}
+                                onClick={() =>
+                                  updateMatchStatus(
+                                    match.id,
+                                    "ACCEPTED_BY_FARMER",
+                                  )
+                                }
                                 className="bg-nat-green hover:bg-nat-green-hover text-white font-bold py-1.5 px-3 rounded-lg text-[10px] transition-all flex items-center gap-1 cursor-pointer shadow-sm"
                               >
                                 <span>Ajukan Pre-Order</span>
                                 <ChevronRight className="w-3.5 h-3.5" />
                               </motion.button>
-                            ) : match.status === 'ACCEPTED_BY_FARMER' ? (
+                            ) : match.status === "ACCEPTED_BY_FARMER" ? (
                               <motion.div
                                 key="accepted_by_farmer"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 500,
+                                  damping: 30,
+                                }}
                                 className="flex items-center space-x-1.5 text-nat-brown font-bold text-[11px] bg-nat-cream px-2.5 py-1 rounded-lg border border-nat-border"
                               >
                                 <span className="w-1.5 h-1.5 rounded-full bg-nat-brown animate-pulse" />
                                 <span>Menunggu Respon Pembeli</span>
                               </motion.div>
-                            ) : match.status === 'ACCEPTED_BY_BUYER' ? (
+                            ) : match.status === "ACCEPTED_BY_BUYER" ? (
                               <motion.button
                                 key="accepted_by_buyer"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 500,
+                                  damping: 30,
+                                }}
                                 id={`confirm-btn-farmer-${match.id}`}
-                                onClick={() => updateMatchStatus(match.id, 'CONFIRMED')}
+                                onClick={() =>
+                                  updateMatchStatus(match.id, "CONFIRMED")
+                                }
                                 className="bg-nat-green hover:bg-nat-green-hover text-white font-bold py-1.5 px-3 rounded-lg text-[10px] transition-all flex items-center gap-1 cursor-pointer shadow-sm animate-bounce"
                               >
                                 <CheckCircle className="w-3.5 h-3.5" />
                                 <span>Konfirmasi Sepakat Transaksi</span>
                               </motion.button>
-                            ) : match.status === 'CONFIRMED' ? (
+                            ) : match.status === "CONFIRMED" ? (
                               <motion.div
                                 key="confirmed"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                transition={{
+                                  type: "spring",
+                                  stiffness: 500,
+                                  damping: 30,
+                                }}
                                 className="flex items-center space-x-1.5 text-nat-green font-bold text-[11px] bg-nat-light-cream px-2.5 py-1 rounded-lg border border-nat-border"
                               >
                                 <CheckCircle className="w-3.5 h-3.5" />
                                 <span>Sinergi Terjalin (Dana Escrow Aman)</span>
                               </motion.div>
                             ) : (
-                              <motion.span 
+                              <motion.span
                                 key="other"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
@@ -659,7 +836,8 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
               </div>
             ) : (
               <div className="text-center py-8 text-nat-sage italic text-xs">
-                Belum ada komoditas panen aktif Anda yang cocok dengan kebutuhan pembeli saat ini.
+                Belum ada komoditas panen aktif Anda yang cocok dengan kebutuhan
+                pembeli saat ini.
               </div>
             )}
           </div>
@@ -688,24 +866,34 @@ export default function FarmerView({ mapLat, mapLng, mapRegion, clearMapSelectio
                 Tandai Panen Selesai & Buat Batch Distribusi
               </h3>
               <p className="text-[11px] text-nat-sage mb-4">
-                Konfirmasi volume aktual panen. Sistem akan menghitung skor prioritas distribusi berdasarkan umur simpan komoditas.
+                Konfirmasi volume aktual panen. Sistem akan menghitung skor
+                prioritas distribusi berdasarkan umur simpan komoditas.
               </p>
               {(() => {
-                const h = harvests.find(x => x.id === harvestingId);
+                const h = harvests.find((x) => x.id === harvestingId);
                 const crop = h ? COMMODITY_LIST[h.commodity] : null;
                 return (
                   <div className="space-y-4">
                     <div className="bg-nat-light-cream rounded-xl p-3 border border-nat-border text-xs text-nat-text">
-                      <p className="font-bold text-nat-dark">{h?.commodity} — {h?.farmerName}</p>
-                      <p className="text-nat-sage mt-0.5">Estimasi: {h?.expectedVolume.toLocaleString('id-ID')} Kg | Umur Simpan: {crop?.shelfLifeDays} hari</p>
+                      <p className="font-bold text-nat-dark">
+                        {h?.commodity} — {h?.farmerName}
+                      </p>
+                      <p className="text-nat-sage mt-0.5">
+                        Estimasi: {h?.expectedVolume.toLocaleString("id-ID")} Kg
+                        | Umur Simpan: {crop?.shelfLifeDays} hari
+                      </p>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-nat-text mb-1">Volume Aktual Panen (Kg)</label>
+                      <label className="block text-xs font-bold text-nat-text mb-1">
+                        Volume Aktual Panen (Kg)
+                      </label>
                       <input
                         type="number"
                         min="1"
                         value={actualVolume}
-                        onChange={(e) => setActualVolume(parseInt(e.target.value) || 0)}
+                        onChange={(e) =>
+                          setActualVolume(parseInt(e.target.value) || 0)
+                        }
                         className="w-full bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-sm font-bold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green"
                       />
                     </div>
