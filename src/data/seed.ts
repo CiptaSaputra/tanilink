@@ -1,4 +1,4 @@
-import { Harvest, Demand } from "../types";
+import { Harvest, Demand, Match, PreOrder } from "../types";
 
 export const SEED_HARVESTS: Harvest[] = [
   {
@@ -246,5 +246,71 @@ export const SEED_DEMANDS: Demand[] = [
     status: "ACTIVE",
     notes:
       "Membutuhkan cabai merah keriting kualitas prima Lampung untuk dipasok ke industri lokal.",
+  },
+];
+
+export const SEED_MATCHES: Match[] = [
+  {
+    id: "m-seed-1",
+    harvestId: "h-1", // Bawang Merah Brebes
+    demandId: "d-1", // Bawang Merah Brebes
+    score: 95,
+    distanceKm: 2.5,
+    scoreDetails: {
+      volumeScore: 100,
+      priceScore: 90,
+      distanceScore: 95,
+      totalScore: 95,
+      distanceKm: 2.5,
+    },
+    status: "CONFIRMED",
+    createdAt: "2026-07-01T00:00:00.000Z",
+  },
+  {
+    id: "m-seed-2",
+    harvestId: "h-2", // Cabai Merah Garut
+    demandId: "d-2", // Cabai Merah Garut
+    score: 88,
+    distanceKm: 5.2,
+    scoreDetails: {
+      volumeScore: 80,
+      priceScore: 95,
+      distanceScore: 90,
+      totalScore: 88,
+      distanceKm: 5.2,
+    },
+    status: "CONFIRMED",
+    createdAt: "2026-07-02T00:00:00.000Z",
+  },
+];
+
+export const SEED_PREORDERS: PreOrder[] = [
+  {
+    id: "po-seed-1",
+    matchId: "m-seed-1",
+    harvestId: "h-1",
+    demandId: "d-1",
+    farmerName: "Pak Joko",
+    buyerName: "Koperasi Jaya Tani",
+    commodity: "Bawang Merah",
+    agreedPricePerKg: 26500,
+    agreedVolumeKg: 10000,
+    deliveryMode: "direct",
+    status: "COMPLETED",
+    createdAt: "2026-07-05T00:00:00.000Z",
+  },
+  {
+    id: "po-seed-2",
+    matchId: "m-seed-2",
+    harvestId: "h-2",
+    demandId: "d-2",
+    farmerName: "Ibu Siti",
+    buyerName: "PT Sambal Lestari",
+    commodity: "Cabai Merah",
+    agreedPricePerKg: 34500,
+    agreedVolumeKg: 5000,
+    deliveryMode: "consolidated",
+    status: "COMPLETED",
+    createdAt: "2026-07-06T00:00:00.000Z",
   },
 ];

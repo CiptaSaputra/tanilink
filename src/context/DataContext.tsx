@@ -111,16 +111,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     async function loadData() {
-      const [h, d, p, b] = await Promise.all([
+      const [h, d, p, b, m] = await Promise.all([
         harvestGetAll(),
         demandGetAll(),
         preOrderGetAll(),
         batchGetAll(),
+        matchGetAll(),
       ]);
       setHarvests(h);
       setDemands(d);
       setPreOrders(p);
       setHarvestBatches(b);
+      setMatches(m.sort((a, b) => b.score - a.score));
     }
     loadData();
   }, []);
@@ -158,25 +160,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
     },
   };
 
-  // ── Auto-compute matches ───────────────────────────────────────────────────
-  useEffect(() => {
-    const newMatches: Match[] = [];
-    harvests.forEach((harvest) => {
-      if (harvest.status === "EXPIRED" || !harvest.isPublished) return;
-      demands.forEach((demand) => {
-        if (demand.status === "CANCELLED") return;
-        if (harvest.commodity !== demand.commodity) return;
-
-        const m = scoreMatch(harvest, demand);
-        const existing = matches.find((prev) => prev.id === m.id);
-        if (existing) m.status = existing.status;
-        newMatches.push(m);
-      });
-    });
-    newMatches.sort((a, b) => b.score - a.score);
-    setMatches(newMatches);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [harvests, demands]);
+  // ── Matching diproses oleh Backend, kita cukup me-refresh data matches saat ada perubahan
+  const refreshMatches = useCallback(async () => {
+    const m = await matchGetAll();
+    // Sort highest score first
+    m.sort((a, b) => b.score - a.score);
+    setMatches(m);
+  }, []);
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
@@ -193,12 +183,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
       };
       const updated = await svcHarvestAdd(newHarvest);
       setHarvests(updated);
+      await refreshMatches();
       showNotification(
         `Laporan tanam ${data.commodity} berhasil ditambahkan!`,
         "success",
       );
     },
-    [activeUser, showNotification],
+    [activeUser, showNotification, refreshMatches],
   );
 
   const addDemand = useCallback(
@@ -212,12 +203,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
       };
       const updated = await svcDemandAdd(newDemand);
       setDemands(updated);
+      await refreshMatches();
       showNotification(
         `Permintaan demand untuk ${data.commodity} berhasil dipublikasi!`,
         "success",
       );
     },
-    [activeUser, showNotification],
+    [activeUser, showNotification, refreshMatches],
   );
 
   const updateMatchStatus = useCallback(
@@ -236,33 +228,35 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
       const d = demands.find((dem) => dem.id === m.demandId);
 
       if (status === "CONFIRMED" && h && d) {
-        const [updatedHarvests, updatedDemands] = await Promise.all([
-          svcHarvestUpdate(h.id, { status: "MATCHED" }),
-          svcDemandUpdate(d.id, { status: "FULFILLED" }),
-        ]);
-        setHarvests(updatedHarvests);
-        setDemands(updatedDemands);
-
-        const newPO: PreOrder = {
-          id: `po-${Date.now()}`,
-          matchId: m.id,
-          harvestId: m.harvestId,
-          demandId: m.demandId,
-          agreedPricePerKg: d.offerPrice,
-          agreedVolumeKg: Math.min(h.expectedVolume, d.requiredVolume),
-          farmerName: h.farmerName,
-          buyerName: d.buyerName,
-          commodity: h.commodity,
-          deliveryMode: "direct",
-          status: "CONFIRMED",
-          createdAt: new Date().toISOString().split("T")[0],
-        };
-        const updatedPreOrders = await svcPreOrderAdd(newPO);
-        setPreOrders(updatedPreOrders);
-        showNotification(
-          "Pre-Order Berhasil Dikonfirmasi! Hasil panen terselamatkan dari potensi susut.",
-          "success",
-        );
+        try {
+          const res = await fetch("/api/pre-orders/confirm", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ matchId }),
+          });
+          if (res.ok) {
+            // Refresh data from server to reflect all changes
+            const [updatedHarvests, updatedDemands, updatedPreOrders] = await Promise.all([
+              harvestGetAll(),
+              demandGetAll(),
+              preOrderGetAll(),
+            ]);
+            setHarvests(updatedHarvests);
+            setDemands(updatedDemands);
+            setPreOrders(updatedPreOrders);
+            await refreshMatches();
+            
+            showNotification(
+              "Pre-Order Berhasil Dikonfirmasi! Hasil panen terselamatkan dari potensi susut.",
+              "success",
+            );
+          } else {
+            showNotification("Gagal memproses konfirmasi PO. Coba lagi.", "warning");
+          }
+        } catch (error) {
+          console.error(error);
+          showNotification("Terjadi kesalahan sistem saat memproses konfirmasi.", "warning");
+        }
       } else if (status === "ACCEPTED_BY_FARMER") {
         showNotification(
           "Penawaran disetujui oleh Petani. Menunggu konfirmasi Pembeli.",

@@ -30,6 +30,7 @@ import DinasView from "@/components/DinasView";
 import AdminView from "@/components/AdminView";
 import PPLView from "@/components/PPLView";
 import KolektorView from "@/components/KolektorView";
+import PublicDashboard from "@/components/PublicDashboard";
 
 // ─── Auth Gate ─────────────────────────────────────────────────────────────────
 
@@ -147,6 +148,11 @@ function DashboardContent() {
             {activeRole === "KOLEKTOR" && (
               <ErrorBoundary name="KolektorView">
                 <KolektorView />
+              </ErrorBoundary>
+            )}
+            {activeRole === "PUBLIK" && (
+              <ErrorBoundary name="PublicDashboard">
+                <PublicDashboard />
               </ErrorBoundary>
             )}
           </motion.div>

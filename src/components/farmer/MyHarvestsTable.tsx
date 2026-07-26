@@ -107,10 +107,19 @@ export const MyHarvestsTable: React.FC<MyHarvestsTableProps> = ({
                           {h.status === "ACTIVE" ? "MASA TANAM" : h.status}
                         </span>
                         {isNearingHarvest && (
-                          <div className="flex items-center gap-1 text-[10px] text-amber-600 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">
+                          <div className="flex items-center gap-1 text-[10px] text-amber-600 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 mt-1">
                             <AlertCircle className="w-3 h-3" />
                             Mendekati Panen
                           </div>
+                        )}
+                        {h.weatherRiskLevel && (
+                           <div className={`mt-1 flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                             h.weatherRiskLevel === "HIGH" ? "bg-red-50 text-red-700 border-red-200" :
+                             h.weatherRiskLevel === "MEDIUM" ? "bg-orange-50 text-orange-700 border-orange-200" :
+                             "bg-blue-50 text-blue-700 border-blue-200"
+                           }`}>
+                             RISIKO CUACA: {h.weatherRiskLevel}
+                           </div>
                         )}
                       </div>
                     </td>

@@ -31,6 +31,7 @@ import {
   AlertCircle,
   Trash2,
   Layers,
+  MessageCircle,
 } from "lucide-react";
 
 interface FarmerViewProps {
@@ -50,6 +51,7 @@ export default function FarmerView({
     harvests,
     demands,
     matches,
+    preOrders,
     addHarvest,
     updateMatchStatus,
     activeUser,
@@ -175,6 +177,12 @@ export default function FarmerView({
   // Matches involving this farmer's harvests
   const myMatches = matches.filter((m) => {
     const h = harvests.find((harv) => harv.id === m.harvestId);
+    return h?.farmerId === activeUser.PETANI.id;
+  });
+
+  // Pre-Orders involving this farmer
+  const myPreOrders = preOrders.filter((po) => {
+    const h = harvests.find((harv) => harv.id === po.harvestId);
     return h?.farmerId === activeUser.PETANI.id;
   });
 
@@ -842,6 +850,102 @@ export default function FarmerView({
             )}
           </div>
         </div>
+      </div>
+
+      {/* Daftar Pre-Order Aktif (PO) Petani */}
+      <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm mt-6">
+        <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-light-cream flex items-center gap-1.5">
+          <Layers className="w-4 h-4 text-nat-green" />
+          Daftar Kontrak Transaksi (PO) Anda ({myPreOrders.length})
+        </h3>
+        
+        {myPreOrders.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-nat-text">
+              <thead>
+                <tr className="border-b border-nat-border text-nat-sage font-bold uppercase tracking-wider text-[10px]">
+                  <th className="py-2">PO ID / Koperasi</th>
+                  <th className="py-2">Komoditas</th>
+                  <th className="py-2">Volume & Harga</th>
+                  <th className="py-2">Total Pendapatan</th>
+                  <th className="py-2 text-right">Status & Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {myPreOrders.map((po) => {
+                  const crop = COMMODITY_LIST[po.commodity as Komoditas];
+                  const totalValue = po.agreedVolumeKg * po.agreedPricePerKg;
+                  return (
+                    <tr
+                      key={po.id}
+                      className="border-b border-nat-light-cream hover:bg-nat-light-cream/35 transition-colors"
+                    >
+                      <td className="py-3">
+                        <div className="font-bold text-nat-dark">{po.buyerName}</div>
+                        <div className="text-[10px] text-nat-sage font-mono">{po.id}</div>
+                      </td>
+                      <td className="py-3 font-bold text-nat-dark flex items-center gap-1.5 mt-1.5">
+                        <span
+                          className="w-2.5 h-2.5 rounded"
+                          style={{ backgroundColor: crop?.color || "#ccc" }}
+                        />
+                        {po.commodity}
+                      </td>
+                      <td className="py-3">
+                        <div className="font-bold text-nat-dark">{po.agreedVolumeKg.toLocaleString("id-ID")} Kg</div>
+                        <div className="text-[10px] text-nat-sage">Rp{po.agreedPricePerKg.toLocaleString("id-ID")}/Kg</div>
+                      </td>
+                      <td className="py-3 font-bold text-emerald-600">
+                        Rp{totalValue.toLocaleString("id-ID")}
+                      </td>
+                      <td className="py-3 text-right">
+                        <div className="flex flex-col items-end gap-2">
+                          {po.status === "COMPLETED" ? (
+                            <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                              Lunas & Selesai
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
+                              Menunggu Pelunasan
+                            </span>
+                          )}
+
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={`https://wa.me/6281234567890?text=Halo%20Koperasi%20${encodeURIComponent(
+                                po.buyerName
+                              )},%20saya%20petani.%20Terkait%20PO%20${po.commodity}%20seberat%20${po.agreedVolumeKg}Kg.`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
+                            >
+                              <MessageCircle className="w-3 h-3" />
+                              Chat Pembeli
+                            </a>
+                            
+                            {po.status === "COMPLETED" && (
+                              <button
+                                onClick={() => showNotification("Terima kasih, ulasan Anda untuk koperasi telah disimpan di Hash-Chain Ledger!", "success")}
+                                className="bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
+                              >
+                                <Star className="w-3 h-3" />
+                                Lihat Rating
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-6 text-nat-sage italic text-xs">
+            Belum ada kontrak Pre-Order (PO) yang disepakati.
+          </div>
+        )}
       </div>
 
       {/* Harvest Batch Creation Modal */}

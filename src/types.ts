@@ -4,7 +4,7 @@
  */
 
 export type Role =
-  "PETANI" | "PEMBELI" | "PPL" | "DINAS" | "ADMIN" | "KOLEKTOR";
+  "PETANI" | "PEMBELI" | "PPL" | "DINAS" | "ADMIN" | "KOLEKTOR" | "PUBLIK";
 
 // ─── Auth Types ────────────────────────────────────────────────────────────────
 
@@ -81,6 +81,7 @@ export interface Harvest {
   region: string; // e.g., 'Brebes', 'Garut', 'Malang'
   plantingDate: string; // YYYY-MM-DD
   expectedHarvestDate: string; // YYYY-MM-DD
+  weatherRiskLevel?: "LOW" | "MEDIUM" | "HIGH";
   isPublished: boolean; // opt-in publikasi
   status: "ACTIVE" | "MATCHED" | "HARVESTED" | "EXPIRED";
   notes?: string;

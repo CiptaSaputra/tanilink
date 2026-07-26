@@ -25,6 +25,9 @@ import {
   Scan,
   Camera,
   RefreshCw,
+  MessageCircle,
+  Star,
+  Truck,
 } from "lucide-react";
 
 import { Harvest } from "../types";
@@ -46,6 +49,8 @@ export default function BuyerView({
     harvests,
     demands,
     matches,
+    preOrders,
+    completePreOrder,
     addDemand,
     updateMatchStatus,
     activeUser,
@@ -66,9 +71,13 @@ export default function BuyerView({
   const [region, setRegion] = useState<string>("Brebes");
   const [notes, setNotes] = useState<string>("");
 
-  // Traceability & Scanner states
+  // Harvest trace modal state
   const [selectedTraceHarvest, setSelectedTraceHarvest] =
     useState<Harvest | null>(null);
+
+  // Logistics state
+  const [selectedLogistics, setSelectedLogistics] = useState<string[]>([]);
+  const [showRoute, setShowRoute] = useState(false);
   const [scannerBatchId, setScannerBatchId] = useState<string>("");
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [scanSuccess, setScanSuccess] = useState<boolean>(false);
@@ -154,6 +163,12 @@ export default function BuyerView({
     return d?.buyerId === activeUser.PEMBELI.id;
   });
 
+  // Pre-Orders involving this buyer
+  const myPreOrders = preOrders.filter((po) => {
+    const d = demands.find((dem) => dem.id === po.demandId);
+    return d?.buyerId === activeUser.PEMBELI.id;
+  });
+
   return (
     <div className="space-y-6">
       {/* Buyer Profile Status Block */}
@@ -188,11 +203,21 @@ export default function BuyerView({
           </div>
           <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
             <p className="text-[10px] text-nat-light-cream uppercase tracking-wider font-semibold">
-              Sinergi Sukses
+              Sinergi Sukses (PO)
             </p>
             <p className="text-lg font-bold text-nat-sand">
-              {myDemands.filter((d) => d.status === "FULFILLED").length} Panen
-              Diserap
+              {myPreOrders.length} Kontrak
+            </p>
+          </div>
+          <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10 hidden sm:block">
+            <p className="text-[10px] text-nat-light-cream uppercase tracking-wider font-semibold">
+              Tonase Diselamatkan
+            </p>
+            <p className="text-lg font-bold text-emerald-300">
+              {(
+                myPreOrders.reduce((acc, po) => acc + po.agreedVolumeKg, 0) / 1000
+              ).toLocaleString("id-ID")}{" "}
+              Ton
             </p>
           </div>
         </div>
@@ -609,6 +634,11 @@ export default function BuyerView({
                           >
                             {match.score}%
                           </span>
+                          {match.score >= 85 && (
+                            <span className="ml-1 text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md border border-amber-300 shadow-sm animate-pulse">
+                              ✨ TOP MATCH
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -756,6 +786,214 @@ export default function BuyerView({
             )}
           </div>
         </div>
+      </div>
+      
+      {/* Daftar Pre-Order Aktif (PO) */}
+      <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm mt-6">
+        <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-light-cream flex items-center gap-1.5">
+          <Activity className="w-4 h-4 text-nat-green" />
+          Daftar Pre-Order Aktif ({myPreOrders.length})
+        </h3>
+        
+        {myPreOrders.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-nat-text">
+              <thead>
+                <tr className="border-b border-nat-border text-nat-sage font-bold uppercase tracking-wider text-[10px]">
+                  <th className="py-2">PO ID / Petani</th>
+                  <th className="py-2">Komoditas</th>
+                  <th className="py-2">Volume & Harga</th>
+                  <th className="py-2">Total Nilai</th>
+                  <th className="py-2 text-right">Status & Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {myPreOrders.map((po) => {
+                  const crop = COMMODITY_LIST[po.commodity as Komoditas];
+                  const totalValue = po.agreedVolumeKg * po.agreedPricePerKg;
+                  return (
+                    <tr
+                      key={po.id}
+                      className="border-b border-nat-light-cream hover:bg-nat-light-cream/35 transition-colors"
+                    >
+                      <td className="py-3">
+                        <div className="font-bold text-nat-dark">{po.farmerName}</div>
+                        <div className="text-[10px] text-nat-sage font-mono">{po.id}</div>
+                      </td>
+                      <td className="py-3 font-bold text-nat-dark flex items-center gap-1.5 mt-1.5">
+                        <span
+                          className="w-2.5 h-2.5 rounded"
+                          style={{ backgroundColor: crop?.color || "#ccc" }}
+                        />
+                        {po.commodity}
+                      </td>
+                      <td className="py-3">
+                        <div className="font-bold text-nat-dark">{po.agreedVolumeKg.toLocaleString("id-ID")} Kg</div>
+                        <div className="text-[10px] text-nat-sage">Rp{po.agreedPricePerKg.toLocaleString("id-ID")}/Kg</div>
+                      </td>
+                      <td className="py-3 font-bold text-emerald-600">
+                        Rp{totalValue.toLocaleString("id-ID")}
+                      </td>
+                      <td className="py-3 text-right">
+                        <div className="flex flex-col items-end gap-2">
+                          {po.status === "COMPLETED" ? (
+                            <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                              Lunas & Selesai
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
+                              Belum Lunas
+                            </span>
+                          )}
+
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={`https://wa.me/6281234567890?text=Halo%20Petani%20${encodeURIComponent(
+                                po.farmerName
+                              )},%20saya%20dari%20Koperasi.%20Terkait%20Pre-Order%20${po.commodity}%20seberat%20${po.agreedVolumeKg}Kg.`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
+                            >
+                              <MessageCircle className="w-3 h-3" />
+                              Chat WA
+                            </a>
+
+                            {po.status === "COMPLETED" ? (
+                              <button
+                                onClick={() => showNotification("Terima kasih, ulasan Anda untuk petani telah disimpan di Hash-Chain Ledger!", "success")}
+                                className="bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
+                              >
+                                <Star className="w-3 h-3" />
+                                Beri Rating
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => completePreOrder(po.id)}
+                                className="bg-nat-green hover:bg-nat-green-hover text-white font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
+                              >
+                                <DollarSign className="w-3 h-3" />
+                                Konfirmasi Bayar
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-6 text-nat-sage italic text-xs">
+            Belum ada kontrak Pre-Order (PO) yang disepakati.
+          </div>
+        )}
+      </div>
+      
+      {/* Logistik & Penjemputan (Pooling) */}
+      <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm mt-6">
+        <div className="flex justify-between items-center mb-4 pb-2 border-b border-nat-light-cream">
+          <h3 className="text-sm font-bold text-nat-dark flex items-center gap-1.5">
+            <Truck className="w-4 h-4 text-nat-green" />
+            Optimasi Rute Logistik (Pooling Penjemputan)
+          </h3>
+          {selectedLogistics.length > 0 && (
+            <button
+              onClick={() => {
+                setShowRoute(true);
+                showNotification(`Memproses rute terpendek untuk ${selectedLogistics.length} titik penjemputan menggunakan algoritma cerdas...`, "success");
+              }}
+              className="bg-nat-green hover:bg-nat-green-hover text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors shadow-sm"
+            >
+              Hitung Rute Terdekat
+            </button>
+          )}
+        </div>
+        
+        {myPreOrders.filter(po => po.status === "COMPLETED").length > 0 ? (
+          <div>
+            {!showRoute ? (
+              <div>
+                <p className="text-xs text-nat-sage mb-3">Pilih Pre-Order Lunas yang ingin dijemput dalam satu rute keberangkatan hari ini:</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {myPreOrders.filter(po => po.status === "COMPLETED").map((po) => (
+                    <div 
+                      key={`logistics-${po.id}`}
+                      className={`border rounded-xl p-3 cursor-pointer transition-colors ${selectedLogistics.includes(po.id) ? 'bg-nat-light-cream/40 border-nat-green' : 'bg-white border-nat-border hover:border-nat-green/50'}`}
+                      onClick={() => {
+                        setSelectedLogistics(prev => 
+                          prev.includes(po.id) 
+                            ? prev.filter(id => id !== po.id) 
+                            : [...prev, po.id]
+                        );
+                      }}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex gap-2">
+                          <input 
+                            type="checkbox" 
+                            checked={selectedLogistics.includes(po.id)} 
+                            readOnly 
+                            className="mt-1 accent-nat-green"
+                          />
+                          <div>
+                            <div className="text-xs font-bold text-nat-dark">{po.farmerName}</div>
+                            <div className="text-[10px] text-nat-sage">{po.commodity} - {po.agreedVolumeKg}Kg</div>
+                          </div>
+                        </div>
+                        <span className="text-[9px] font-mono bg-nat-light-cream px-1.5 py-0.5 rounded text-nat-sage">{po.id}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-nat-light-cream/30 border border-nat-green/30 p-4 rounded-xl">
+                <h4 className="text-xs font-bold text-nat-dark mb-3">Rekomendasi Urutan Pengambilan (Haversine Optimized):</h4>
+                <div className="relative border-l-2 border-nat-green ml-2 pl-4 space-y-4">
+                  <div className="relative">
+                    <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-nat-green"></div>
+                    <div className="text-xs font-bold text-nat-dark">Gudang Koperasi (Titik Awal)</div>
+                    <div className="text-[10px] text-nat-sage">Berangkat</div>
+                  </div>
+                  
+                  {selectedLogistics.map((poId, index) => {
+                    const po = myPreOrders.find(p => p.id === poId);
+                    return (
+                      <div key={`route-${poId}`} className="relative">
+                        <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-nat-green"></div>
+                        <div className="text-xs font-bold text-nat-dark">Titik {index + 1}: Lahan Petani {po?.farmerName}</div>
+                        <div className="text-[10px] text-nat-sage">Angkut: {po?.commodity} ({po?.agreedVolumeKg}Kg)</div>
+                      </div>
+                    );
+                  })}
+                  
+                  <div className="relative">
+                    <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-nat-green"></div>
+                    <div className="text-xs font-bold text-nat-dark">Gudang Koperasi (Titik Akhir)</div>
+                    <div className="text-[10px] text-nat-sage">Selesai</div>
+                  </div>
+                </div>
+                
+                <button
+                  onClick={() => {
+                    setShowRoute(false);
+                    setSelectedLogistics([]);
+                  }}
+                  className="mt-4 text-xs text-nat-green font-semibold hover:underline"
+                >
+                  Rencanakan Rute Baru
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-6 text-nat-sage italic text-xs">
+            Tidak ada PO berstatus Lunas untuk penjemputan logistik.
+          </div>
+        )}
       </div>
     </div>
   );

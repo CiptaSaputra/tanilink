@@ -145,7 +145,7 @@ export default function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
   return (
     <div className="min-h-screen bg-nat-light-cream/50 flex items-center justify-center px-4 py-12">
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
+        initial={{ opacity: 1, y: 0 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
         className="w-full max-w-md"

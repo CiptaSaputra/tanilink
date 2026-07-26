@@ -32,6 +32,7 @@ export const harvests = pgTable("harvests", {
   region: varchar("region").notNull(),
   plantingDate: varchar("planting_date").notNull(),
   expectedHarvestDate: varchar("expected_harvest_date").notNull(),
+  weatherRiskLevel: varchar("weather_risk_level").default("LOW").notNull(),
   isPublished: boolean("is_published").default(true).notNull(),
   status: varchar("status").notNull(),
   notes: text("notes"),
@@ -127,5 +128,14 @@ export const reviews = pgTable("reviews", {
   revieweeUserId: varchar("reviewee_user_id").notNull(),
   rating: integer("rating").notNull(),
   comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const marketPrices = pgTable("market_prices", {
+  id: varchar("id").primaryKey(),
+  commodity: varchar("commodity").notNull(),
+  region: varchar("region").notNull(),
+  pricePerKg: doublePrecision("price_per_kg").notNull(),
+  dateRecorded: varchar("date_recorded").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

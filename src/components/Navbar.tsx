@@ -18,6 +18,7 @@ import {
   LogOut,
   UserCircle,
   MapPin,
+  Globe,
 } from "lucide-react";
 import { Role } from "../types";
 
@@ -75,6 +76,13 @@ export default function Navbar() {
       color: "bg-nat-sage text-white border-nat-sage hover:opacity-95",
       desc: "Memantau performa bobot default Smart Matching dan menyelesaikan dispute.",
     },
+    {
+      id: "PUBLIK",
+      label: "Masyarakat / Publik",
+      icon: <Globe className="w-4 h-4" />,
+      color: "bg-blue-600 text-white border-blue-600 hover:opacity-95",
+      desc: "Dashboard publik untuk melihat total tonase diselamatkan dan tren pangan.",
+    },
   ];
 
   // Badge warna per role
@@ -85,6 +93,7 @@ export default function Navbar() {
     DINAS: "bg-nat-dark/10 text-nat-dark border-nat-dark/20",
     KOLEKTOR: "bg-amber-100 text-amber-700 border-amber-300",
     ADMIN: "bg-nat-sage/10 text-nat-sage border-nat-sage/30",
+    PUBLIK: "bg-blue-100 text-blue-700 border-blue-300",
   };
 
   const roleBadgeLabel: Record<Role, string> = {
@@ -94,6 +103,7 @@ export default function Navbar() {
     DINAS: "Dinas",
     KOLEKTOR: "Kolektor",
     ADMIN: "Admin",
+    PUBLIK: "Publik",
   };
 
   // Role yang sedang aktif = role user yang login (tidak bisa di-switch manual)

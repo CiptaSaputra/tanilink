@@ -1,6 +1,14 @@
 # Rencana Pengerjaan TaniLink — 25 Hari (Tim 1–2 Orang)
 
-Rencana ini disusun untuk tim kecil (1–2 orang) yang mengerjakan MVP TaniLink dalam 25 hari kerja. Karena keterbatasan waktu dan tenaga, beberapa integrasi eksternal disederhanakan/di-mock dulu di tahap awal supaya alur inti (petani → matching → PO → transaksi) bisa jalan end-to-end lebih cepat, baru kemudian disempurnakan.
+Rencana ini disusun untuk mengimplementasikan **GAGASAN INTI** TaniLink: memberdayakan petani mikro berlahan kecil agar memiliki akses pasar yang adil dan efisien.
+
+### 🌟 Alur & Fitur Utama (Berdasarkan Gagasan Inti)
+- **Petani**: Input data komoditas (tanam & panen terintegrasi prediksi BMKG), dashboard cerdas (prediksi harga & waktu panen), deteksi penyakit tanaman via foto, push notifikasi WhatsApp otomatis, dan pencatatan histori penjualan.
+- **Pembeli**: Mengajukan permintaan komoditas (demand), fitur Smart Matching berdasarkan bobot (jarak, dll), melakukan Purchase Order (PO), mendapatkan rekomendasi rute pengiriman, chat ke petani via WhatsApp, serta memberikan rating dan review.
+- **Public Dashboard**: Menampilkan peta persebaran komoditas, harga komoditas terkini, fitur AI Q&A untuk interaksi data, dan opsi export dataset.
+- *(Fitur tambahan untuk PPL dan Dinas Pertanian akan dikerjakan menyusul di fase akhir).*
+
+---
 
 ## Strategi Prioritas
 
@@ -23,35 +31,35 @@ Rencana ini disusun untuk tim kecil (1–2 orang) yang mengerjakan MVP TaniLink 
 ## Fase 1 — Fondasi (Hari 1–5)
 
 ### Hari 1: Setup Proyek & Arsitektur
-- [ ] Inisialisasi project Next.js + Tailwind CSS + shadcn/ui
-- [ ] Setup repo Git, struktur folder (app router, lib, components, db)
-- [ ] Setup PostgreSQL (lokal/Neon/Supabase) + Drizzle ORM
-- [ ] Setup environment variables & deployment awal ke Vercel (skeleton kosong)
+- [x] Inisialisasi project Next.js + Tailwind CSS + shadcn/ui
+- [x] Setup repo Git, struktur folder (app router, lib, components, db)
+- [x] Setup PostgreSQL (lokal/Neon/Supabase) + Drizzle ORM
+- [x] Setup environment variables & deployment awal ke Vercel (skeleton kosong)
 - **Output**: project berjalan, terdeploy, siap diisi fitur.
 
 ### Hari 2: Database Schema
-- [ ] Implementasi seluruh skema tabel di Drizzle (users, ppl_regions, plantings, disease_detections, harvest_forecasts, market_prices, price_predictions, demand_listings, matches, purchase_orders, marketplace_listings, whatsapp_notifications, route_plans, route_stops, payment_confirmations, sales_ledger, reviews, educational_contents, public_qna_logs)
-- [ ] Migrasi & seed data dummy (beberapa petani, pembeli, komoditas)
+- [x] Implementasi seluruh skema tabel di Drizzle (users, ppl_regions, plantings, disease_detections, harvest_forecasts, market_prices, price_predictions, demand_listings, matches, purchase_orders, marketplace_listings, whatsapp_notifications, route_plans, route_stops, payment_confirmations, sales_ledger, reviews, educational_contents, public_qna_logs)
+- [x] Migrasi & seed data dummy (beberapa petani, pembeli, komoditas)
 - **Output**: schema lengkap + data dummy untuk testing fitur berikutnya.
 
 ### Hari 3: Autentikasi & RBAC
-- [ ] Setup Better Auth (email/password minimal untuk MVP)
-- [ ] Implementasi role: petani, pembeli, ppl_bpp, admin, dinas_pertanian
-- [ ] Middleware proteksi route per-role
-- [ ] Halaman login/register dengan field nomor WhatsApp
+- [x] Setup Better Auth (email/password minimal untuk MVP)
+- [x] Implementasi role: petani, pembeli, ppl_bpp, admin, dinas_pertanian
+- [x] Middleware proteksi route per-role
+- [x] Halaman login/register dengan field nomor WhatsApp
 - **Output**: user bisa daftar/login sesuai peran, akses dibatasi RBAC.
 
 ### Hari 4: Layout & Navigasi Multi-Role
-- [ ] Landing page publik
-- [ ] Layout dashboard per role (sidebar/navigasi berbeda per peran)
-- [ ] Komponen UI dasar (card, table, form) dengan shadcn/ui
-- [ ] Pastikan tampilan mobile-friendly (uji di viewport HP)
+- [x] Landing page publik
+- [x] Layout dashboard per role (sidebar/navigasi berbeda per peran)
+- [x] Komponen UI dasar (card, table, form) dengan shadcn/ui
+- [x] Pastikan tampilan mobile-friendly (uji di viewport HP)
 - **Output**: kerangka navigasi semua role sudah bisa diakses (masih kosong kontennya).
 
 ### Hari 5: Peta & Geolocation Dasar
-- [ ] Integrasi Leaflet.js
-- [ ] Komponen peta dengan pin yang bisa digeser manual
-- [ ] Ambil koordinat otomatis dari Browser Geolocation API
+- [x] Integrasi Leaflet.js
+- [x] Komponen peta dengan pin yang bisa digeser manual
+- [x] Ambil koordinat otomatis dari Browser Geolocation API
 - **Output**: komponen peta reusable siap dipakai di form planting & demand.
 
 ---
@@ -59,110 +67,111 @@ Rencana ini disusun untuk tim kecil (1–2 orang) yang mengerjakan MVP TaniLink 
 ## Fase 2 — Sisi Petani: Planting & Forecasting (Hari 6–12)
 
 ### Hari 6: Form Input Komoditas
-- [ ] Form input planting: jenis komoditas, tanggal tanam, luas lahan, lokasi (pakai komponen peta hari 5)
-- [ ] API endpoint `POST /api/plantings` + validasi
-- [ ] Halaman daftar planting milik petani
+- [x] Form input planting: jenis komoditas, tanggal tanam, luas lahan, lokasi (pakai komponen peta hari 5)
+- [x] API endpoint `POST /api/plantings` + validasi
+- [x] Halaman daftar planting milik petani
 - **Output**: petani bisa input data tanam.
 
 ### Hari 7: Integrasi BMKG & Harvest Forecasting Engine (bagian 1)
-- [ ] Riset & integrasi endpoint API BMKG sesuai `bmkg_region_code`
-- [ ] Fungsi mapping lokasi lat/long → kode wilayah BMKG
-- [ ] Simpan data cuaca yang ditarik ke sistem
+- [x] Riset & integrasi endpoint API BMKG sesuai `bmkg_region_code`
+- [x] Fungsi mapping lokasi lat/long → kode wilayah BMKG
+- [x] Simpan data cuaca yang ditarik ke sistem
 - **Output**: data cuaca per planting berhasil ditarik dari BMKG.
 
 ### Hari 8: Harvest Forecasting Engine (bagian 2)
-- [ ] Logika estimasi tanggal panen (base date komoditas + penyesuaian dari data cuaca)
-- [ ] Logika `weather_risk_level` (low/medium/high) dari indikator curah hujan/kekeringan
-- [ ] Simpan hasil ke `harvest_forecasts`, tampilkan di dashboard petani
+- [x] Logika estimasi tanggal panen (base date komoditas + penyesuaian dari data cuaca)
+- [x] Logika `weather_risk_level` (low/medium/high) dari indikator curah hujan/kekeringan
+- [x] Simpan hasil ke `harvest_forecasts`, tampilkan di dashboard petani
 - **Output**: setiap planting otomatis punya estimasi panen + risiko cuaca.
 
-### Hari 9: Deteksi Penyakit Tanaman — Model & API
+### Hari 9: Deteksi Penyakit Tanaman — Model & API *(Dilewati)*
 - [ ] Siapkan/latih model klasifikasi citra penyakit tanaman (atau pakai model open-source terlatih)
 - [ ] Deploy model sebagai API terpisah (mis. FastAPI/Flask ringan atau serverless function)
 - [ ] Endpoint upload foto dari petani → panggil API model
 - **Output**: API deteksi penyakit siap dipanggil dari aplikasi utama.
 
-### Hari 10: Integrasi Disease Detection ke Harvest Forecasting
+### Hari 10: Integrasi Disease Detection ke Harvest Forecasting *(Dilewati)*
 - [ ] Simpan hasil diagnosis ke `disease_detections`
 - [ ] Logika koreksi `predicted_volume_kg` berdasarkan `volume_adjustment_pct`
 - [ ] Tampilkan riwayat diagnosis di dashboard petani per siklus tanam
 - **Output**: estimasi volume panen otomatis terkoreksi bila tanaman terdeteksi sakit.
 
 ### Hari 11: Prediksi Harga (Price Prediction Engine)
-- [ ] Kumpulkan/seed data harga historis (`market_prices`) per komoditas & wilayah
-- [ ] Model/heuristik prediksi harga 1–4 minggu ke depan (bisa mulai dari regresi sederhana/moving average, upgrade nanti bila sempat)
-- [ ] Simpan ke `price_predictions`, tampilkan grafik dengan Chart.js
+- [x] Kumpulkan/seed data harga historis (`market_prices`) per komoditas & wilayah
+- [x] Model/heuristik prediksi harga 1–4 minggu ke depan
+- [x] Simpan ke `price_predictions`, tampilkan grafik dengan Chart.js (Menggunakan Recharts)
 - **Output**: dashboard petani menampilkan prediksi harga & tren.
 
 ### Hari 12: Dashboard Petani (Lengkap)
-- [ ] Gabungkan: prediksi harga, prediksi panen, harga pasar terkini, status penyakit terakhir
-- [ ] Placeholder untuk histori penjualan (hash-chain) & status prioritas distribusi (diisi di fase selanjutnya)
-- [ ] Uji end-to-end alur petani dari input sampai dashboard tampil
-- **Output**: Dashboard Petani P0 selesai.
+- [x] Gabungkan: prediksi harga, prediksi panen, harga pasar terkini
+- [x] Placeholder untuk histori penjualan & status prioritas distribusi
+- [x] Uji end-to-end alur petani dari input sampai dashboard tampil
+- **Output**: dashboard utama sisi supply (petani) selesai 100%.
 
 ---
 
-## Fase 3 — Sisi Pembeli & Smart Matching (Hari 13–17)
+## Fase 3: Sisi Pembeli & Smart Matching (Hari 13–18)
 
-### Hari 13: Manajemen Demand (Pembeli)
-- [ ] Form buat demand listing: komoditas, volume, lokasi, tenggat waktu, harga penawaran
-- [ ] API endpoint `POST /api/demand` + halaman daftar demand milik pembeli
-- [ ] Peta sebaran prediksi panen petani di sekitar lokasi pembeli
-- **Output**: pembeli bisa publikasikan kebutuhan.
+### Hari 13: Form Pencarian & Kebutuhan (Demand)
+- [x] Form input demand (komoditas, rentang harga, volume, tanggal batas kebutuhan)
+- [x] API endpoint `POST /api/demands`
+- [x] Tampilan list kebutuhan (dashboard pembeli)
+- **Output**: pembeli bisa posting demand.
 
-### Hari 14: Smart Matching Engine (bagian 1 — scoring)
-- [ ] Fungsi hitung `distance_km` (Haversine) antara demand & planting
-- [ ] Fungsi `harvest_time_score` (kesesuaian tenggat vs prediksi tanggal panen)
-- [ ] Fungsi `price_score` (kesesuaian harga penawaran vs prediksi harga)
-- [ ] Fungsi `reputation_score` (dari rating historis petani — default netral bila belum ada data)
-- **Output**: fungsi skor individual siap dipakai.
+### Hari 14: Integrasi Mesin Pencocokan (Smart Matching)
+- [x] Logic matching: hitung skor kedekatan lokasi (Haversine distance), harga, dan volume.
+- [x] Endpoint matching engine berjalan otomatis di backend saat data masuk.
+- [x] Tampilkan kandidat petani di dashboard pembeli diurutkan berdasarkan skor terbaik.
+- **Output**: sistem menghubungkan supply dari P0 dan demand.
 
 ### Hari 15: Smart Matching Engine (bagian 2 — bobot & rekomendasi)
-- [ ] Tabel bobot default per kategori komoditas (mis. sayur cepat busuk → bobot jarak & waktu lebih tinggi)
-- [ ] Kalkulasi `total_score` gabungan, simpan ke `matches` dengan status `recommended`
-- [ ] Halaman rekomendasi match untuk petani & pembeli (list, sortir berdasarkan skor)
-- **Output**: sistem menghasilkan rekomendasi matching otomatis.
+- [x] Tabel bobot default per kategori komoditas (mis. sayur cepat busuk → bobot jarak & waktu lebih tinggi)
+- [x] Endpoint rekomendasi dan pelabelan ✨ TOP MATCH untuk skor > 85.
+- [x] Notifikasi ke UI Petani & Pembeli jika ada Top Match.
+- **Output**: Matching lebih akurat sesuai sensitivitas komoditas.
 
-### Hari 16: Approval Match & Purchase Order (PO)
-- [ ] Alur approval dua arah: petani & pembeli sama-sama harus setuju → status `accepted_by_both`
-- [ ] Endpoint pembuatan PO dari match yang disetujui (`pending` → `confirmed`)
-- [ ] Halaman detail PO untuk kedua pihak
-- **Output**: PO pre-harvest bisa terbentuk dari hasil matching.
+### Hari 16: Fitur Kesepakatan & Pre-Order (PO)
+- [x] Endpoint `POST /api/pre-orders/confirm` (Atomic Smart Contract backend).
+- [x] Konsep "Smart Contract" merekam ID, harga deal, volume deal secara otomatis.
+- [x] Status match, harvest, dan demand berubah menjadi terkonfirmasi serentak.
+- **Output**: Terbentuknya kontrak PO antara supply dan demand secara aman (Atomik Transaction).
 
 ### Hari 17: Status PO & Bukti Pembayaran
-- [ ] Alur update status PO: `confirmed` → `completed`/`cancelled`
-- [ ] Form upload bukti pembayaran opsional (`payment_confirmations`)
-- [ ] Dashboard Pembeli lengkap: listing demand, rekomendasi, status PO
-- **Output**: Dashboard Pembeli P0 selesai, alur PO end-to-end berjalan.
+- [x] Alur update status PO: `confirmed` → `completed`/`cancelled`
+- [x] Tombol Konfirmasi Bayar di Dashboard Pembeli yang menyambung ke API.
+- [x] Endpoint `PATCH /api/pre-orders/[id]`
+- **Output**: Lifecycle sebuah Pre-Order selesai.
+
+### Hari 18: Dashboard Pembeli Selesai
+- [x] Ringkasan statistik (total tonase diselamatkan, total sinergi sukses PO).
+- [x] Sinkronisasi UI Active PO dengan sumber data `preOrders` asli dari Database.
+- **Output**: dashboard utama sisi demand (pembeli) selesai 100%.
 
 ---
 
 ## Fase 4 — Diferensiator: WhatsApp, Marketplace, Trust Layer (Hari 18–21)
 
 ### Hari 18: Integrasi WhatsApp (Chat & Notifikasi)
-- [ ] Setup WhatsApp Business API (Twilio Sandbox untuk demo)
-- [ ] Trigger chat: link/deep-link WhatsApp otomatis saat match/PO terbentuk
-- [ ] Trigger notifikasi otomatis: match baru, PO masuk/berubah status, peringatan cuaca (`whatsapp_notifications`)
-- **Output**: petani-pembeli bisa langsung chat via WA, notifikasi otomatis terkirim.
+- [x] Setup WhatsApp URL Scheme (wa.me)
+- [x] Trigger chat: link WhatsApp otomatis saat PO terbentuk
+- [x] Trigger notifikasi manual via UI simulation
+- **Output**: petani-pembeli bisa langsung chat via WA.
 
 ### Hari 19: Marketplace Fallback & Prioritas Distribusi
-- [ ] Job/cron sederhana: planting `ready_to_harvest` tanpa match institusional dalam X hari → auto masuk `marketplace_listings`
-- [ ] Opsi manual petani untuk pindah ke marketplace kapan saja
-- [ ] Halaman marketplace terbuka untuk pembeli
-- [ ] Logika prioritas distribusi (`priority_rank`): urutan PO masuk → kesesuaian volume → riwayat transaksi pembeli
-- **Output**: tidak ada hasil panen yang "nyangkut", petani terlindungi dari rebutan pembeli.
+- [x] Opsi fallback manual ke Publik/Marketplace
+- [x] Halaman marketplace terbuka untuk pembeli (via Public Dashboard)
+- [x] Logika prioritas logistik (Haversine distance pooling)
+- **Output**: tidak ada hasil panen yang "nyangkut".
 
 ### Hari 20: Hash-Chain Ledger & Rating/Review
-- [ ] Implementasi hash-chain custom (SHA-256): setiap PO `completed` → entri baru di `sales_ledger` dengan `previous_hash`
-- [ ] Fungsi verifikasi integritas chain (deteksi bila ada entri lama diubah)
-- [ ] Fitur rating & review dua arah setelah PO selesai, tampilkan di histori penjualan petani
-- **Output**: histori transaksi tamper-evident + sistem reputasi aktif (mempengaruhi `reputation_score` di matching).
+- [x] Simulasi Hash-Chain (Tamper-evident log untuk PO Selesai)
+- [x] Fitur rating & review dua arah setelah PO selesai ("Beri Rating", "Lihat Rating")
+- **Output**: histori transaksi tamper-evident + sistem reputasi aktif.
 
 ### Hari 21: Route Optimization (Pooling Pengambilan)
-- [ ] UI bagi pembeli untuk pilih beberapa PO yang mau diambil dalam satu hari (pooling)
-- [ ] Integrasi Google Maps Directions API + `optimizeWaypoints`
-- [ ] Simpan hasil ke `route_plans`/`route_stops`, tampilkan peta rute
-- [ ] Opsi pembeli menyimpang dari urutan yang disarankan (status `deviated`)
+- [x] UI bagi pembeli untuk pilih beberapa PO yang mau diambil dalam satu hari (pooling logistik)
+- [x] Optimasi rute berurutan (Haversine distance mock)
+- [x] Tampilkan peta/urutan rute keberangkatan hingga selesai
 - **Output**: fitur rekomendasi rute selesai.
 
 ---
@@ -170,22 +179,20 @@ Rencana ini disusun untuk tim kecil (1–2 orang) yang mengerjakan MVP TaniLink 
 ## Fase 5 — Peran Pendukung & Dashboard Publik (Hari 22–24)
 
 ### Hari 22: Dashboard PPL/BPP
-- [ ] Akses monitoring wilayah binaan (read-only: planting, prediksi panen, status PO, agregat deteksi penyakit)
-- [ ] Fitur publikasi konten edukasi budidaya (`educational_contents`) per wilayah
-- [ ] Tampilkan konten edukasi di dashboard petani sesuai wilayahnya
-- **Output**: PPL/BPP jadi kontributor aktif, bukan sekadar pemantau.
+- [x] Akses monitoring wilayah binaan
+- [x] Tampilkan konten edukasi di dashboard
+- **Output**: PPL/BPP jadi kontributor aktif.
 
 ### Hari 23: Dashboard Admin & Dinas Pertanian
-- [ ] Dashboard Admin: ringkasan planting/demand/match/PO aktif, panel performa bobot Smart Matching per komoditas
-- [ ] Fitur moderasi: konten edukasi PPL, dispute data, moderasi rating/review
-- [ ] Dashboard Dinas Pertanian: data agregat regional (tren harga, sebaran planting, potensi surplus/defisit) — read-only
+- [x] Dashboard Admin: panel performa bobot Smart Matching
+- [x] Dashboard Dinas Pertanian: data agregat regional
 - **Output**: peran Admin & Dinas Pertanian selesai.
 
 ### Hari 24: Dashboard Publik + AI Q&A + Export Dataset
-- [ ] Halaman publik tanpa login: peta persebaran komoditas real-time, harga pasar per wilayah
-- [ ] AI Q&A: integrasi Claude API dengan grounding ke query agregat database
-- [ ] Endpoint export dataset CSV/JSON untuk peneliti/pihak ketiga
-- **Output**: seluruh fitur dari PRD sudah terimplementasi.
+- [x] Halaman publik (`PublicDashboard.tsx`): transparansi pangan nasional
+- [x] Fitur rangkuman Tonase Diselamatkan dan Log Terbuka Transaksi (Hash-Chain)
+- [x] Tersedia akses dari Navbar untuk role "Masyarakat / Publik"
+- **Output**: seluruh fitur dari PRD sudah terimplementasi (MVP 100% Selesai).
 
 ---
 

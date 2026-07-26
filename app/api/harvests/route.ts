@@ -15,13 +15,30 @@ export async function GET() {
   }
 }
 
+import { getBMKGWeatherRisk } from "@/utils/bmkg";
+import { runMatchingForHarvest } from "@/utils/matchingEngine";
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    
+    // Call BMKG Util to get weather risk
+    const bmkgData = await getBMKGWeatherRisk(
+      body.region,
+      body.commodity,
+      body.plantingDate
+    );
+    
+    body.weatherRiskLevel = bmkgData.riskLevel;
+    
     await db
       .insert(harvests)
       .values(body)
       .onConflictDoUpdate({ target: harvests.id, set: body });
+      
+    // Trigger Match Engine
+    await runMatchingForHarvest(body);
+    
     return NextResponse.json(body);
   } catch (err) {
     return NextResponse.json({ error: "Failed" }, { status: 500 });

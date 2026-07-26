@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { demands } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { runMatchingForDemand } from "@/utils/matchingEngine";
 
 export async function GET() {
   try {
@@ -22,6 +23,10 @@ export async function POST(req: NextRequest) {
       .insert(demands)
       .values(body)
       .onConflictDoUpdate({ target: demands.id, set: body });
+      
+    // Trigger Match Engine
+    await runMatchingForDemand(body);
+    
     return NextResponse.json(body);
   } catch (err) {
     return NextResponse.json({ error: "Failed" }, { status: 500 });
