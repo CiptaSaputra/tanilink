@@ -157,16 +157,26 @@ export default function BuyerView({
   // Buyer's own demands
   const myDemands = demands.filter((d) => d.buyerId === activeUser.PEMBELI.id);
 
-  // Matches involving this buyer's demands
+  // Matches involving this buyer's demands (include FULFILLED demands for post-PO state)
   const myMatches = matches.filter((m) => {
     const d = demands.find((dem) => dem.id === m.demandId);
     return d?.buyerId === activeUser.PEMBELI.id;
   });
 
   // Pre-Orders involving this buyer
+  // Filter via match chain (PO → match → demand → buyerId) to handle FULFILLED demands
   const myPreOrders = preOrders.filter((po) => {
+    // Primary: match via demandId (works when demand still ACTIVE)
     const d = demands.find((dem) => dem.id === po.demandId);
-    return d?.buyerId === activeUser.PEMBELI.id;
+    if (d) return d.buyerId === activeUser.PEMBELI.id;
+    // Fallback: match via matchId → match → demandId (works after demand FULFILLED)
+    const m = matches.find((match) => match.id === po.matchId);
+    if (m) {
+      const dm = demands.find((dem) => dem.id === m.demandId);
+      if (dm) return dm.buyerId === activeUser.PEMBELI.id;
+    }
+    // Last fallback: buyer name match
+    return po.buyerName === activeUser.PEMBELI.name;
   });
 
   return (

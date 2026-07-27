@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
         buyerName: demand.buyerName,
         commodity: harvest.commodity,
         deliveryMode: "direct",
-        status: "PENDING_DELIVERY",
+        status: "CONFIRMED",
         createdAt: new Date(),
       });
     });

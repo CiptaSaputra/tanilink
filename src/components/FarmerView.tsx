@@ -765,7 +765,7 @@ export default function FarmerView({
                                 onClick={() =>
                                   updateMatchStatus(
                                     match.id,
-                                    "ACCEPTED_BY_FARMER",
+                                    "CONFIRMED",
                                   )
                                 }
                                 className="bg-nat-green hover:bg-nat-green-hover text-white font-bold py-1.5 px-3 rounded-lg text-[10px] transition-all flex items-center gap-1 cursor-pointer shadow-sm"
