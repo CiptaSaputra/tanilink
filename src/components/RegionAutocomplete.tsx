@@ -25,9 +25,14 @@ export default function RegionAutocomplete({
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Sync internal query state with prop value
+  const [lastSelected, setLastSelected] = useState(value);
+
+  // Sync internal query state with prop value if it changes externally
   useEffect(() => {
-    setQuery(value);
+    if (value !== query) {
+      setQuery(value);
+      setLastSelected(value);
+    }
   }, [value]);
 
   // Click outside to close dropdown
@@ -52,9 +57,9 @@ export default function RegionAutocomplete({
       return;
     }
 
-    // Don't search if the query is exactly the selected value (to prevent re-fetching on select)
-    if (query === value) {
-        return;
+    // Don't search if the query is exactly the last selected value
+    if (query === lastSelected) {
+      return;
     }
 
     setIsLoading(true);
@@ -67,10 +72,11 @@ export default function RegionAutocomplete({
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [query, value]);
+  }, [query, lastSelected]);
 
   const handleSelect = (lat: number, lng: number, name: string) => {
     setQuery(name);
+    setLastSelected(name);
     onChange(name);
     onSelect(lat, lng, name);
     setIsOpen(false);
