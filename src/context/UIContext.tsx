@@ -21,7 +21,7 @@ import {
   STORAGE_KEYS,
   storageRead,
   storageWrite,
-  storageClearDomain,
+  clearAllDatabaseAndStorage,
 } from "../services";
 import { useAuth } from "./AuthContext";
 
@@ -72,8 +72,8 @@ export const UIProvider: React.FC<{ children: React.ReactNode }> = ({
   const dismissNotification = useCallback(() => setNotification(null), []);
   const setRole = useCallback((role: Role) => setActiveRole(role), []);
 
-  const resetAllData = useCallback(() => {
-    storageClearDomain();
+  const resetAllData = useCallback(async () => {
+    await clearAllDatabaseAndStorage();
     window.location.reload();
   }, []);
 

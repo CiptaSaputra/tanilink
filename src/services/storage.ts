@@ -92,8 +92,39 @@ export function storageReadArray<T>(key: StorageKey, fallback: T[] = []): T[] {
 }
 
 /**
- * Hapus semua key domain data (kecuali auth session dan users).
+ * Hapus semua key domain data dan reset database PostgreSQL.
  */
+export async function clearAllDatabaseAndStorage(): Promise<void> {
+  const domainKeys: StorageKey[] = [
+    STORAGE_KEYS.ACTIVE_ROLE,
+    STORAGE_KEYS.HARVESTS,
+    STORAGE_KEYS.DEMANDS,
+    STORAGE_KEYS.MATCHES,
+    STORAGE_KEYS.PRE_ORDERS,
+    STORAGE_KEYS.HARVEST_BATCHES,
+    STORAGE_KEYS.CONVERSATIONS,
+    STORAGE_KEYS.MESSAGES,
+    STORAGE_KEYS.PAYMENTS,
+    STORAGE_KEYS.REVIEWS,
+  ];
+  domainKeys.forEach(storageRemove);
+
+  try {
+    await Promise.all([
+      fetch("/api/harvests/reset", { method: "POST" }),
+      fetch("/api/demands/reset", { method: "POST" }),
+      fetch("/api/matches/reset", { method: "POST" }),
+      fetch("/api/pre-orders/reset", { method: "POST" }),
+      fetch("/api/harvest-batches/reset", { method: "POST" }),
+      fetch("/api/messages/reset", { method: "POST" }),
+      fetch("/api/payments/reset", { method: "POST" }),
+      fetch("/api/reviews/reset", { method: "POST" }),
+    ]);
+  } catch (err) {
+    console.warn("Failed to reset backend database:", err);
+  }
+}
+
 export function storageClearDomain(): void {
   const domainKeys: StorageKey[] = [
     STORAGE_KEYS.ACTIVE_ROLE,
