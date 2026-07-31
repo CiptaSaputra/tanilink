@@ -138,6 +138,22 @@ export default function BuyerView({
     }
   }, [mapLat, mapLng, mapRegion]);
 
+  // Real-time debounced geocoding when typing region (350ms pause)
+  useEffect(() => {
+    if (!region || region.trim().length < 3) return;
+    const timer = setTimeout(async () => {
+      const coords = await findCoordinatesForRegion(region);
+      if (coords) {
+        setLatitude(coords.lat);
+        setLongitude(coords.lng);
+        if (onSelectCoords) {
+          onSelectCoords(coords.lat, coords.lng, region);
+        }
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [region]);
+
   const handleCommodityChange = (crop: Komoditas) => {
     setCommodity(crop);
     const metadata = COMMODITY_LIST[crop];
@@ -480,20 +496,7 @@ export default function BuyerView({
                     <input
                       type="text"
                       value={region}
-                      onChange={async (e) => {
-                        const val = e.target.value;
-                        setRegion(val);
-                        if (val.trim().length >= 2) {
-                          const coords = await findCoordinatesForRegion(val);
-                          if (coords) {
-                            setLatitude(coords.lat);
-                            setLongitude(coords.lng);
-                            if (onSelectCoords) {
-                              onSelectCoords(coords.lat, coords.lng, val);
-                            }
-                          }
-                        }
-                      }}
+                      onChange={(e) => setRegion(e.target.value)}
                       placeholder="Ketik kota/daerah..."
                       className="w-full bg-white border border-nat-border rounded px-2 py-1 text-nat-dark font-bold focus:outline-none focus:ring-1 focus:ring-nat-green"
                     />

@@ -11,6 +11,7 @@ export const INDONESIA_REGIONS: Record<string, { lat: number; lng: number; name:
   lampung: { lat: -5.402, lng: 105.263, name: "Lampung" },
   jakarta: { lat: -6.208, lng: 106.845, name: "Jakarta" },
   surabaya: { lat: -7.257, lng: 112.752, name: "Surabaya" },
+  wonokromo: { lat: -7.300, lng: 112.738, name: "Wonokromo" },
   bandung: { lat: -6.917, lng: 107.619, name: "Bandung" },
   semarang: { lat: -6.993, lng: 110.42, name: "Semarang" },
   yogyakarta: { lat: -7.795, lng: 110.369, name: "Yogyakarta" },
@@ -89,7 +90,7 @@ export async function findCoordinatesForRegion(
 
   const normalized = query
     .toLowerCase()
-    .replace(/(kabupaten|kab\.|kota|regency|city|kecamatan|distrik)\s+/gi, "")
+    .replace(/(kabupaten|kab\.|kota|regency|city|kecamatan|distrik|kelurahan)\s+/gi, "")
     .trim();
 
   // 1. Exact match in local dictionary
@@ -97,14 +98,16 @@ export async function findCoordinatesForRegion(
     return INDONESIA_REGIONS[normalized];
   }
 
-  // 2. Partial match in local dictionary
-  for (const [key, val] of Object.entries(INDONESIA_REGIONS)) {
-    if (key.includes(normalized) || normalized.includes(key)) {
-      return val;
+  // 2. Strict prefix match ONLY if query length >= 4 (e.g. "wonokromo" will NOT match "wonogiri")
+  if (normalized.length >= 4) {
+    const keys = Object.keys(INDONESIA_REGIONS);
+    const exactPrefix = keys.find((k) => k === normalized);
+    if (exactPrefix) {
+      return INDONESIA_REGIONS[exactPrefix];
     }
   }
 
-  // 3. Fallback to Nominatim OpenStreetMap Search API
+  // 3. Geocode via Nominatim OpenStreetMap Search API for exact real-world coordinates
   try {
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
