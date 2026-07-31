@@ -129,3 +129,34 @@ export async function findCoordinatesForRegion(
 
   return null;
 }
+
+/**
+ * Real-time geocoding search to return a list of suggestions (for autocomplete)
+ */
+export async function searchRegions(
+  query: string,
+): Promise<{ lat: number; lng: number; name: string; displayName: string }[]> {
+  if (!query || query.trim().length < 3) return [];
+
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+        query + ", Indonesia",
+      )}&limit=5&addressdetails=1`,
+      { headers: { "Accept-Language": "id,en" } },
+    );
+    if (res.ok) {
+      const data = await res.json();
+      return data.map((item: any) => ({
+        lat: Math.round(parseFloat(item.lat) * 1000) / 1000,
+        lng: Math.round(parseFloat(item.lon) * 1000) / 1000,
+        name: item.name || query,
+        displayName: item.display_name,
+      }));
+    }
+  } catch (err) {
+    console.warn("Geocoding search failed:", err);
+  }
+
+  return [];
+}

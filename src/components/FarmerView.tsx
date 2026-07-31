@@ -10,7 +10,7 @@ import { useUI } from "../context/UIContext";
 import { COMMODITY_LIST } from "../constants/commodities";
 import type { Komoditas, Harvest, Match, PreOrder } from "../types";
 import RouteMapModal from "./modals/RouteMapModal";
-import { findCoordinatesForRegion } from "../utils/geocoding";
+import RegionAutocomplete from "./RegionAutocomplete";
 import {
   Sprout,
   Plus,
@@ -109,21 +109,7 @@ export default function FarmerView({
     }
   }, [mapLat, mapLng, mapRegion]);
 
-  // Real-time debounced geocoding when typing region (350ms pause)
-  useEffect(() => {
-    if (!region || region.trim().length < 3) return;
-    const timer = setTimeout(async () => {
-      const coords = await findCoordinatesForRegion(region);
-      if (coords) {
-        setLatitude(coords.lat);
-        setLongitude(coords.lng);
-        if (onSelectCoords) {
-          onSelectCoords(coords.lat, coords.lng, region);
-        }
-      }
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [region]);
+  // Real-time geocoding is now handled by RegionAutocomplete component
 
   // Handle land area changes to auto-calculate recommended yield
   const handleLandAreaChange = (val: number) => {
@@ -482,15 +468,19 @@ export default function FarmerView({
 
               <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
                 <div>
-                  <span className="text-nat-sage font-semibold block">
+                  <span className="text-nat-sage font-semibold block mb-0.5">
                     Wilayah / Kabupaten
                   </span>
-                  <input
-                    type="text"
+                  <RegionAutocomplete
                     value={region}
-                    onChange={(e) => setRegion(e.target.value)}
-                    placeholder="Ketik kota/daerah..."
-                    className="w-full bg-white border border-nat-border rounded px-2 py-1 text-nat-dark font-bold focus:outline-none focus:ring-1 focus:ring-nat-green"
+                    onChange={(val) => setRegion(val)}
+                    onSelect={(lat, lng, name) => {
+                      setLatitude(lat);
+                      setLongitude(lng);
+                      if (onSelectCoords) {
+                        onSelectCoords(lat, lng, name);
+                      }
+                    }}
                   />
                 </div>
                 <div className="flex items-end">
