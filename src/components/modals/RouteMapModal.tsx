@@ -54,11 +54,10 @@ export default function RouteMapModal({ po, harvest, demand, onClose }: RouteMap
 
       const midLat = (farmerLat + buyerLat) / 2;
       const midLng = (farmerLng + buyerLng) / 2;
-      const map = L.map(mapContainerRef.current!).setView([midLat, midLng], 9);
+      const map = L.map(mapContainerRef.current!, { attributionControl: false }).setView([midLat, midLng], 9);
       mapRef.current = map;
 
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap contributors",
         maxZoom: 18,
       }).addTo(map);
 

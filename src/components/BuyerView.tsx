@@ -249,7 +249,7 @@ export default function BuyerView({
         <Info className="w-5 h-5 text-nat-green shrink-0 mt-0.5" />
         <div>
           <p className="font-bold">
-            Informasi Ketersediaan Pasokan (Market Intel FLW):
+            Informasi Pasokan Daerah:
           </p>
           <p className="mt-1 text-nat-text leading-relaxed">
             Data Dinas Pertanian mendeteksi adanya penumpukan surplus komoditas{" "}
@@ -978,7 +978,7 @@ export default function BuyerView({
 
                             {po.status === "COMPLETED" ? (
                               <button
-                                onClick={() => showNotification("Terima kasih, ulasan Anda untuk petani telah disimpan di Hash-Chain Ledger!", "success")}
+                                onClick={() => showNotification("Terima kasih, ulasan Anda berhasil disimpan!", "success")}
                                 className="bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
                               >
                                 <Star className="w-3 h-3" />
@@ -1014,13 +1014,13 @@ export default function BuyerView({
         <div className="flex justify-between items-center mb-4 pb-2 border-b border-nat-light-cream">
           <h3 className="text-sm font-bold text-nat-dark flex items-center gap-1.5">
             <Truck className="w-4 h-4 text-nat-green" />
-            Optimasi Rute Logistik (Pooling Penjemputan)
+            Optimasi Rute Logistik Penjemputan
           </h3>
           {selectedLogistics.length > 0 && (
             <button
               onClick={() => {
                 setShowRoute(true);
-                showNotification(`Memproses rute terpendek untuk ${selectedLogistics.length} titik penjemputan menggunakan algoritma cerdas...`, "success");
+                showNotification(`Menghitung rute penjemputan terdekat untuk ${selectedLogistics.length} lokasi...`, "success");
               }}
               className="bg-nat-green hover:bg-nat-green-hover text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-colors shadow-sm"
             >
@@ -1068,7 +1068,7 @@ export default function BuyerView({
               </div>
             ) : (
               <div className="bg-nat-light-cream/30 border border-nat-green/30 p-4 rounded-xl">
-                <h4 className="text-xs font-bold text-nat-dark mb-3">Rekomendasi Urutan Pengambilan (Haversine Optimized):</h4>
+                <h4 className="text-xs font-bold text-nat-dark mb-3">Rekomendasi Urutan Pengambilan:</h4>
                 <div className="relative border-l-2 border-nat-green ml-2 pl-4 space-y-4">
                   <div className="relative">
                     <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-nat-green"></div>

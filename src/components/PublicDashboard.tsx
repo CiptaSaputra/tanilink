@@ -177,7 +177,7 @@ export default function PublicDashboard() {
       </div>
       
       <div className="text-center text-[10px] text-nat-sage">
-        <p>Data bersifat publik dan transparan. Diperbarui secara real-time dari Ledger TaniLink.</p>
+        <p>Data bersifat publik dan transparan. Diperbarui secara real-time.</p>
       </div>
     </div>
   );

@@ -264,20 +264,15 @@ export default function FarmerView({
         </div>
       </div>
 
-      {/* Weather & Market Alerts to avoid Food Loss */}
+      {/* Weather & Market Alerts */}
       <div className="bg-nat-light-cream border border-nat-border/60 rounded-xl p-4 flex gap-3 text-xs text-amber-900">
         <BadgeAlert className="w-5 h-5 text-nat-brown shrink-0 mt-0.5" />
         <div>
           <p className="font-bold">
-            Peringatan Risiko Busuk (Weather Guard FLW):
+            Informasi Cuaca &amp; Panen:
           </p>
           <p className="mt-1 text-nat-brown leading-relaxed">
-            Curah hujan tinggi diprediksi melanda wilayah{" "}
-            <span className="font-semibold">Brebes</span> dalam 10 hari ke
-            depan. Komoditas <span className="font-semibold">Bawang Merah</span>{" "}
-            yang mendekati masa panen sangat berisiko terkena busuk umbi. Segera
-            laporkan rencana panen Anda di form bawah untuk langsung dihubungkan
-            dengan cold storage pembeli terdekat!
+            Curah hujan tinggi diprediksi melanda wilayah Brebes. Komoditas Bawang Merah yang mendekati masa panen disarankan segera dihubungkan dengan pembeli terdekat!
           </p>
         </div>
       </div>
@@ -961,7 +956,7 @@ export default function FarmerView({
 
                             {po.status === "COMPLETED" && (
                               <button
-                                onClick={() => showNotification("Terima kasih, ulasan Anda untuk koperasi telah disimpan di Hash-Chain Ledger!", "success")}
+                                onClick={() => showNotification("Terima kasih, ulasan Anda telah disimpan!", "success")}
                                 className="bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
                               >
                                 <Star className="w-3 h-3" />

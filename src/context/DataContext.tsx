@@ -112,20 +112,30 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     async function loadData() {
-      const [h, d, p, b, m] = await Promise.all([
-        harvestGetAll(),
-        demandGetAll(),
-        preOrderGetAll(),
-        batchGetAll(),
-        matchGetAll(),
-      ]);
-      setHarvests(h);
-      setDemands(d);
-      setPreOrders(p);
-      setHarvestBatches(b);
-      setMatches(m.sort((a, b) => b.score - a.score));
+      try {
+        const [h, d, p, b, m] = await Promise.all([
+          harvestGetAll(),
+          demandGetAll(),
+          preOrderGetAll(),
+          batchGetAll(),
+          matchGetAll(),
+        ]);
+        setHarvests(h);
+        setDemands(d);
+        setPreOrders(p);
+        setHarvestBatches(b);
+        setMatches(m.sort((a, b) => b.score - a.score));
+      } catch (err) {
+        console.error("Failed to fetch real-time data:", err);
+      }
     }
+
+    // Initial load
     loadData();
+
+    // Real-time polling every 3 seconds
+    const interval = setInterval(loadData, 3000);
+    return () => clearInterval(interval);
   }, []);
 
   // activeUser
@@ -258,7 +268,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
             setPreOrders(updatedPreOrders);
             await refreshMatches();
             showNotification(
-              "✅ Pre-Order Berhasil! Kontrak disepakati. Panen terselamatkan dari potensi susut.",
+              "✅ Pre-Order Berhasil! Kontrak telah disepakati.",
               "success",
             );
           } else {
