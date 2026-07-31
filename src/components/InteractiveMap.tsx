@@ -168,6 +168,9 @@ export default function InteractiveMap({
       const roundedLat = Math.round(lat * 1000) / 1000;
       const roundedLng = Math.round(lng * 1000) / 1000;
 
+      // Automatically zoom in closer to see surroundings
+      map.flyTo([roundedLat, roundedLng], 12, { animate: true, duration: 1 });
+
       // Show immediate loading indicator in forms
       onSelectCoordsRef.current(roundedLat, roundedLng, "Mencari Wilayah...");
 
@@ -254,7 +257,7 @@ export default function InteractiveMap({
     };
   }, []);
 
-  // Update dynamic coordinates pin marker
+  // Update dynamic coordinates pin marker and zoom to selected point
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -287,6 +290,9 @@ export default function InteractiveMap({
           `<div class="font-bold text-xs">Lokasi Pilihan Anda<br/><span class="text-[10px] font-normal text-nat-sage">Lat: ${selectedLat}, Lng: ${selectedLng}</span></div>`,
         )
         .openPopup();
+
+      // Pan & zoom map to the selected point
+      map.flyTo([selectedLat, selectedLng], 12, { animate: true, duration: 1 });
     }
   }, [selectedLat, selectedLng]);
 

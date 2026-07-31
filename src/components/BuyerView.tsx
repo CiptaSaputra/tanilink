@@ -36,12 +36,14 @@ import {
 } from "lucide-react";
 
 import { Harvest } from "../types";
+import { findCoordinatesForRegion } from "../utils/geocoding";
 
 interface BuyerViewProps {
   mapLat?: number;
   mapLng?: number;
   mapRegion?: string;
   clearMapSelection?: () => void;
+  onSelectCoords?: (lat: number, lng: number, region: string) => void;
 }
 
 export default function BuyerView({
@@ -49,6 +51,7 @@ export default function BuyerView({
   mapLng,
   mapRegion,
   clearMapSelection,
+  onSelectCoords,
 }: BuyerViewProps) {
   const {
     harvests,
@@ -439,9 +442,13 @@ export default function BuyerView({
                       type="number"
                       step="0.001"
                       value={latitude}
-                      onChange={(e) =>
-                        setLatitude(parseFloat(e.target.value) || 0)
-                      }
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0;
+                        setLatitude(val);
+                        if (onSelectCoords && longitude) {
+                          onSelectCoords(val, longitude, region);
+                        }
+                      }}
                       className="w-full bg-white border border-nat-border rounded px-2 py-1 text-nat-dark font-mono focus:outline-none focus:ring-1 focus:ring-nat-green"
                     />
                   </div>
@@ -453,9 +460,13 @@ export default function BuyerView({
                       type="number"
                       step="0.001"
                       value={longitude}
-                      onChange={(e) =>
-                        setLongitude(parseFloat(e.target.value) || 0)
-                      }
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0;
+                        setLongitude(val);
+                        if (onSelectCoords && latitude) {
+                          onSelectCoords(latitude, val, region);
+                        }
+                      }}
                       className="w-full bg-white border border-nat-border rounded px-2 py-1 text-nat-dark font-mono focus:outline-none focus:ring-1 focus:ring-nat-green"
                     />
                   </div>
@@ -469,13 +480,27 @@ export default function BuyerView({
                     <input
                       type="text"
                       value={region}
-                      onChange={(e) => setRegion(e.target.value)}
+                      onChange={async (e) => {
+                        const val = e.target.value;
+                        setRegion(val);
+                        if (val.trim().length >= 2) {
+                          const coords = await findCoordinatesForRegion(val);
+                          if (coords) {
+                            setLatitude(coords.lat);
+                            setLongitude(coords.lng);
+                            if (onSelectCoords) {
+                              onSelectCoords(coords.lat, coords.lng, val);
+                            }
+                          }
+                        }
+                      }}
+                      placeholder="Ketik kota/daerah..."
                       className="w-full bg-white border border-nat-border rounded px-2 py-1 text-nat-dark font-bold focus:outline-none focus:ring-1 focus:ring-nat-green"
                     />
                   </div>
                   <div className="flex items-end">
                     <p className="text-[9px] text-nat-sage font-medium italic leading-tight">
-                      *Klik peta sebaran di atas untuk menyinkronkan lokasi
+                      *Ketik daerah atau klik peta untuk menggeser lokasi &amp; zoom
                     </p>
                   </div>
                 </div>

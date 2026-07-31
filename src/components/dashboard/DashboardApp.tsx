@@ -117,6 +117,7 @@ function DashboardContent() {
                   mapLng={mapLng}
                   mapRegion={mapRegion}
                   clearMapSelection={handleClearCoords}
+                  onSelectCoords={handleSelectCoords}
                 />
               </ErrorBoundary>
             )}
@@ -127,6 +128,7 @@ function DashboardContent() {
                   mapLng={mapLng}
                   mapRegion={mapRegion}
                   clearMapSelection={handleClearCoords}
+                  onSelectCoords={handleSelectCoords}
                 />
               </ErrorBoundary>
             )}

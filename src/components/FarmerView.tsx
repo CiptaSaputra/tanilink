@@ -10,6 +10,7 @@ import { useUI } from "../context/UIContext";
 import { COMMODITY_LIST } from "../constants/commodities";
 import type { Komoditas, Harvest, Match, PreOrder } from "../types";
 import RouteMapModal from "./modals/RouteMapModal";
+import { findCoordinatesForRegion } from "../utils/geocoding";
 import {
   Sprout,
   Plus,
@@ -43,6 +44,7 @@ interface FarmerViewProps {
   mapLng?: number;
   mapRegion?: string;
   clearMapSelection?: () => void;
+  onSelectCoords?: (lat: number, lng: number, region: string) => void;
 }
 
 export default function FarmerView({
@@ -50,6 +52,7 @@ export default function FarmerView({
   mapLng,
   mapRegion,
   clearMapSelection,
+  onSelectCoords,
 }: FarmerViewProps) {
   const {
     harvests,
@@ -431,9 +434,13 @@ export default function FarmerView({
                     type="number"
                     step="0.001"
                     value={latitude}
-                    onChange={(e) =>
-                      setLatitude(parseFloat(e.target.value) || 0)
-                    }
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0;
+                      setLatitude(val);
+                      if (onSelectCoords && longitude) {
+                        onSelectCoords(val, longitude, region);
+                      }
+                    }}
                     className="w-full bg-white border border-nat-border rounded px-2 py-1 text-nat-dark font-mono focus:outline-none focus:ring-1 focus:ring-nat-green"
                   />
                 </div>
@@ -445,9 +452,13 @@ export default function FarmerView({
                     type="number"
                     step="0.001"
                     value={longitude}
-                    onChange={(e) =>
-                      setLongitude(parseFloat(e.target.value) || 0)
-                    }
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0;
+                      setLongitude(val);
+                      if (onSelectCoords && latitude) {
+                        onSelectCoords(latitude, val, region);
+                      }
+                    }}
                     className="w-full bg-white border border-nat-border rounded px-2 py-1 text-nat-dark font-mono focus:outline-none focus:ring-1 focus:ring-nat-green"
                   />
                 </div>
@@ -461,13 +472,27 @@ export default function FarmerView({
                   <input
                     type="text"
                     value={region}
-                    onChange={(e) => setRegion(e.target.value)}
+                    onChange={async (e) => {
+                      const val = e.target.value;
+                      setRegion(val);
+                      if (val.trim().length >= 2) {
+                        const coords = await findCoordinatesForRegion(val);
+                        if (coords) {
+                          setLatitude(coords.lat);
+                          setLongitude(coords.lng);
+                          if (onSelectCoords) {
+                            onSelectCoords(coords.lat, coords.lng, val);
+                          }
+                        }
+                      }
+                    }}
+                    placeholder="Ketik kota/daerah..."
                     className="w-full bg-white border border-nat-border rounded px-2 py-1 text-nat-dark font-bold focus:outline-none focus:ring-1 focus:ring-nat-green"
                   />
                 </div>
                 <div className="flex items-end">
                   <p className="text-[9px] text-nat-sage font-medium italic leading-snug">
-                    *Atau pilih/klik pada peta sebaran di atas
+                    *Ketik daerah atau klik peta untuk menggeser lokasi &amp; zoom
                   </p>
                 </div>
               </div>
