@@ -363,17 +363,11 @@ export default function InteractiveMap({
         const harvestHtml = renderToString(
           <div className="relative flex flex-col items-center group">
             <div className="absolute -bottom-1 w-5 h-1.5 bg-black/20 rounded-full blur-[2px]"></div>
-            <div 
-              className="relative flex items-center justify-center w-8 h-8 rounded-full border-2 border-white shadow-md transition-transform group-hover:-translate-y-1 z-10"
-              style={{ backgroundColor: color }}
-            >
+            <div className="relative flex items-center justify-center w-8 h-8 rounded-full border-2 border-white shadow-md transition-transform group-hover:-translate-y-1 z-10 bg-[#16a34a]">
               <Sprout size={16} color="white" />
             </div>
             <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-white -mt-[2px] transition-transform group-hover:-translate-y-1 z-0 shadow-sm"></div>
-            <div 
-              className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent -mt-[9px] transition-transform group-hover:-translate-y-1 z-10"
-              style={{ borderTopColor: color }}
-            ></div>
+            <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent border-t-[#16a34a] -mt-[9px] transition-transform group-hover:-translate-y-1 z-10"></div>
           </div>
         );
 
@@ -644,7 +638,7 @@ export default function InteractiveMap({
           {/* Map Legend */}
           <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-nat-border shadow-sm flex items-center gap-4 text-[10px] text-nat-dark font-bold z-[1000]">
             <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded-full bg-[#5F7444] border border-white flex items-center justify-center">
+              <div className="w-5 h-5 rounded-full bg-[#16a34a] border border-white flex items-center justify-center">
                 <Sprout size={10} color="white" />
               </div>
               <span>Panen (Hulu)</span>
