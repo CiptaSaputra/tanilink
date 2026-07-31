@@ -222,6 +222,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
       const m = matches.find((m) => m.id === matchId);
       if (!m) return;
 
+      const h = harvests.find((harv) => harv.id === m.harvestId);
+      const d = demands.find((dem) => dem.id === m.demandId);
+
       // Optimistic update
       setMatches((prev) =>
         prev.map((match) =>
@@ -231,21 +234,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
         ),
       );
 
-      // Persist bid data + status to DB
-      try {
-        await fetch(`/api/matches/${matchId}/status`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ status, ...bidData }),
-        });
-      } catch (e) {
-        console.error("Failed to update match status", e);
-      }
-
-      const h = harvests.find((harv) => harv.id === m.harvestId);
-      const d = demands.find((dem) => dem.id === m.demandId);
-
-      if (status === "CONFIRMED" && h && d) {
+      if (status === "CONFIRMED") {
+        if (!h || !d) return;
         try {
           const res = await fetch("/api/pre-orders/confirm", {
             method: "POST",
@@ -278,15 +268,28 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
           console.error(error);
           showNotification("Terjadi kesalahan sistem saat memproses konfirmasi.", "warning");
         }
-      } else if (status === "WAITING_BUYER_APPROVAL") {
-        showNotification(
-          "📤 Penawaran berhasil dikirim! Menunggu persetujuan pembeli.",
-          "success",
-        );
-      } else if (status === "REJECTED") {
-        showNotification("Penawaran ditolak oleh pembeli.", "warning");
-      } else if (status === "DISPUTED") {
-        showNotification("Pencocokan dilaporkan mengalami kendala.", "warning");
+      } else {
+        // Persist non-CONFIRMED status to DB via PATCH
+        try {
+          await fetch(`/api/matches/${matchId}/status`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status, ...bidData }),
+          });
+        } catch (e) {
+          console.error("Failed to update match status", e);
+        }
+
+        if (status === "WAITING_BUYER_APPROVAL") {
+          showNotification(
+            "📤 Penawaran berhasil dikirim! Menunggu persetujuan pembeli.",
+            "success",
+          );
+        } else if (status === "REJECTED") {
+          showNotification("Penawaran ditolak oleh pembeli.", "warning");
+        } else if (status === "DISPUTED") {
+          showNotification("Pencocokan dilaporkan mengalami kendala.", "warning");
+        }
       }
     },
     [harvests, demands, matches, showNotification],
