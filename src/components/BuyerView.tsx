@@ -77,6 +77,7 @@ export default function BuyerView({
   const [latitude, setLatitude] = useState<number>(-6.865);
   const [longitude, setLongitude] = useState<number>(109.035);
   const [region, setRegion] = useState<string>("Brebes");
+  const [addressDetail, setAddressDetail] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
 
   // Harvest trace modal state
@@ -160,11 +161,13 @@ export default function BuyerView({
       longitude,
       region,
       dateRequired,
-      notes,
+      notes: notes.trim(),
+      addressDetail: addressDetail.trim(),
     });
 
     if (clearMapSelection) clearMapSelection();
     setNotes("");
+    setAddressDetail("");
   };
 
   // Buyer's own demands
@@ -497,6 +500,19 @@ export default function BuyerView({
                     </p>
                   </div>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-nat-text mb-1">
+                  Detail Alamat (Jalan, Blok, No. Rumah)
+                </label>
+                <textarea
+                  value={addressDetail}
+                  onChange={(e) => setAddressDetail(e.target.value)}
+                  placeholder="Misal: Perumahan Indah Blok C No. 5"
+                  rows={2}
+                  className="w-full bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green resize-none"
+                />
               </div>
 
               <div>

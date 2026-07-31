@@ -87,6 +87,7 @@ export interface Harvest {
   isPublished: boolean; // opt-in publikasi
   status: "ACTIVE" | "MATCHED" | "HARVESTED" | "EXPIRED";
   notes?: string;
+  addressDetail?: string;
 }
 
 export interface Demand {
@@ -102,6 +103,7 @@ export interface Demand {
   dateRequired: string; // YYYY-MM-DD
   status: "ACTIVE" | "FULFILLED" | "CANCELLED";
   notes?: string;
+  addressDetail?: string;
 }
 
 export interface MatchScoreDetails {

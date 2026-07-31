@@ -36,6 +36,7 @@ export const harvests = pgTable("harvests", {
   isPublished: boolean("is_published").default(true).notNull(),
   status: varchar("status").notNull(),
   notes: text("notes"),
+  addressDetail: text("address_detail"),
 });
 
 export const demands = pgTable("demands", {
@@ -51,6 +52,7 @@ export const demands = pgTable("demands", {
   dateRequired: varchar("date_required").notNull(),
   status: varchar("status").notNull(),
   notes: text("notes"),
+  addressDetail: text("address_detail"),
 });
 
 export const matches = pgTable("matches", {

@@ -91,8 +91,9 @@ export default function FarmerView({
   const [plantingDate, setPlantingDate] = useState<string>(
     () => new Date().toISOString().split("T")[0],
   );
-  const [latitude, setLatitude] = useState<number>(-6.871);
-  const [longitude, setLongitude] = useState<number>(109.042);
+  const [latitude, setLatitude] = useState<number>(mapLat || -7.300);
+  const [longitude, setLongitude] = useState<number>(mapLng || 112.738);
+  const [addressDetail, setAddressDetail] = useState<string>("");
   const [region, setRegion] = useState<string>("Brebes");
   const [notes, setNotes] = useState<string>("");
 
@@ -175,7 +176,8 @@ export default function FarmerView({
       plantingDate,
       expectedHarvestDate,
       isPublished: true,
-      notes,
+      notes: notes.trim(),
+      addressDetail: addressDetail.trim(),
     });
 
     // Reset coordinates picker if any
@@ -488,6 +490,19 @@ export default function FarmerView({
                     *Ketik daerah atau klik peta untuk menggeser lokasi &amp; zoom
                   </p>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-nat-text mb-1">
+                  Detail Alamat (Jalan, Blok, No. Rumah)
+                </label>
+                <textarea
+                  value={addressDetail}
+                  onChange={(e) => setAddressDetail(e.target.value)}
+                  placeholder="Misal: Jalan Merpati Blok B No. 12"
+                  rows={2}
+                  className="w-full bg-white border border-nat-border rounded-lg px-3 py-2 text-xs text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green resize-none"
+                />
               </div>
             </div>
 
