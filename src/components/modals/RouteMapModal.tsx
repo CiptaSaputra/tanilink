@@ -63,11 +63,20 @@ export default function RouteMapModal({ po, harvest, demand, onClose }: RouteMap
 
       // Marker Petani (hijau)
       const farmerIcon = L.divIcon({
-        className: "",
-        html: `<div style="background:#16a34a;color:white;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)">🌾</div>`,
-        iconSize: [36, 36],
-        iconAnchor: [18, 36],
-        popupAnchor: [0, -36],
+        className: "bg-transparent",
+        html: `
+          <div class="relative flex flex-col items-center group">
+            <div class="absolute -bottom-1 w-6 h-1.5 bg-black/20 rounded-full blur-[2px]"></div>
+            <svg width="36" height="45" viewBox="0 0 36 45" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-md transition-transform group-hover:-translate-y-1 origin-bottom">
+              <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="#16a34a" />
+              <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="none" stroke="white" stroke-width="2.5"/>
+              <text x="18" y="23" font-size="16" text-anchor="middle" fill="white" font-family="sans-serif">🌾</text>
+            </svg>
+          </div>
+        `,
+        iconSize: [36, 45],
+        iconAnchor: [18, 43],
+        popupAnchor: [0, -43],
       });
       L.marker([farmerLat, farmerLng], { icon: farmerIcon })
         .addTo(map)
@@ -82,11 +91,20 @@ export default function RouteMapModal({ po, harvest, demand, onClose }: RouteMap
 
       // Marker Pembeli (biru)
       const buyerIcon = L.divIcon({
-        className: "",
-        html: `<div style="background:#2563eb;color:white;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)">🏢</div>`,
-        iconSize: [36, 36],
-        iconAnchor: [18, 36],
-        popupAnchor: [0, -36],
+        className: "bg-transparent",
+        html: `
+          <div class="relative flex flex-col items-center group">
+            <div class="absolute -bottom-1 w-6 h-1.5 bg-black/20 rounded-full blur-[2px]"></div>
+            <svg width="36" height="45" viewBox="0 0 36 45" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-md transition-transform group-hover:-translate-y-1 origin-bottom">
+              <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="#2563eb" />
+              <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="none" stroke="white" stroke-width="2.5"/>
+              <text x="18" y="23" font-size="16" text-anchor="middle" fill="white" font-family="sans-serif">🏢</text>
+            </svg>
+          </div>
+        `,
+        iconSize: [36, 45],
+        iconAnchor: [18, 43],
+        popupAnchor: [0, -43],
       });
       L.marker([buyerLat, buyerLng], { icon: buyerIcon })
         .addTo(map)

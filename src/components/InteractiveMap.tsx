@@ -270,16 +270,20 @@ export default function InteractiveMap({
     if (selectedLat && selectedLng) {
       const clickIcon = L.divIcon({
         html: `
-          <div class="relative flex items-center justify-center">
-            <div class="absolute w-8 h-8 rounded-full bg-nat-green/30 animate-ping"></div>
-            <div class="w-7 h-7 rounded-full bg-nat-green text-white flex items-center justify-center border-2 border-white shadow-xl">
-              <span class="w-2.5 h-2.5 rounded-full bg-white"></span>
-            </div>
+          <div class="relative flex items-center justify-center group">
+            <div class="absolute -bottom-1 w-6 h-1.5 bg-black/20 rounded-full blur-[2px]"></div>
+            <div class="absolute -top-3 w-10 h-10 bg-blue-500/30 rounded-full animate-ping"></div>
+            <svg width="32" height="40" viewBox="0 0 36 45" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-lg -mt-4 transition-transform group-hover:-translate-y-1 origin-bottom">
+              <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="#2563EB" />
+              <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="none" stroke="white" stroke-width="2.5"/>
+              <circle cx="18" cy="17" r="6" fill="white" />
+            </svg>
           </div>
         `,
-        className: "click-select-marker",
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
+        className: "bg-transparent",
+        iconSize: [32, 40],
+        iconAnchor: [16, 38],
+        popupAnchor: [0, -38],
       });
 
       clickMarkerRef.current = L.marker([selectedLat, selectedLng], {
@@ -353,16 +357,19 @@ export default function InteractiveMap({
 
         const icon = L.divIcon({
           html: `
-            <div class="relative flex items-center justify-center">
-              <div class="absolute w-8 h-8 rounded-full opacity-35 animate-pulse" style="background-color: ${color}"></div>
-              <div class="w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-md transition-all hover:scale-125" style="background-color: ${color}">
-                <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
-              </div>
+            <div class="relative flex flex-col items-center group">
+              <div class="absolute -bottom-1 w-5 h-1.5 bg-black/20 rounded-full blur-[2px]"></div>
+              <svg width="28" height="35" viewBox="0 0 36 45" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-md transition-transform group-hover:scale-110 group-hover:-translate-y-1 origin-bottom">
+                <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="${color}" />
+                <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="none" stroke="white" stroke-width="2.5"/>
+                <circle cx="18" cy="17" r="7.5" fill="white" />
+              </svg>
             </div>
           `,
-          className: "custom-harvest-marker",
-          iconSize: [24, 24],
-          iconAnchor: [12, 12],
+          className: "bg-transparent",
+          iconSize: [28, 35],
+          iconAnchor: [14, 33],
+          popupAnchor: [0, -33],
         });
 
         const marker = L.marker([harvest.latitude, harvest.longitude], {
@@ -408,15 +415,19 @@ export default function InteractiveMap({
 
         const icon = L.divIcon({
           html: `
-            <div class="relative flex items-center justify-center">
-              <div class="w-5 h-5 bg-nat-brown flex items-center justify-center rounded border-2 border-white shadow-md transition-all hover:scale-125">
-                <div class="w-2.5 h-2.5 rounded-full" style="background-color: ${color}"></div>
-              </div>
+            <div class="relative flex flex-col items-center group">
+              <div class="absolute -bottom-1 w-5 h-1.5 bg-black/20 rounded-full blur-[2px]"></div>
+              <svg width="28" height="35" viewBox="0 0 36 45" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-md transition-transform group-hover:scale-110 group-hover:-translate-y-1 origin-bottom">
+                <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="#A67C52" />
+                <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="none" stroke="white" stroke-width="2.5"/>
+                <rect x="11.5" y="10.5" width="13" height="13" rx="2.5" fill="${color}" />
+              </svg>
             </div>
           `,
-          className: "custom-demand-marker",
-          iconSize: [22, 22],
-          iconAnchor: [11, 11],
+          className: "bg-transparent",
+          iconSize: [28, 35],
+          iconAnchor: [14, 33],
+          popupAnchor: [0, -33],
         });
 
         const marker = L.marker([demand.latitude, demand.longitude], {
@@ -612,11 +623,19 @@ export default function InteractiveMap({
           {/* Map Legend */}
           <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-nat-border shadow-sm flex items-center gap-4 text-[10px] text-nat-dark font-bold z-[1000]">
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-nat-green inline-block border border-white" />
+              <svg width="12" height="16" viewBox="0 0 36 45" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="#5F7444" />
+                <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="none" stroke="white" stroke-width="2.5"/>
+                <circle cx="18" cy="17" r="7.5" fill="white" />
+              </svg>
               <span>Panen (Hulu)</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded bg-nat-brown inline-block border border-white" />
+              <svg width="12" height="16" viewBox="0 0 36 45" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="#A67C52" />
+                <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="none" stroke="white" stroke-width="2.5"/>
+                <rect x="11.5" y="10.5" width="13" height="13" rx="2.5" fill="white" />
+              </svg>
               <span>Daya Serap (Hilir)</span>
             </div>
           </div>
