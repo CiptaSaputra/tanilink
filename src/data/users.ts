@@ -29,6 +29,7 @@ export const SEED_USERS: User[] = [
     passwordHash: hashPassword("demo123"),
     role: "PETANI",
     region: "Brebes",
+    phone: "6285XXXXXXXXX", // ← Ganti nomor WA petani demo
     createdAt: "2026-01-01",
   },
   {
@@ -38,6 +39,7 @@ export const SEED_USERS: User[] = [
     passwordHash: hashPassword("demo123"),
     role: "PEMBELI",
     region: "Semarang",
+    phone: "6281XXXXXXXXX", // ← Ganti nomor WA pembeli demo
     createdAt: "2026-01-01",
   },
   {
@@ -47,6 +49,7 @@ export const SEED_USERS: User[] = [
     passwordHash: hashPassword("demo123"),
     role: "PPL",
     region: "Brebes",
+    phone: "6282XXXXXXXXX",
     createdAt: "2026-01-01",
   },
   {
@@ -56,6 +59,7 @@ export const SEED_USERS: User[] = [
     passwordHash: hashPassword("demo123"),
     role: "KOLEKTOR",
     region: "Cirebon",
+    phone: "6283XXXXXXXXX",
     createdAt: "2026-01-01",
   },
   {
@@ -65,6 +69,7 @@ export const SEED_USERS: User[] = [
     passwordHash: hashPassword("demo123"),
     role: "DINAS",
     region: "Jawa Tengah",
+    phone: "6284XXXXXXXXX",
     createdAt: "2026-01-01",
   },
   {
@@ -74,6 +79,8 @@ export const SEED_USERS: User[] = [
     passwordHash: hashPassword("demo123"),
     role: "ADMIN",
     region: "Jakarta",
+    phone: "6289XXXXXXXXX",
     createdAt: "2026-01-01",
   },
 ];
+

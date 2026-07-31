@@ -9,9 +9,14 @@ export async function PATCH(
 ) {
   try {
     const body = await req.json();
+    const updateData: Record<string, unknown> = { status: body.status };
+    // Support bid fields for farmer's custom proposal
+    if (body.bidVolume !== undefined) updateData.bidVolume = body.bidVolume;
+    if (body.bidPrice !== undefined) updateData.bidPrice = body.bidPrice;
+
     await db
       .update(matches)
-      .set({ status: body.status })
+      .set(updateData)
       .where(eq(matches.id, (await params).id));
     return NextResponse.json({ success: true });
   } catch (err) {

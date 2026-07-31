@@ -56,10 +56,10 @@ import {
 } from "../services";
 
 interface ActiveUserMap {
-  PETANI: { id: string; name: string; region: string };
-  PEMBELI: { id: string; name: string; region: string };
-  PPL: { id: string; name: string; region: string };
-  KOLEKTOR: { id: string; name: string; region: string };
+  PETANI: { id: string; name: string; region: string; phone?: string };
+  PEMBELI: { id: string; name: string; region: string; phone?: string };
+  PPL: { id: string; name: string; region: string; phone?: string };
+  KOLEKTOR: { id: string; name: string; region: string; phone?: string };
 }
 
 interface DataContextProps {
@@ -78,6 +78,7 @@ interface DataContextProps {
   updateMatchStatus: (
     matchId: string,
     status: Match["status"],
+    bidData?: { bidVolume: number; bidPrice: number },
   ) => Promise<void>;
   createHarvestBatch: (
     harvestId: string,
@@ -213,16 +214,33 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const updateMatchStatus = useCallback(
-    async (matchId: string, status: Match["status"]) => {
-      // Need a simpler approach: update optimistic state, then make async calls
+    async (
+      matchId: string,
+      status: Match["status"],
+      bidData?: { bidVolume: number; bidPrice: number },
+    ) => {
       const m = matches.find((m) => m.id === matchId);
       if (!m) return;
 
+      // Optimistic update
       setMatches((prev) =>
         prev.map((match) =>
-          match.id === matchId ? { ...match, status } : match,
+          match.id === matchId
+            ? { ...match, status, ...(bidData ?? {}) }
+            : match,
         ),
       );
+
+      // Persist bid data + status to DB
+      try {
+        await fetch(`/api/matches/${matchId}/status`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status, ...bidData }),
+        });
+      } catch (e) {
+        console.error("Failed to update match status", e);
+      }
 
       const h = harvests.find((harv) => harv.id === m.harvestId);
       const d = demands.find((dem) => dem.id === m.demandId);
@@ -232,10 +250,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
           const res = await fetch("/api/pre-orders/confirm", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ matchId }),
+            body: JSON.stringify({
+              matchId,
+              // Pass bid data so PO uses agreed price/volume
+              bidVolume: bidData?.bidVolume ?? m.bidVolume,
+              bidPrice: bidData?.bidPrice ?? m.bidPrice,
+            }),
           });
           if (res.ok) {
-            // Refresh data from server to reflect all changes
             const [updatedHarvests, updatedDemands, updatedPreOrders] = await Promise.all([
               harvestGetAll(),
               demandGetAll(),
@@ -245,9 +267,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
             setDemands(updatedDemands);
             setPreOrders(updatedPreOrders);
             await refreshMatches();
-            
             showNotification(
-              "Pre-Order Berhasil Dikonfirmasi! Hasil panen terselamatkan dari potensi susut.",
+              "✅ Pre-Order Berhasil! Kontrak disepakati. Panen terselamatkan dari potensi susut.",
               "success",
             );
           } else {
@@ -257,13 +278,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
           console.error(error);
           showNotification("Terjadi kesalahan sistem saat memproses konfirmasi.", "warning");
         }
-      } else if (status === "ACCEPTED_BY_FARMER") {
+      } else if (status === "WAITING_BUYER_APPROVAL") {
         showNotification(
-          "Penawaran disetujui oleh Petani. Menunggu konfirmasi Pembeli.",
-          "info",
+          "📤 Penawaran berhasil dikirim! Menunggu persetujuan pembeli.",
+          "success",
         );
-      } else if (status === "ACCEPTED_BY_BUYER") {
-        showNotification("Permintaan pencocokan diajukan ke Petani.", "info");
+      } else if (status === "REJECTED") {
+        showNotification("Penawaran ditolak oleh pembeli.", "warning");
       } else if (status === "DISPUTED") {
         showNotification("Pencocokan dilaporkan mengalami kendala.", "warning");
       }

@@ -162,19 +162,23 @@ export const MatchCardList: React.FC<MatchCardListProps> = ({
                     Status:{" "}
                     <span
                       className={
-                        match.status === "ACCEPTED_BY_FARMER" ||
+                        match.status === "WAITING_BUYER_APPROVAL" ||
                         match.status === "ACCEPTED_BY_BUYER"
                           ? "text-nat-green"
                           : match.status === "PENDING"
                             ? "text-amber-500"
-                            : "text-nat-dark"
+                            : match.status === "REJECTED"
+                              ? "text-red-500"
+                              : "text-nat-dark"
                       }
                     >
-                      {match.status === "ACCEPTED_BY_FARMER"
-                        ? "DITERIMA PETANI"
+                      {match.status === "WAITING_BUYER_APPROVAL"
+                        ? "MENUNGGU PEMBELI"
                         : match.status === "ACCEPTED_BY_BUYER"
                           ? "DITERIMA PEMBELI"
-                          : match.status}
+                          : match.status === "REJECTED"
+                            ? "DITOLAK PEMBELI"
+                            : match.status}
                     </span>
                   </div>
 
@@ -182,7 +186,7 @@ export const MatchCardList: React.FC<MatchCardListProps> = ({
                     <div className="flex gap-2">
                       <button
                         onClick={() =>
-                          onUpdateMatchStatus(match.id, "DISPUTED")
+                          onUpdateMatchStatus(match.id, "REJECTED")
                         }
                         className="px-4 py-2 rounded-xl bg-nat-light-cream text-nat-text text-[11px] font-bold border border-nat-border hover:bg-nat-cream transition-colors cursor-pointer"
                       >
@@ -193,7 +197,7 @@ export const MatchCardList: React.FC<MatchCardListProps> = ({
                           onUpdateMatchStatus(
                             match.id,
                             userRole === "PETANI"
-                              ? "ACCEPTED_BY_FARMER"
+                              ? "WAITING_BUYER_APPROVAL"
                               : "ACCEPTED_BY_BUYER",
                           )
                         }
@@ -202,7 +206,7 @@ export const MatchCardList: React.FC<MatchCardListProps> = ({
                         Terima & Lanjut Pre-Order
                       </button>
                     </div>
-                  ) : match.status === "ACCEPTED_BY_FARMER" ||
+                  ) : match.status === "WAITING_BUYER_APPROVAL" ||
                     match.status === "ACCEPTED_BY_BUYER" ? (
                     <button
                       onClick={() => onOpenChat(match.id, peerId, peerName)}

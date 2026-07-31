@@ -7,7 +7,8 @@ import React, { useState, useEffect } from "react";
 import { useData } from "../context/DataContext";
 import { useUI } from "../context/UIContext";
 import { COMMODITY_LIST } from "../constants/commodities";
-import type { Komoditas, Demand, Match } from "../types";
+import type { Komoditas, Demand, Match, PreOrder } from "../types";
+import RouteMapModal from "./modals/RouteMapModal";
 import {
   ShoppingBag,
   Plus,
@@ -28,6 +29,10 @@ import {
   MessageCircle,
   Star,
   Truck,
+  Map,
+  XCircle,
+  AlertCircle,
+  Bell,
 } from "lucide-react";
 
 import { Harvest } from "../types";
@@ -74,6 +79,9 @@ export default function BuyerView({
   // Harvest trace modal state
   const [selectedTraceHarvest, setSelectedTraceHarvest] =
     useState<Harvest | null>(null);
+
+  // Route map modal
+  const [routeMapPO, setRouteMapPO] = useState<PreOrder | null>(null);
 
   // Logistics state
   const [selectedLogistics, setSelectedLogistics] = useState<string[]>([]);
@@ -179,6 +187,9 @@ export default function BuyerView({
     return po.buyerName === activeUser.PEMBELI.name;
   });
 
+  // Penawaran yang menunggu keputusan pembeli (WAITING_BUYER_APPROVAL)
+  const pendingBids = myMatches.filter(m => m.status === "WAITING_BUYER_APPROVAL");
+
   return (
     <div className="space-y-6">
       {/* Buyer Profile Status Block */}
@@ -250,6 +261,92 @@ export default function BuyerView({
           </p>
         </div>
       </div>
+
+      {/* ───── PENAWARAN MASUK DARI PETANI ───── */}
+      {pendingBids.length > 0 && (
+        <div className="bg-white rounded-2xl border-2 border-amber-300 shadow-lg overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-amber-500 to-amber-400 text-white px-5 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Bell className="w-4 h-4 animate-bounce" />
+              <h3 className="font-bold text-sm">Penawaran Masuk dari Petani</h3>
+            </div>
+            <span className="bg-white/25 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">
+              {pendingBids.length} Penawaran
+            </span>
+          </div>
+
+          <div className="divide-y divide-amber-100">
+            {pendingBids.map((match) => {
+              const harvest = harvests.find(h => h.id === match.harvestId);
+              const demand = demands.find(d => d.id === match.demandId) ||
+                demands.find(d => {
+                  const m = matches.find(mx => mx.id === match.id);
+                  return m && d.id === m.demandId;
+                });
+              if (!harvest) return null;
+
+              return (
+                <div key={match.id} className="p-4 flex flex-col md:flex-row md:items-center gap-4">
+                  {/* Info komoditas */}
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-xl shrink-0">
+                      🌾
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-nat-dark">{harvest.commodity}</p>
+                      <p className="text-xs text-nat-sage">{harvest.farmerName} · {harvest.region}</p>
+                    </div>
+                  </div>
+
+                  {/* Detail penawaran */}
+                  <div className="grid grid-cols-3 gap-3 flex-1">
+                    <div className="bg-green-50 rounded-xl p-2 text-center">
+                      <p className="text-[10px] text-nat-sage uppercase tracking-wider">Volume</p>
+                      <p className="text-sm font-bold text-nat-dark">
+                        {(match.bidVolume ?? harvest.expectedVolume).toLocaleString("id-ID")} kg
+                      </p>
+                    </div>
+                    <div className="bg-green-50 rounded-xl p-2 text-center">
+                      <p className="text-[10px] text-nat-sage uppercase tracking-wider">Harga/kg</p>
+                      <p className="text-sm font-bold text-nat-dark">
+                        Rp{(match.bidPrice ?? harvest.askingPrice).toLocaleString("id-ID")}
+                      </p>
+                    </div>
+                    <div className="bg-amber-50 rounded-xl p-2 text-center">
+                      <p className="text-[10px] text-nat-sage uppercase tracking-wider">Total</p>
+                      <p className="text-sm font-bold text-amber-700">
+                        Rp{(
+                          (match.bidVolume ?? harvest.expectedVolume) *
+                          (match.bidPrice ?? harvest.askingPrice)
+                        ).toLocaleString("id-ID")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => updateMatchStatus(match.id, "REJECTED")}
+                      className="flex items-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold text-xs py-2 px-3 rounded-xl transition-colors cursor-pointer"
+                    >
+                      <XCircle className="w-3.5 h-3.5" />
+                      Tolak
+                    </button>
+                    <button
+                      onClick={() => updateMatchStatus(match.id, "CONFIRMED")}
+                      className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white font-bold text-xs py-2 px-3 rounded-xl transition-colors shadow-sm cursor-pointer"
+                    >
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      Terima & Buat Kontrak
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Form & QR Scanner Simulator */}
@@ -761,17 +858,11 @@ export default function BuyerView({
                               <span className="w-1.5 h-1.5 rounded-full bg-nat-brown animate-pulse" />
                               <span>Menunggu Persetujuan Petani</span>
                             </div>
-                          ) : match.status === "ACCEPTED_BY_FARMER" ? (
-                            <button
-                              id={`confirm-btn-buyer-${match.id}`}
-                              onClick={() =>
-                                updateMatchStatus(match.id, "CONFIRMED")
-                              }
-                              className="bg-nat-green hover:bg-nat-green-hover text-white font-bold py-1.5 px-3 rounded-lg text-[10px] transition-colors flex items-center gap-1 cursor-pointer shadow-sm"
-                            >
-                              <CheckCircle className="w-3.5 h-3.5" />
-                              <span>Setujui Pre-Order Kontrak</span>
-                            </button>
+                          ) : match.status === "WAITING_BUYER_APPROVAL" ? (
+                            <div className="flex items-center space-x-1.5 text-amber-700 font-bold text-[11px] bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                              <span>Penawaran Petani Masuk ↑</span>
+                            </div>
                           ) : match.status === "CONFIRMED" ? (
                             <div className="flex items-center space-x-1.5 text-nat-green font-bold text-[11px] bg-nat-light-cream px-2.5 py-1 rounded-lg border border-nat-border">
                               <CheckCircle className="w-3.5 h-3.5" />
@@ -856,11 +947,16 @@ export default function BuyerView({
                             </span>
                           )}
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <a
-                              href={`https://wa.me/6281234567890?text=Halo%20Petani%20${encodeURIComponent(
-                                po.farmerName
-                              )},%20saya%20dari%20Koperasi.%20Terkait%20Pre-Order%20${po.commodity}%20seberat%20${po.agreedVolumeKg}Kg.`}
+                              href={(() => {
+                                const harvest = harvests.find(h => h.id === po.harvestId);
+                                const farmerPhone = (harvest as any)?.farmerPhone ||
+                                  activeUser.PETANI?.phone ||
+                                  "62";
+                                const msg = `Halo Petani ${encodeURIComponent(po.farmerName)}, saya dari Koperasi. Terkait Pre-Order ${po.commodity} seberat ${po.agreedVolumeKg}Kg dengan harga Rp${po.agreedPricePerKg.toLocaleString('id-ID')}/Kg.`;
+                                return `https://wa.me/${farmerPhone}?text=${encodeURIComponent(msg)}`;
+                              })()}
                               target="_blank"
                               rel="noreferrer"
                               className="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
@@ -868,6 +964,17 @@ export default function BuyerView({
                               <MessageCircle className="w-3 h-3" />
                               Chat WA
                             </a>
+
+                            {/* Lihat Rute */}
+                            {(po.status === "CONFIRMED" || po.status === "COMPLETED") && (
+                              <button
+                                onClick={() => setRouteMapPO(po)}
+                                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+                              >
+                                <Map className="w-3 h-3" />
+                                Lihat Rute
+                              </button>
+                            )}
 
                             {po.status === "COMPLETED" ? (
                               <button
@@ -1005,6 +1112,16 @@ export default function BuyerView({
           </div>
         )}
       </div>
+
+      {/* ───── Route Map Modal ───── */}
+      {routeMapPO && (
+        <RouteMapModal
+          po={routeMapPO}
+          harvest={harvests.find(h => h.id === routeMapPO.harvestId)}
+          demand={demands.find(d => d.id === routeMapPO.demandId)}
+          onClose={() => setRouteMapPO(null)}
+        />
+      )}
     </div>
   );
 }

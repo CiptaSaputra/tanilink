@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
   try {
-    const { matchId } = await req.json();
+    const { matchId, bidVolume, bidPrice } = await req.json();
 
     if (!matchId) {
       return NextResponse.json({ error: "matchId is required" }, { status: 400 });
@@ -29,23 +29,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Harvest or Demand not found" }, { status: 404 });
     }
 
-    // Prepare PreOrder data
+    // 3. Use bid data (Advanced mode) or fallback to harvest/demand defaults
+    const agreedVolumeKg = bidVolume ?? match.bidVolume ?? Math.min(harvest.expectedVolume, demand.requiredVolume);
+    const agreedPricePerKg = bidPrice ?? match.bidPrice ?? demand.offerPrice;
     const preOrderId = `po-${Date.now()}`;
-    const agreedVolumeKg = Math.min(harvest.expectedVolume, demand.requiredVolume);
-    const agreedPricePerKg = demand.offerPrice;
 
-    // 3. Atomic Updates using Transaction
+    // 4. Atomic Updates using Transaction
     await db.transaction(async (tx) => {
-      // Update Harvest
       await tx.update(harvests).set({ status: "MATCHED" }).where(eq(harvests.id, harvest.id));
-
-      // Update Demand
       await tx.update(demands).set({ status: "FULFILLED" }).where(eq(demands.id, demand.id));
-
-      // Update Match
       await tx.update(matches).set({ status: "CONFIRMED" }).where(eq(matches.id, match.id));
 
-      // Insert PreOrder
       await tx.insert(preOrders).values({
         id: preOrderId,
         matchId: match.id,

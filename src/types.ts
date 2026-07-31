@@ -17,6 +17,8 @@ export interface User {
   passwordHash: string;
   role: Role;
   region: string;
+  /** Nomor WA format internasional tanpa '+', contoh: 6281234567890 */
+  phone?: string;
   createdAt: string;
 }
 
@@ -119,10 +121,15 @@ export interface Match {
   scoreDetails: MatchScoreDetails;
   status:
     | "PENDING"
-    | "ACCEPTED_BY_FARMER"
+    | "WAITING_BUYER_APPROVAL"  // Petani sudah ajukan penawaran, menunggu pembeli
     | "ACCEPTED_BY_BUYER"
     | "CONFIRMED"
+    | "REJECTED"               // Pembeli menolak penawaran petani
     | "DISPUTED";
+  /** Volume yang ditawarkan petani (kg) — diisi saat farmer bid */
+  bidVolume?: number;
+  /** Harga per kg yang ditawarkan petani — diisi saat farmer bid */
+  bidPrice?: number;
   createdAt: string;
 }
 

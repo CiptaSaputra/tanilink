@@ -61,6 +61,8 @@ export const matches = pgTable("matches", {
   distanceKm: doublePrecision("distance_km").notNull(),
   scoreDetails: jsonb("score_details").notNull(),
   status: varchar("status").notNull(),
+  bidVolume: doublePrecision("bid_volume"),
+  bidPrice: doublePrecision("bid_price"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

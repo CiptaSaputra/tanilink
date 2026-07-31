@@ -8,7 +8,8 @@ import { motion, AnimatePresence } from "motion/react";
 import { useData } from "../context/DataContext";
 import { useUI } from "../context/UIContext";
 import { COMMODITY_LIST } from "../constants/commodities";
-import type { Komoditas, Harvest, Match } from "../types";
+import type { Komoditas, Harvest, Match, PreOrder } from "../types";
+import RouteMapModal from "./modals/RouteMapModal";
 import {
   Sprout,
   Plus,
@@ -32,6 +33,9 @@ import {
   Trash2,
   Layers,
   MessageCircle,
+  Map,
+  Send,
+  XCircle,
 } from "lucide-react";
 
 interface FarmerViewProps {
@@ -62,6 +66,14 @@ export default function FarmerView({
 
   const [selectedTraceHarvest, setSelectedTraceHarvest] =
     useState<Harvest | null>(null);
+
+  // Bid form modal state (Advanced mode)
+  const [bidFormMatch, setBidFormMatch] = useState<Match | null>(null);
+  const [bidVolume, setBidVolume] = useState<number>(0);
+  const [bidPrice, setBidPrice] = useState<number>(0);
+
+  // Route map modal
+  const [routeMapPO, setRouteMapPO] = useState<PreOrder | null>(null);
 
   // Harvest batch creation modal states
   const [showHarvestModal, setShowHarvestModal] = useState(false);
@@ -174,7 +186,7 @@ export default function FarmerView({
       !h.id.startsWith("h-live-"),
   );
 
-  // Matches involving this farmer's harvests
+  // Matches involving this farmer's harvests (only PENDING & active ones)
   const myMatches = matches.filter((m) => {
     const h = harvests.find((harv) => harv.id === m.harvestId);
     return h?.farmerId === activeUser.PETANI.id;
@@ -185,6 +197,28 @@ export default function FarmerView({
     const h = harvests.find((harv) => harv.id === po.harvestId);
     return h?.farmerId === activeUser.PETANI.id;
   });
+
+  // Open bid form pre-filled with harvest defaults
+  const openBidForm = (match: Match) => {
+    const h = harvests.find((harv) => harv.id === match.harvestId);
+    setBidVolume(h?.expectedVolume ?? 1000);
+    setBidPrice(h?.askingPrice ?? 25000);
+    setBidFormMatch(match);
+  };
+
+  // Submit farmer's bid
+  const submitBid = async () => {
+    if (!bidFormMatch) return;
+    if (bidVolume <= 0 || bidPrice <= 0) {
+      showNotification("Volume dan harga harus lebih dari 0", "warning");
+      return;
+    }
+    await updateMatchStatus(bidFormMatch.id, "WAITING_BUYER_APPROVAL", {
+      bidVolume,
+      bidPrice,
+    });
+    setBidFormMatch(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -756,74 +790,63 @@ export default function FarmerView({
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{
-                                  type: "spring",
-                                  stiffness: 500,
-                                  damping: 30,
-                                }}
-                                id={`accept-btn-farmer-${match.id}`}
-                                onClick={() =>
-                                  updateMatchStatus(
-                                    match.id,
-                                    "CONFIRMED",
-                                  )
-                                }
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                id={`bid-btn-farmer-${match.id}`}
+                                onClick={() => openBidForm(match)}
                                 className="bg-nat-green hover:bg-nat-green-hover text-white font-bold py-1.5 px-3 rounded-lg text-[10px] transition-all flex items-center gap-1 cursor-pointer shadow-sm"
                               >
-                                <span>Ajukan Pre-Order</span>
-                                <ChevronRight className="w-3.5 h-3.5" />
+                                <Send className="w-3.5 h-3.5" />
+                                <span>Ajukan Penawaran</span>
                               </motion.button>
-                            ) : match.status === "ACCEPTED_BY_FARMER" ? (
+                            ) : match.status === "WAITING_BUYER_APPROVAL" ? (
                               <motion.div
-                                key="accepted_by_farmer"
+                                key="waiting"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{
-                                  type: "spring",
-                                  stiffness: 500,
-                                  damping: 30,
-                                }}
-                                className="flex items-center space-x-1.5 text-nat-brown font-bold text-[11px] bg-nat-cream px-2.5 py-1 rounded-lg border border-nat-border"
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                className="flex flex-col items-end gap-1"
                               >
-                                <span className="w-1.5 h-1.5 rounded-full bg-nat-brown animate-pulse" />
-                                <span>Menunggu Respon Pembeli</span>
+                                <div className="flex items-center space-x-1.5 text-amber-700 font-bold text-[11px] bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                  <span>Menunggu Persetujuan Pembeli</span>
+                                </div>
+                                {match.bidVolume && match.bidPrice && (
+                                  <span className="text-[10px] text-nat-sage">
+                                    Penawaran: {match.bidVolume.toLocaleString("id-ID")} kg @ Rp{match.bidPrice.toLocaleString("id-ID")}/kg
+                                  </span>
+                                )}
                               </motion.div>
-                            ) : match.status === "ACCEPTED_BY_BUYER" ? (
-                              <motion.button
-                                key="accepted_by_buyer"
+                            ) : match.status === "REJECTED" ? (
+                              <motion.div
+                                key="rejected"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{
-                                  type: "spring",
-                                  stiffness: 500,
-                                  damping: 30,
-                                }}
-                                id={`confirm-btn-farmer-${match.id}`}
-                                onClick={() =>
-                                  updateMatchStatus(match.id, "CONFIRMED")
-                                }
-                                className="bg-nat-green hover:bg-nat-green-hover text-white font-bold py-1.5 px-3 rounded-lg text-[10px] transition-all flex items-center gap-1 cursor-pointer shadow-sm animate-bounce"
+                                className="flex flex-col items-end gap-1.5"
                               >
-                                <CheckCircle className="w-3.5 h-3.5" />
-                                <span>Konfirmasi Sepakat Transaksi</span>
-                              </motion.button>
+                                <div className="flex items-center space-x-1.5 text-red-700 font-bold text-[11px] bg-red-50 px-2.5 py-1 rounded-lg border border-red-200">
+                                  <XCircle className="w-3.5 h-3.5 text-red-500" />
+                                  <span>Penawaran Ditolak</span>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    updateMatchStatus(match.id, "PENDING");
+                                    openBidForm(match);
+                                  }}
+                                  className="text-[10px] text-nat-green hover:underline font-semibold cursor-pointer"
+                                >
+                                  Ajukan ulang penawaran →
+                                </button>
+                              </motion.div>
                             ) : match.status === "CONFIRMED" ? (
                               <motion.div
                                 key="confirmed"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{
-                                  type: "spring",
-                                  stiffness: 500,
-                                  damping: 30,
-                                }}
                                 className="flex items-center space-x-1.5 text-nat-green font-bold text-[11px] bg-nat-light-cream px-2.5 py-1 rounded-lg border border-nat-border"
                               >
                                 <CheckCircle className="w-3.5 h-3.5" />
-                                <span>Sinergi Terjalin (Dana Escrow Aman)</span>
+                                <span>Kontrak Sepakat ✓</span>
                               </motion.div>
                             ) : (
                               <motion.span
@@ -909,20 +932,33 @@ export default function FarmerView({
                               Menunggu Pelunasan
                             </span>
                           )}
-
-                          <div className="flex items-center gap-2">
-                            <a
-                              href={`https://wa.me/6281234567890?text=Halo%20Koperasi%20${encodeURIComponent(
-                                po.buyerName
-                              )},%20saya%20petani.%20Terkait%20PO%20${po.commodity}%20seberat%20${po.agreedVolumeKg}Kg.`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
-                            >
-                              <MessageCircle className="w-3 h-3" />
-                              Chat Pembeli
-                            </a>
+                          <div className="flex items-center gap-2 flex-wrap">
+                             <a
+                              href={(() => {
+                                // Ambil nomor WA pembeli dari activeUser jika yang login adalah pembeli tersebut
+                                const buyerPhone = activeUser.PEMBELI?.phone || "62";
+                                const msg = `Halo Koperasi ${encodeURIComponent(po.buyerName)}, saya petani ${po.farmerName}. Terkait PO ${po.commodity} seberat ${po.agreedVolumeKg}Kg dengan harga Rp${po.agreedPricePerKg.toLocaleString('id-ID')}/Kg.`;
+                                return `https://wa.me/${buyerPhone}?text=${encodeURIComponent(msg)}`;
+                              })()}
+                               target="_blank"
+                               rel="noreferrer"
+                               className="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
+                             >
+                               <MessageCircle className="w-3 h-3" />
+                               Chat Pembeli
+                             </a>
                             
+                            {/* Lihat Rute — muncul saat PO CONFIRMED atau COMPLETED */}
+                            {(po.status === "CONFIRMED" || po.status === "COMPLETED") && (
+                              <button
+                                onClick={() => setRouteMapPO(po)}
+                                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+                              >
+                                <Map className="w-3 h-3" />
+                                Lihat Rute
+                              </button>
+                            )}
+
                             {po.status === "COMPLETED" && (
                               <button
                                 onClick={() => showNotification("Terima kasih, ulasan Anda untuk koperasi telah disimpan di Hash-Chain Ledger!", "success")}
@@ -1028,6 +1064,116 @@ export default function FarmerView({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* ───── Bid Form Modal (Advanced — Petani isi volume & harga penawaran) ───── */}
+      <AnimatePresence>
+        {bidFormMatch && (() => {
+          const h = harvests.find(hv => hv.id === bidFormMatch.harvestId);
+          const d = demands.find(dm => dm.id === bidFormMatch.demandId);
+          return (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+              onClick={() => setBidFormMatch(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={e => e.stopPropagation()}
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+              >
+                {/* Header */}
+                <div className="bg-gradient-to-r from-nat-dark to-nat-green text-white px-5 py-4">
+                  <h3 className="font-bold text-sm">📤 Ajukan Penawaran ke Pembeli</h3>
+                  <p className="text-green-100 text-xs mt-0.5">
+                    {h?.commodity} · {h?.region} → {d?.buyerName}
+                  </p>
+                </div>
+
+                <div className="p-5 space-y-4">
+                  {/* Info permintaan pembeli */}
+                  <div className="bg-blue-50 rounded-xl p-3 border border-blue-100 text-xs">
+                    <p className="font-bold text-blue-700 mb-1">📋 Permintaan Pembeli</p>
+                    <div className="grid grid-cols-2 gap-2 text-blue-800">
+                      <span>Volume dibutuhkan</span><span className="font-semibold">{d?.requiredVolume?.toLocaleString("id-ID")} kg</span>
+                      <span>Harga ditawarkan</span><span className="font-semibold">Rp{d?.offerPrice?.toLocaleString("id-ID")}/kg</span>
+                    </div>
+                  </div>
+
+                  {/* Volume penawaran */}
+                  <div>
+                    <label className="block text-xs font-bold text-nat-dark mb-1.5">
+                      Volume yang Anda Tawarkan (kg)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max={h?.expectedVolume}
+                      value={bidVolume}
+                      onChange={e => setBidVolume(Number(e.target.value))}
+                      className="w-full border border-nat-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-nat-green"
+                    />
+                    <p className="text-[10px] text-nat-sage mt-1">Estimasi produksi: {h?.expectedVolume?.toLocaleString("id-ID")} kg</p>
+                  </div>
+
+                  {/* Harga penawaran */}
+                  <div>
+                    <label className="block text-xs font-bold text-nat-dark mb-1.5">
+                      Harga per kg yang Anda Minta (Rp)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={bidPrice}
+                      onChange={e => setBidPrice(Number(e.target.value))}
+                      className="w-full border border-nat-border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-nat-green"
+                    />
+                    <p className="text-[10px] text-nat-sage mt-1">Harga pasar saat ini: Rp{h?.askingPrice?.toLocaleString("id-ID")}/kg</p>
+                  </div>
+
+                  {/* Total estimasi */}
+                  <div className="bg-nat-light-cream rounded-xl p-3 border border-nat-border">
+                    <p className="text-[10px] text-nat-sage font-medium uppercase tracking-wider mb-1">Estimasi Total Nilai</p>
+                    <p className="text-lg font-bold text-nat-green">
+                      Rp{(bidVolume * bidPrice).toLocaleString("id-ID")}
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setBidFormMatch(null)}
+                      className="flex-1 py-2 rounded-xl border border-nat-border text-nat-text text-xs font-bold hover:bg-nat-light-cream transition-colors cursor-pointer"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={submitBid}
+                      className="flex-1 py-2 rounded-xl bg-nat-green text-white text-xs font-bold hover:bg-nat-green-hover transition-colors shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      Kirim Penawaran
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          );
+        })()}
+      </AnimatePresence>
+
+      {/* ───── Route Map Modal ───── */}
+      {routeMapPO && (
+        <RouteMapModal
+          po={routeMapPO}
+          harvest={harvests.find(h => h.id === routeMapPO.harvestId)}
+          demand={demands.find(d => d.id === routeMapPO.demandId)}
+          onClose={() => setRouteMapPO(null)}
+        />
+      )}
     </div>
   );
 }
