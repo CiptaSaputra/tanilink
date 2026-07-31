@@ -15,7 +15,10 @@ import {
   EyeOff,
   Navigation,
   RefreshCw,
+  Sprout,
+  Store,
 } from "lucide-react";
+import { renderToString } from "react-dom/server";
 import { COMMODITY_LIST } from "../constants/commodities";
 import type { Harvest, Demand, Komoditas } from "../types";
 import L from "leaflet";
@@ -268,22 +271,24 @@ export default function InteractiveMap({
     }
 
     if (selectedLat && selectedLng) {
-      const clickIcon = L.divIcon({
-        html: `
-          <div class="relative flex items-center justify-center group">
-            <div class="absolute -bottom-1 w-6 h-1.5 bg-black/20 rounded-full blur-[2px]"></div>
-            <div class="absolute -top-3 w-10 h-10 bg-blue-500/30 rounded-full animate-ping"></div>
-            <svg width="32" height="40" viewBox="0 0 36 45" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-lg -mt-4 transition-transform group-hover:-translate-y-1 origin-bottom">
-              <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="#2563EB" />
-              <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="none" stroke="white" stroke-width="2.5"/>
-              <circle cx="18" cy="17" r="6" fill="white" />
-            </svg>
+      const clickHtml = renderToString(
+        <div className="relative flex flex-col items-center group">
+          <div className="absolute -bottom-1 w-6 h-1.5 bg-black/20 rounded-full blur-[2px]"></div>
+          <div className="absolute -top-3 w-10 h-10 bg-blue-500/30 rounded-full animate-ping"></div>
+          <div className="relative flex items-center justify-center w-9 h-9 rounded-full border-2 border-white shadow-md transition-transform group-hover:-translate-y-1 z-10 bg-blue-600">
+            <MapPin size={20} color="white" fill="white" />
           </div>
-        `,
+          <div className="w-0 h-0 border-l-[8px] border-r-[8px] border-t-[10px] border-l-transparent border-r-transparent border-t-white -mt-[2px] transition-transform group-hover:-translate-y-1 z-0 shadow-sm"></div>
+          <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[7px] border-l-transparent border-r-transparent border-t-blue-600 -mt-[9px] transition-transform group-hover:-translate-y-1 z-10"></div>
+        </div>
+      );
+
+      const clickIcon = L.divIcon({
+        html: clickHtml,
         className: "bg-transparent",
-        iconSize: [32, 40],
-        iconAnchor: [16, 38],
-        popupAnchor: [0, -38],
+        iconSize: [36, 45],
+        iconAnchor: [18, 43],
+        popupAnchor: [0, -43],
       });
 
       clickMarkerRef.current = L.marker([selectedLat, selectedLng], {
@@ -355,21 +360,29 @@ export default function InteractiveMap({
           selectedPoint?.type === "HARVEST" &&
           selectedPoint.data.id === harvest.id;
 
-        const icon = L.divIcon({
-          html: `
-            <div class="relative flex flex-col items-center group">
-              <div class="absolute -bottom-1 w-5 h-1.5 bg-black/20 rounded-full blur-[2px]"></div>
-              <svg width="28" height="35" viewBox="0 0 36 45" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-md transition-transform group-hover:scale-110 group-hover:-translate-y-1 origin-bottom">
-                <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="${color}" />
-                <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="none" stroke="white" stroke-width="2.5"/>
-                <circle cx="18" cy="17" r="7.5" fill="white" />
-              </svg>
+        const harvestHtml = renderToString(
+          <div className="relative flex flex-col items-center group">
+            <div className="absolute -bottom-1 w-5 h-1.5 bg-black/20 rounded-full blur-[2px]"></div>
+            <div 
+              className="relative flex items-center justify-center w-8 h-8 rounded-full border-2 border-white shadow-md transition-transform group-hover:-translate-y-1 z-10"
+              style={{ backgroundColor: color }}
+            >
+              <Sprout size={16} color="white" />
             </div>
-          `,
+            <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-white -mt-[2px] transition-transform group-hover:-translate-y-1 z-0 shadow-sm"></div>
+            <div 
+              className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent -mt-[9px] transition-transform group-hover:-translate-y-1 z-10"
+              style={{ borderTopColor: color }}
+            ></div>
+          </div>
+        );
+
+        const icon = L.divIcon({
+          html: harvestHtml,
           className: "bg-transparent",
-          iconSize: [28, 35],
-          iconAnchor: [14, 33],
-          popupAnchor: [0, -33],
+          iconSize: [32, 40],
+          iconAnchor: [16, 38],
+          popupAnchor: [0, -38],
         });
 
         const marker = L.marker([harvest.latitude, harvest.longitude], {
@@ -413,21 +426,29 @@ export default function InteractiveMap({
           selectedPoint?.type === "DEMAND" &&
           selectedPoint.data.id === demand.id;
 
-        const icon = L.divIcon({
-          html: `
-            <div class="relative flex flex-col items-center group">
-              <div class="absolute -bottom-1 w-5 h-1.5 bg-black/20 rounded-full blur-[2px]"></div>
-              <svg width="28" height="35" viewBox="0 0 36 45" xmlns="http://www.w3.org/2000/svg" class="drop-shadow-md transition-transform group-hover:scale-110 group-hover:-translate-y-1 origin-bottom">
-                <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="#A67C52" />
-                <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="none" stroke="white" stroke-width="2.5"/>
-                <rect x="11.5" y="10.5" width="13" height="13" rx="2.5" fill="${color}" />
-              </svg>
+        const demandHtml = renderToString(
+          <div className="relative flex flex-col items-center group">
+            <div className="absolute -bottom-1 w-5 h-1.5 bg-black/20 rounded-full blur-[2px]"></div>
+            <div 
+              className="relative flex items-center justify-center w-8 h-8 rounded-full border-2 border-white shadow-md transition-transform group-hover:-translate-y-1 z-10"
+              style={{ backgroundColor: color }}
+            >
+              <Store size={15} color="white" />
             </div>
-          `,
+            <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-white -mt-[2px] transition-transform group-hover:-translate-y-1 z-0 shadow-sm"></div>
+            <div 
+              className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent -mt-[9px] transition-transform group-hover:-translate-y-1 z-10"
+              style={{ borderTopColor: color }}
+            ></div>
+          </div>
+        );
+
+        const icon = L.divIcon({
+          html: demandHtml,
           className: "bg-transparent",
-          iconSize: [28, 35],
-          iconAnchor: [14, 33],
-          popupAnchor: [0, -33],
+          iconSize: [32, 40],
+          iconAnchor: [16, 38],
+          popupAnchor: [0, -38],
         });
 
         const marker = L.marker([demand.latitude, demand.longitude], {
@@ -623,19 +644,15 @@ export default function InteractiveMap({
           {/* Map Legend */}
           <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-lg border border-nat-border shadow-sm flex items-center gap-4 text-[10px] text-nat-dark font-bold z-[1000]">
             <div className="flex items-center gap-1.5">
-              <svg width="12" height="16" viewBox="0 0 36 45" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="#5F7444" />
-                <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="none" stroke="white" stroke-width="2.5"/>
-                <circle cx="18" cy="17" r="7.5" fill="white" />
-              </svg>
+              <div className="w-5 h-5 rounded-full bg-[#5F7444] border border-white flex items-center justify-center">
+                <Sprout size={10} color="white" />
+              </div>
               <span>Panen (Hulu)</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <svg width="12" height="16" viewBox="0 0 36 45" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="#A67C52" />
-                <path d="M18 0C8.059 0 0 8.059 0 18C0 31.5 18 45 18 45C18 45 36 31.5 36 18C36 8.059 27.941 0 18 0Z" fill="none" stroke="white" stroke-width="2.5"/>
-                <rect x="11.5" y="10.5" width="13" height="13" rx="2.5" fill="white" />
-              </svg>
+              <div className="w-5 h-5 rounded-full bg-[#A67C52] border border-white flex items-center justify-center">
+                <Store size={10} color="white" />
+              </div>
               <span>Daya Serap (Hilir)</span>
             </div>
           </div>
