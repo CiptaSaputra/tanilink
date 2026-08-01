@@ -143,3 +143,51 @@ export const marketPrices = pgTable("market_prices", {
   dateRecorded: varchar("date_recorded").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const marketplaceListings = pgTable("marketplace_listings", {
+  id: varchar("id").primaryKey(),
+  harvestId: varchar("harvest_id"),
+  batchId: varchar("batch_id"),
+  farmerId: varchar("farmer_id").notNull(),
+  farmerName: varchar("farmer_name").notNull(),
+  commodity: varchar("commodity").notNull(),
+  volumeKg: doublePrecision("volume_kg").notNull(),
+  pricePerKg: doublePrecision("price_per_kg").notNull(),
+  region: varchar("region").notNull(),
+  latitude: doublePrecision("latitude").notNull(),
+  longitude: doublePrecision("longitude").notNull(),
+  status: varchar("status").notNull().default("open"), // open | sold | expired
+  notes: text("notes"),
+  listedAt: timestamp("listed_at").defaultNow().notNull(),
+});
+
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  type: varchar("type").notNull(), // match | preorder | batch | weather | system
+  message: text("message").notNull(),
+  read: boolean("read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/** Hash-chain ledger — tamper-evident riwayat transaksi PO selesai */
+export const salesLedger = pgTable("sales_ledger", {
+  id: varchar("id").primaryKey(),
+  preOrderId: varchar("pre_order_id").notNull(),
+  recordData: text("record_data").notNull(), // JSON: komoditas, volume, harga, pihak
+  previousHash: varchar("previous_hash").notNull().default("GENESIS"),
+  currentHash: varchar("current_hash").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/** Konten edukasi budidaya — dipublikasi PPL/BPP per wilayah binaan */
+export const educationalContents = pgTable("educational_contents", {
+  id: varchar("id").primaryKey(),
+  pplUserId: varchar("ppl_user_id").notNull(),
+  pplName: varchar("ppl_name").notNull(),
+  region: varchar("region").notNull(),
+  title: varchar("title").notNull(),
+  body: text("body").notNull(),
+  status: varchar("status").notNull().default("pending"), // pending | published | rejected
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

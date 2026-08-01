@@ -74,26 +74,32 @@ Farmer & Buyer Agree on Pre-Order (opt-in, both parties decide)
 
 ## Main Modules
 
-| Module | Description |
-|--------|-------------|
-| **Harvest Forecasting** | Aggregates planting data to predict harvest time & volume per region |
-| **Price & Demand Prediction** | Analyzes historical prices, demand, and weather data; projects 1–4 week prices |
-| **Smart Matching** | Recommends farmer–buyer matches using Haversine, volume fit, and price fit scores with commodity-specific default weights |
-| **Chat** | In-app messaging for price/delivery negotiation between matched farmers and buyers |
-| **Pre-Order** | Binding agreement before harvest completion with `direct` or `consolidated` delivery mode |
-| **Distribution Priority** | Ranks harvest batches by spoilage risk (shelf life, weather, harvest schedule) |
-| **Route Optimization (First-Mile)** | Clusters collection points and recommends pickup order using Clarke-Wright + 2-opt heuristic |
-| **Payment Confirmation** | Optional proof-of-payment upload (transactions occur outside the system) |
-| **Reviews & Ratings** | Post-transaction 1–5 star rating between farmers and buyers |
-| **Admin Dashboard** | Monitor match performance, default weights per commodity, resolve disputes, moderate reviews |
-| **PPL Dashboard** | Read-only: regional planting data, forecast summary, batch status |
-| **Dinas Dashboard** | Read-only: regional aggregates, price trends, surplus/deficit risk, route optimization viewer |
+| Module | Description | Status |
+|--------|-------------|--------|
+| **Harvest Forecasting** | Aggregates planting data to predict harvest time & volume per region (Holt's Double ES + Fourier) | ✅ |
+| **Price & Demand Prediction** | Reads historical prices from DB, projects 14-day price per kg (moving average + linear trend) | ✅ |
+| **Smart Matching** | Recommends farmer–buyer matches using Haversine, volume fit, and price fit scores with commodity-specific default weights (computed in backend on harvest POST) | ✅ |
+| **Chat** | Dual channel: in-app messaging persisted to DB + `wa.me` link to WhatsApp | ✅ |
+| **Pre-Order** | Binding agreement before harvest completion, atomic DB transaction, `direct`/`consolidated` delivery mode | ✅ |
+| **Distribution Priority** | Ranks harvest batches by spoilage risk (shelf life, weather, harvest schedule) | ✅ |
+| **Route Optimization (First-Mile)** | Clusters collection points and recommends pickup order using Clarke-Wright + 2-opt heuristic (custom, not Google Maps) | ✅ |
+| **Payment Confirmation** | Optional proof-of-payment upload (transactions occur outside the system) | ✅ |
+| **Reviews & Ratings** | Post-transaction 1–5 star rating between farmers and buyers | ✅ |
+| **Authentication & RBAC** | Email/password login & registration verified against PostgreSQL; Admin/Dinas not self-registerable | ✅ |
+| **Admin Dashboard** | Monitor match performance, default weights per commodity (read-only), resolve disputes, moderate reviews | ✅ |
+| **PPL Dashboard** | Read-only: regional planting data, forecast summary, batch status | ✅ |
+| **Dinas Dashboard** | Read-only: regional aggregates, price trends, surplus/deficit risk, route optimization viewer | ✅ |
+
+**Not in MVP (roadmap):** disease detection (TensorFlow.js), hash-chain ledger, WhatsApp Business API, marketplace fallback, AI Q&A, dataset export, BMKG real-time API integration.
 
 ## Design Decisions
 
-- **No blockchain/hash-chain traceability** — a centralized database with optional SHA-256 checksums is sufficient. Blockchain's value (trustless decentralization) is irrelevant for a single-database system.
-- **No computer vision (TensorFlow.js) in MVP** — Quality Grading is a roadmap feature.
+- **Backend-first data layer** — all domain data lives in PostgreSQL via Drizzle; frontend talks to `/api/*` through the service layer. localStorage is used only for the auth session.
+- **No blockchain/hash-chain traceability** — a centralized database with optional SHA-256 checksums is sufficient. Blockchain's value (trustless decentralization) is irrelevant for a single-database system. **No hash-chain ledger is implemented** — the "Hash-Chain" label in the public dashboard UI is decorative.
+- **No computer vision (TensorFlow.js) in MVP** — Quality Grading / disease detection is a roadmap feature (`@tensorflow/tfjs` installed but unused).
 - **No payment gateway** — transactions are agreed and settled outside the system; optional proof upload only.
 - **No third-party data input** — farmers always input their own data via their own account. No proxy input by family, PPL, or Gapoktan within the system.
-- **Route optimization is recommendation-only** — collectors and buyers may deviate from suggested routes based on field conditions.
+- **Route optimization is recommendation-only** — collectors and buyers may deviate from suggested routes based on field conditions (status `PICKED_UP_DIRECTLY`). Uses a custom Clarke-Wright + 2-opt solver, not Google Maps Directions API.
 - **Per-commodity default weights** — not freely adjustable by admin. Commodity-specific weights encode domain knowledge (e.g., fast-spoiling crops prioritize distance).
+- **Chat is dual-channel** — in-app chat (persisted to DB) plus a `wa.me` deep link. WhatsApp Business API is not yet integrated.
+- **Password hashing is demo-grade (`btoa`)** — must be replaced with bcrypt/argon + JWT before production.

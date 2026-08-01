@@ -29,3 +29,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Sembunyikan scrollbar horizontal (untuk SectionNav di mobile) */
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+

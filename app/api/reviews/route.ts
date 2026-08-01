@@ -18,11 +18,18 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    // createdAt dari frontend berupa string → konversi ke Date untuk kolom timestamp
+    const normalized = {
+      ...body,
+      createdAt: body.createdAt
+        ? new Date(body.createdAt)
+        : new Date(),
+    };
     await db
       .insert(reviews)
-      .values(body)
-      .onConflictDoUpdate({ target: reviews.id, set: body });
-    return NextResponse.json(body);
+      .values(normalized)
+      .onConflictDoUpdate({ target: reviews.id, set: normalized });
+    return NextResponse.json(normalized);
   } catch (err) {
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }

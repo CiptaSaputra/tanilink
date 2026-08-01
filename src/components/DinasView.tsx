@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useData } from "../context/DataContext";
 import { COMMODITY_LIST } from "../constants/commodities";
 import type { Komoditas, Harvest, Demand } from "../types";
@@ -32,12 +32,27 @@ import {
   CheckCircle2,
   Navigation,
 } from "lucide-react";
+import RouteMap from "./shared/RouteMap";
 
 export default function DinasView() {
   const { harvests, demands, matches, harvestBatches } = useData();
   const [activeTab, setActiveTab] = useState<
     "monitoring" | "forecasting" | "routing"
   >("monitoring");
+
+  // Listen SectionNav global (dari DashboardApp) untuk switch tab
+  useEffect(() => {
+    function handleSectionClick(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      if (!detail || detail.role !== "DINAS") return;
+      if (detail.id === "forecast") setActiveTab("forecasting");
+      else if (detail.id === "rute") setActiveTab("routing");
+      else setActiveTab("monitoring");
+    }
+    window.addEventListener("tanilink:sectionclick", handleSectionClick);
+    return () =>
+      window.removeEventListener("tanilink:sectionclick", handleSectionClick);
+  }, []);
 
   // --- TAB 2: FORECASTING STATES ---
   const [forecastRegion, setForecastRegion] = useState<string>("Brebes");
@@ -372,7 +387,7 @@ export default function DinasView() {
       {activeTab === "monitoring" && (
         <div className="space-y-6">
           {/* Aggregate Indicators */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div id="indeks" className="grid grid-cols-2 lg:grid-cols-4 gap-4 scroll-mt-28">
             <div className="bg-white rounded-2xl border border-nat-border p-4 shadow-sm">
               <p className="text-[10px] text-nat-sage uppercase tracking-wider font-bold flex items-center gap-1">
                 <Activity className="w-3.5 h-3.5 text-nat-green" />
@@ -441,7 +456,10 @@ export default function DinasView() {
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Custom SVG Bar Chart of Supply vs Demand */}
-            <div className="lg:col-span-3 bg-white rounded-2xl border border-nat-border p-5 shadow-sm">
+            <div
+              id="komoditas"
+              className="lg:col-span-3 bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+            >
               <h3 className="text-xs font-bold text-nat-dark uppercase tracking-wider mb-6 pb-2 border-b border-nat-light-cream">
                 Neraca Komparatif Komoditas (Tanam vs Permintaan)
               </h3>
@@ -519,7 +537,10 @@ export default function DinasView() {
             </div>
 
             {/* Surplus & Food Loss Risk Tracker */}
-            <div className="lg:col-span-2 bg-white rounded-2xl border border-nat-border p-5 shadow-sm">
+            <div
+              id="risiko"
+              className="lg:col-span-2 bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+            >
               <h3 className="text-xs font-bold text-nat-dark uppercase tracking-wider mb-4 pb-2 border-b border-nat-light-cream flex items-center gap-1">
                 <AlertTriangle className="w-4 h-4 text-nat-brown" />
                 Indeks Risiko Penumpukan & Food Loss Daerah
@@ -626,7 +647,7 @@ export default function DinasView() {
 
       {/* TAB 2: TIME-SERIES FORECASTING */}
       {activeTab === "forecasting" && (
-        <div className="space-y-6">
+        <div id="forecast" className="space-y-6 scroll-mt-28">
           {/* Controls Panel */}
           <div className="bg-white border border-nat-border rounded-2xl p-5 shadow-sm">
             <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-light-cream flex items-center gap-1.5">
@@ -1151,7 +1172,7 @@ export default function DinasView() {
 
       {/* TAB 3: ROUTE OPTIMIZATION */}
       {activeTab === "routing" && (
-        <div className="space-y-6">
+        <div id="rute" className="space-y-6 scroll-mt-28">
           {/* Configuration Panel */}
           <div className="bg-white border border-nat-border rounded-2xl p-5 shadow-sm space-y-4">
             <div>
@@ -1399,6 +1420,32 @@ export default function DinasView() {
                             Armada ini tidak ditugaskan (idle / cadangan
                             mitigasi over-supply).
                           </div>
+                        )}
+
+                        {/* Peta Rute Jalan Aktual */}
+                        {route.routeStops.length > 0 && (
+                          <RouteMap
+                            waypoints={[
+                              {
+                                lat: currentDepotCoords.lat,
+                                lng: currentDepotCoords.lng,
+                              },
+                              ...route.routeStops.map((s) => ({
+                                lat: s.latitude,
+                                lng: s.longitude,
+                              })),
+                            ]}
+                            stops={[
+                              { id: "depot", label: `Depot ${depotRegion}` },
+                              ...route.routeStops.map((s) => ({
+                                id: s.harvestId,
+                                label: s.farmerName,
+                                sub: `${s.commodity} • ${s.volumeKg.toLocaleString("id-ID")} kg`,
+                              })),
+                            ]}
+                            height="260px"
+                            depotIndex={0}
+                          />
                         )}
                       </div>
                     </div>

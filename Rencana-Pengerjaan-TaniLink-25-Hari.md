@@ -2,6 +2,15 @@
 
 Rencana ini disusun untuk mengimplementasikan **GAGASAN INTI** TaniLink: memberdayakan petani mikro berlahan kecil agar memiliki akses pasar yang adil dan efisien.
 
+> **Catatan (per 2026-08-01):** dokumen ini adalah rencana & checklist pengerjaan. Sebagian item yang dicentang `[x]` menyimpang dari implementasi final di kode. Perbedaan penting:
+> - **Route Optimization**: rencana pakai Google Maps Directions API → final: **Clarke-Wright + 2-opt custom** (`src/utils/routeOptimizer.ts`).
+> - **WhatsApp**: rencana Twilio/Meta Cloud API → final: **chat in-app (DB) + link `wa.me`**. WhatsApp Business API **belum** terintegrasi.
+> - **Hash-Chain Ledger**: rencana simulasi tamper-evident → final: **tidak diimplementasi**. Label "Hash-Chain" di PublicDashboard hanyalah teks dekoratif.
+> - **Disease Detection**: dilewati (Hari 9–10), `@tensorflow/tfjs` ter-install tapi tidak dipakai.
+> - **Harvest Forecasting "BMKG"**: final memakai **pola musim statis** + mock engine (`src/utils/bmkg.ts`), bukan API BMKG real-time.
+>
+> Status implementasi terkini lihat `docs/IMPLEMENTATION_STATUS.md`.
+
 ### 🌟 Alur & Fitur Utama (Berdasarkan Gagasan Inti)
 - **Petani**: Input data komoditas (tanam & panen terintegrasi prediksi BMKG), dashboard cerdas (prediksi harga & waktu panen), deteksi penyakit tanaman via foto, push notifikasi WhatsApp otomatis, dan pencatatan histori penjualan.
 - **Pembeli**: Mengajukan permintaan komoditas (demand), fitur Smart Matching berdasarkan bobot (jarak, dll), melakukan Purchase Order (PO), mendapatkan rekomendasi rute pengiriman, chat ke petani via WhatsApp, serta memberikan rating dan review.

@@ -1,47 +1,51 @@
 # TaniLink — Architecture
 
+> Diperbarui per 2026-08-01. Mencerminkan arsitektur nyata: **Next.js 15 App Router + PostgreSQL (Drizzle) + React Context (5 domain)**.
+> Dokumentasi lama yang menggambarkan Vite SPA + AppContext monolith sudah tidak berlaku sejak CHANGELOG 1.3.0/1.4.0.
+
 ## Application Type
 
-Single-page application (SPA) built with React 18 + Vite. All logic runs in the browser. No server-side rendering. No backend API.
+Full-stack web app: Next.js 15 (App Router) dengan API Routes di server dan database PostgreSQL. Frontend adalah React SPA yang dilaunch dari Next.js; semua operasi data lewat HTTP API — **tidak ada lagi akses localStorage untuk data domain** (kecuali auth session).
 
 ---
 
 ## Architecture Diagram
 
 ```
-┌──────────────────────────────────────────────────────┐
-│                    index.html                         │
-│              Leaflet CSS + React Root                 │
-└──────────────────────┬───────────────────────────────┘
-                       │
-┌──────────────────────▼───────────────────────────────┐
-│                    App.tsx                            │
-│  ┌─────────────────────────────────────────────────┐ │
-│  │               AppProvider (Context)              │ │
-│  │   ├── State: harvests, demands, matches,         │ │
-│  │   │         preOrders, batches, conversations,   │ │
-│  │   │         messages, payments, reviews          │ │
-│  │   ├── Actions: addHarvest, addDemand,            │ │
-│  │   │         updateMatchStatus, sendMessage, ...  │ │
-│  │   ├── localStorage sync (10 effects)             │ │
-│  │   └── useEffect: auto-compute matches            │ │
-│  └─────────────────────────────────────────────────┘ │
-│                                                       │
-│  ┌──────────────┐    ┌─────────────────────────────┐  │
-│  │   Navbar      │    │     InteractiveMap          │  │
-│  │  (RoleSwitch) │    │  (Leaflet + Nominatim)      │  │
-│  └──────────────┘    └─────────────────────────────┘  │
-│                                                       │
-│  ┌───────────────── Role Views ──────────────────┐   │
-│  │   FarmerView │ BuyerView │ PPLView           │   │
-│  │   DinasView  │ AdminView │ KolektorView      │   │
-│  └────────────────────────────────────────────────┘   │
-│                                                       │
-│  ┌────────────┐    ┌──────────────────────────────┐   │
-│  │ ChatModal  │    │  Modals (Payment, Review,    │   │
-│  │            │    │          HarvestBatch)        │   │
-│  └────────────┘    └──────────────────────────────┘   │
-└──────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                    Next.js 15 (App Router)                    │
+│                                                              │
+│  ┌───────────────────────┐       ┌─────────────────────────┐ │
+│  │  app/ (route entries) │       │  app/api/* (REST)       │ │
+│  │  ├── /login /register │       │  auth, harvests, demands│ │
+│  │  ├── /dashboard       │──────▶│  matches, pre-orders,   │ │
+│  │  └── / (redirect)     │       │  batches, conversations,│ │
+│  └───────────────────────┘       │  messages, payments,    │ │
+│          │                       │  reviews, prices        │ │
+│          ▼                       └───────────┬─────────────┘ │
+│  ┌───────────────────────────────────────────▼─────────────┐ │
+│  │              PostgreSQL (Docker, port 5434)              │ │
+│  │      Drizzle ORM — 12 tabel (users, harvests, demands,  │ │
+│  │      matches, pre_orders, harvest_batches, conversations,│ │
+│  │      messages, payment_confirmations, reviews, market_   │ │
+│  │      prices)                                             │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                                                              │
+│  ┌─────────────────── Client Components ───────────────────┐ │
+│  │  src/components/  (role views, modals, map, navbar)     │ │
+│  │      │                                                 │ │
+│  │  ┌───▼───────────────────────────────────────────────┐ │ │
+│  │  │  Providers:  UI → Data → Chat → Payment → Review │ │ │
+│  │  │  AuthProvider  (wrapping root)                    │ │ │
+│  │  └───────────────────────────────────────────────────┘ │ │
+│  │      │  hanya akses via src/services/*.ts (fetch)      │ │
+│  │      ▼                                                 │ │
+│  │  src/services/*  →  HTTP GET/POST/PUT/PATCH/DELETE      │ │
+│  │      │  ke /api/*                                       │ │
+│  │      ▼                                                 │ │
+│  │  App Router API Routes → Drizzle → PostgreSQL           │ │
+│  └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -52,71 +56,78 @@ Single-page application (SPA) built with React 18 + Vite. All logic runs in the 
 User Action (form submit, button click)
        │
        ▼
-Component calls context action
-(e.g., addHarvest, addDemand)
+Component calls context action (useData, useChat, ...)
        │
        ▼
-AppContext updates state
-       │
-       ├──→ localStorage.setItem("flw_*", data)  (persistence)
-       │
-       ├──→ useEffect re-runs matching engine     (auto compute)
-       │
-       └──→ showNotification()                     (UI feedback)
+Context calls service layer (src/services/*.ts)
        │
        ▼
-All consumers re-render with new state
+Service performs HTTP fetch → Next.js API Route → Drizzle → PostgreSQL
+       │
+       ▼
+Context updates state (optimistic update untuk match status)
+       │
+       ▼
+Polling DataContext (tiap 3 detik) menjaga data tetap sinkron
+       │
+       ▼
+showNotification() → UI feedback (toast)
 ```
+
+Auth session (opsional) tetap di localStorage (`flw_auth_session`) — hanya token session, bukan data domain.
+
+---
 
 ## Component Hierarchy
 
 ```
-<App>
-  <AppProvider>
-    <AppContent>
-      <Navbar />
-        ├── Role buttons (setRole)
-        └── Reset Data button
-      <InteractiveMap />
-        ├── Leaflet.js map render
-        ├── Harvest markers (dots)
-        ├── Demand markers (squares)
-        ├── Match polylines (dashed)
-        └── Sidebar info panel
-      <AnimatePresence> (role switching)
-        <FarmerView />       — if role === 'PETANI'
-        <BuyerView />        — if role === 'PEMBELI'
-        <PPLView />          — if role === 'PPL'
-        <DinasView />        — if role === 'DINAS'
-        <AdminView />        — if role === 'ADMIN'
-        <KolektorView />     — if role === 'KOLEKTOR'
-      </AnimatePresence>
-      <NotificationToast /> — fixed position
-      <!-- Modals are rendered inside role views -->
-    </AppContent>
-  </AppProvider>
-</App>
+<RootApp>                          — src/components/RootApp.tsx (client, ssr:false)
+  <AuthProvider>                    — src/context/AuthContext.tsx
+    <DashboardApp>                  — src/components/dashboard/DashboardApp.tsx
+      <UIProvider>                  — notifikasi, activeRole
+        <DataProvider>              — harvests, demands, matches, preOrders, batches
+          <ChatProvider>            — conversations, messages
+            <PaymentProvider>       — paymentConfirmations
+              <ReviewProvider>      — reviews
+                <Navbar />
+                <InteractiveMap />  — Leaflet.js + Nominatim
+                <AnimatePresence> (role switching)
+                  <FarmerView />    — role === 'PETANI'
+                  <BuyerView />     — role === 'PEMBELI'
+                  <PPLView />       — role === 'PPL'
+                  <DinasView />     — role === 'DINAS'
+                  <AdminView />     — role === 'ADMIN'
+                  <KolektorView />  — role === 'KOLEKTOR'
+                <PublicDashboard /> — role === 'PUBLIK' / tanpa login
 ```
+
+Semua role view dibungkus `ErrorBoundary` (crash role A tidak mematikan role B).
 
 ---
 
-## Data Model (Context State)
+## Data Model (Database)
+
+Schema: `src/db/schema.ts` (Drizzle `pgTable`). Migrasi: `drizzle/`.
 
 ```
-AppContext State Shape:
-
-harvests: Harvest[]          — Planting records (source of truth)
-demands: Demand[]            — Buyer demand listings
-matches: Match[]             — Computed match scores (auto-generated)
-preOrders: PreOrder[]        — Confirmed agreements
-harvestBatches: HarvestBatch[] — Post-harvest batch records
-conversations: Conversation[] — Chat session metadata
-messages: Message[]          — Chat messages
-paymentConfirmations: PaymentConfirmation[] — Optional proof uploads
-reviews: Review[]            — Post-transaction ratings
-activeRole: Role             — Current UI role
-activeUser: { PETANI, PEMBELI, PPL, KOLEKTOR } — Simulated user identities
-notification: { message, type } | null — Toast state
+users                    — id, name, email, passwordHash, role, region, createdAt
+harvests                 — id, farmerId/Name, commodity, landArea, expectedVolume,
+                            askingPrice, lat/lng, region, plantingDate,
+                            expectedHarvestDate, weatherRiskLevel, isPublished, status
+demands                  — id, buyerId/Name, commodity, requiredVolume, offerPrice,
+                            lat/lng, region, dateRequired, status
+matches                  — id, harvestId, demandId, score, distanceKm, scoreDetails(jsonb),
+                            status, bidVolume, bidPrice
+pre_orders               — id, matchId, harvestId, demandId, agreedPricePerKg,
+                            agreedVolumeKg, farmer/buyerName, commodity, deliveryMode, status
+harvest_batches          — id, plantingId, farmerId/Name, commodity, region, lat/lng,
+                            preOrderId, actualVolumeKg, harvestDate, shelfLifeDays,
+                            priorityScore, status
+conversations            — id, matchId, farmerUserId, buyerUserId
+messages                 — id, conversationId, senderUserId, content, sentAt
+payment_confirmations    — id, preOrderId, proofImageUrl, status, notes
+reviews                  — id, preOrderId, reviewerUserId, revieweeUserId, rating, comment
+market_prices            — id, commodity, region, pricePerKg, dateRecorded
 ```
 
 ---
@@ -125,13 +136,12 @@ notification: { message, type } | null — Toast state
 
 ```
 Harvest
-  ├── harvestForecasts    (computed from ALL harvests)
-  ├── matches             (computed from harvest + demand cross-product)
-  │     └── preOrders     (created when match → CONFIRMED)
+  ├── matches             (dihitung backend: matchingEngine, trigger saat POST harvest)
+  │     └── preOrders     (dibuat saat match → CONFIRMED via /api/pre-orders/confirm)
   │           ├── paymentConfirmations
   │           └── reviews
-  ├── harvestBatches      (created when farmer marks harvest done)
-  │     └── routeStops    (computed by routeOptimizer)
+  ├── harvestBatches      (dibuat saat farmer mark harvest done)
+  │     └── routeStops    (dihitung routeOptimizer — bukan tabel DB)
   └── conversations
         └── messages
 ```
@@ -142,76 +152,60 @@ Harvest
 
 ### 1. Harvest Forecasting (`src/utils/forecasting.ts`)
 
-Pure function: `generateHarvestForecast(harvests, region, commodity) → RegionForecast`
+Pure function. Holt's Double Exponential Smoothing + Fourier series (K=2) + exogenous rain factor. 95% confidence interval. Displayed di DinasView (SVG chart).
 
-- STL-style decomposition (Trend × Seasonal × Residual)
-- Holt's Double Exponential Smoothing for trend
-- Fourier series (K=2) for seasonality
-- Exogenous rain factor from Indonesia monsoon pattern
-- 95% confidence interval widening with √h
+### 2. Smart Matching (`src/utils/matchingEngine.ts`, `src/utils/matching.ts`)
 
-### 2. Matching Engine (`src/context/AppContext.tsx` via `scoreMatch`)
+- `runMatchingForHarvest(harvest)` dipanggil dari POST `/api/harvests`
+- Haversine distance + volume fit + price fit, weighted sum pakai `COMMODITY_WEIGHTS`
+- Hasil disimpan ke tabel `matches`
 
-Pure function: `scoreMatch(harvest, demand) → Match`
+### 3. Price Prediction (`app/api/prices/route.ts`)
 
-- Haversine distance for location proximity
-- Ratio-based volume fit score
-- Offer/asking price ratio score
-- Weighted sum using `COMMODITY_WEIGHTS[commodity]` defaults
+- Baca `market_prices` historis dari DB (filter commodity + region)
+- Prediksi 14 hari: Simple Moving Average + tren linier + noise kecil
+- Dikonsumsi grafik harga di dashboard
 
-Computed reactively via `useEffect` whenever `[harvests, demands]` change.
+### 4. Route Optimization (`src/utils/routeOptimizer.ts`)
 
-### 3. Route Optimization (`src/utils/routeOptimizer.ts`)
+- `optimizeBatchRoutes()` / `optimizeCollectorRoutes()` — Clarke-Wright Savings + 2-opt Local Search
+- Haversine distance matrix
+- Rekomendasi saja — status `PICKED_UP_DIRECTLY` untuk deviasi
 
-Pure functions:
-- `optimizeBatchRoutes(batches, depot, capacity, vehicles) → VehicleRoute[]`
-- `optimizeCollectorRoutes(harvests, depot, capacity, vehicles) → VehicleRoute[]`
+### 5. Distribution Priority (dalam `DataContext.createHarvestBatch`)
 
-Algorithm:
-1. Build Haversine distance matrix
-2. Clarke-Wright Savings heuristic for route merging
-3. 2-opt Local Search for intra-route optimization
-
-### 4. Distribution Priority (`src/context/AppContext.tsx` via `createHarvestBatch`)
-
-Inline computation:
 - shelfLifeScore = (1 / shelfLifeDays) × 4000
 - overdueScore = min(40, overdueDays × 4)
 - volumeScore = min(20, floor(volumeKg / 1000))
-- priorityScore = min(100, sum of above) ≤ 70 high, ≥ 40 medium
+- priorityScore = min(100, sum)
 
-### 5. Chat (`src/components/ChatModal.tsx`)
+### 6. Chat (`src/components/ChatModal.tsx` + `src/services/chatService.ts`)
 
-- Simple push-to-messages array model
-- Conversation created on match confirm
-- Messages persisted in localStorage
-- Current user filtering by `senderUserId`
+- Dua kanal: in-app chat (persisted ke DB via API) + link `wa.me` di kartu match
+- Bukan WhatsApp Business API
 
 ---
 
 ## Folder Organization
 
 ```
+app/
+├── (auth)/login, (auth)/register     — halaman auth
+├── dashboard/                        — halaman dashboard
+├── api/                              — 45+ REST route handlers
+├── layout.tsx, page.tsx, not-found.tsx
 src/
-├── components/
-│   ├── AdminView.tsx        — Admin dashboard
-│   ├── BuyerView.tsx        — Buyer dashboard
-│   ├── ChatModal.tsx        — Chat dialog
-│   ├── DinasView.tsx        — Dinas Pertanian dashboard
-│   ├── FarmerView.tsx       — Farmer dashboard
-│   ├── InteractiveMap.tsx   — Leaflet map + side panel
-│   ├── KolektorView.tsx     — Collector dashboard
-│   ├── Navbar.tsx           — App header + role switcher
-│   └── PPLView.tsx          — Extension worker dashboard
-├── context/
-│   └── AppContext.tsx       — Global state + logic
-├── utils/
-│   ├── forecasting.ts       — Harvest forecast engine
-│   └── routeOptimizer.ts    — VRP solver
-├── types.ts                 — All type definitions + constants
-├── App.tsx                  — Root component
-├── main.tsx                 — Entry point
-└── index.css                — Tailwind theme (Natural Tones)
+├── components/                       — role views, modals, map, navbar
+├── context/                          — Auth, UI, Data, Chat, Payment, Review
+├── services/                         — HTTP service layer (fetch → /api/*)
+├── db/                               — Drizzle connection, schema, seed, migrate
+├── utils/                            — forecasting, matching, routeOptimizer, bmkg, geocoding
+├── constants/commodities.ts          — runtime data komoditas + weights
+├── data/                             — seed data & demo users
+└── types.ts                          — pure type definitions
+drizzle/                              — migration files
+docker-compose.yml                    — PostgreSQL 15 (port 5434)
+drizzle.config.ts                     — Drizzle kit config
 ```
 
 ---
@@ -219,25 +213,25 @@ src/
 ## Design Decisions
 
 ### Why React Context (not Redux/Zustand)?
-MVP scope — zero external state dependencies. Acceptable for <10k lines. Must migrate for production.
+MVP scope — zero external state deps. 5 domain contexts mengisolasi re-render. Migrate ke Zustand ada di roadmap (medium-term).
 
-### Why localStorage (not DB)?
-Prototype-only. Allows zero-config setup and page-refresh persistence. 5MB limit will be reached with chat at scale.
+### Why PostgreSQL + Drizzle (bukan localStorage)?
+Kebutuhan multi-user & persistence. Semua data domain lewat API → DB. localStorage hanya untuk auth session.
 
-### Why Vite (not Next.js)?
-Initial choice. PRD specifies Next.js for landing page + API routes in one project. Migration expected.
+### Why Next.js App Router?
+PRD: landing page + API routes dalam satu project. SSR/SEO untuk landing. API Routes menangani seluruh CRUD.
 
 ### Why Leaflet (not Google Maps)?
-Free, open-source, no API key required. Acceptable for MVP with demo data.
+Free, open-source, no API key. Route optimization memakai algoritma custom (Clarke-Wright + 2-opt), bukan Google Maps Directions API.
 
 ### Why no Payment Gateway?
-PRD explicitly excludes automated payments. Transactions are off-system. Optional proof upload only.
+PRD mengecualikan pembayaran otomatis. Transaksi di luar sistem; upload bukti opsional.
 
 ### Why per-commodity weights (not admin-adjustable)?
-Domain expertise encoded into `COMMODITY_WEIGHTS`. Prevents well-meaning admin from overriding food-science defaults.
+Domain knowledge di-encode di `COMMODITY_WEIGHTS`. Mencegah admin override food-science defaults.
 
-### Why PICKED_UP_DIRECTLY batch status?
-PRD specifies that routes are recommendations only. Buyers with their own fleet may bypass consolidation entirely.
+### Why no blockchain / hash-chain?
+PRD melarang blockchain. Tidak ada kode SHA-256 ledger. Label "Hash-Chain" di UI hanyalah branding visual.
 
-### Why no blockchain?
-PRD explicitly prohibits blockchain/hash-chain. Centralized database trust model is sufficient for this use case.
+### Why password hash btoa?
+Demo-only. Tanpa salt, tidak aman produksi. Perlu bcrypt/argon saat production.

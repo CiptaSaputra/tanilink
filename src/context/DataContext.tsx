@@ -24,6 +24,8 @@ import type {
   Match,
   PreOrder,
   HarvestBatch,
+  MarketplaceListing,
+  EducationalContent,
 } from "../types";
 import { COMMODITY_LIST, COMMODITY_WEIGHTS } from "../constants/commodities";
 import { scoreMatch } from "../utils/matching";
@@ -51,6 +53,14 @@ import {
   batchAdd as svcBatchAdd,
   batchUpdateStatus,
   batchClear,
+  marketplaceGetAll,
+  marketplaceAdd as svcMarketplaceAdd,
+  marketplaceUpdateStatus as svcMarketplaceUpdateStatus,
+  notificationAdd,
+  ledgerAdd,
+  eduGetAll,
+  eduAdd as svcEduAdd,
+  eduUpdateStatus as svcEduUpdateStatus,
   STORAGE_KEYS,
   storageRead,
 } from "../services";
@@ -68,6 +78,8 @@ interface DataContextProps {
   matches: Match[];
   preOrders: PreOrder[];
   harvestBatches: HarvestBatch[];
+  marketplaceListings: MarketplaceListing[];
+  educationalContents: EducationalContent[];
   activeUser: ActiveUserMap;
   addHarvest: (
     data: Omit<Harvest, "id" | "farmerId" | "farmerName" | "status">,
@@ -93,6 +105,20 @@ interface DataContextProps {
     mode: "direct" | "consolidated",
   ) => Promise<void>;
   completePreOrder: (preOrderId: string) => Promise<void>;
+  addMarketplaceListing: (
+    data: Omit<MarketplaceListing, "id" | "listedAt" | "status">,
+  ) => Promise<void>;
+  updateMarketplaceStatus: (
+    id: string,
+    status: MarketplaceListing["status"],
+  ) => Promise<void>;
+  addEducationalContent: (
+    data: Omit<EducationalContent, "id" | "createdAt" | "status">,
+  ) => Promise<void>;
+  updateEducationalStatus: (
+    id: string,
+    status: EducationalContent["status"],
+  ) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextProps | undefined>(undefined);
@@ -109,29 +135,58 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
   const [matches, setMatches] = useState<Match[]>([]);
   const [preOrders, setPreOrders] = useState<PreOrder[]>([]);
   const [harvestBatches, setHarvestBatches] = useState<HarvestBatch[]>([]);
+  const [marketplaceListings, setMarketplaceListings] = useState<
+    MarketplaceListing[]
+  >([]);
+  const [educationalContents, setEducationalContents] = useState<
+    EducationalContent[]
+  >([]);
 
   useEffect(() => {
     async function loadData() {
       try {
-        const [h, d, p, b, m] = await Promise.all([
+        const [h, d, p, b, m, mp, edu] = await Promise.all([
           harvestGetAll(),
           demandGetAll(),
           preOrderGetAll(),
           batchGetAll(),
           matchGetAll(),
+          marketplaceGetAll(),
+          eduGetAll(),
         ]);
         setHarvests(h);
         setDemands(d);
         setPreOrders(p);
         setHarvestBatches(b);
         setMatches(m.sort((a, b) => b.score - a.score));
+        setMarketplaceListings(mp);
+        setEducationalContents(edu);
       } catch (err) {
         console.error("Failed to fetch real-time data:", err);
       }
     }
 
+    // Auto-marketplace: sekali saat mount (idempotent di server)
+    let autoRan = false;
+    async function runAutoMarketplace() {
+      if (autoRan) return;
+      autoRan = true;
+      try {
+        const res = await fetch("/api/marketplace/auto", { method: "POST" });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.created > 0) {
+            loadData();
+          }
+        }
+      } catch (err) {
+        console.warn("[marketplace-auto] Gagal:", err);
+      }
+    }
+
     // Initial load
     loadData();
+    runAutoMarketplace();
 
     // Real-time polling every 3 seconds
     const interval = setInterval(loadData, 3000);
@@ -267,6 +322,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
             setDemands(updatedDemands);
             setPreOrders(updatedPreOrders);
             await refreshMatches();
+            // Notifikasi ke kedua pihak
+            await notificationAdd({
+              userId: h.farmerId,
+              type: "preorder",
+              message: `PO disepakati: ${h.commodity} dengan ${d.buyerName} (${(bidData?.bidVolume ?? m.bidVolume ?? h.expectedVolume).toLocaleString("id-ID")} kg @ Rp${(bidData?.bidPrice ?? m.bidPrice ?? d.offerPrice).toLocaleString("id-ID")}/kg)`,
+            });
+            await notificationAdd({
+              userId: d.buyerId,
+              type: "preorder",
+              message: `PO disepakati: ${d.commodity} dengan petani ${h.farmerName} — stok terkunci sebelum panen.`,
+            });
             showNotification(
               "✅ Pre-Order Berhasil! Kontrak telah disepakati.",
               "success",
@@ -360,6 +426,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
       });
       setHarvestBatches(updatedBatches);
       setHarvests(updatedHarvests);
+      await notificationAdd({
+        userId: harvest.farmerId,
+        type: "batch",
+        message: `Batch panen ${harvest.commodity} siap dijemput (${actualVolumeKg.toLocaleString("id-ID")} kg, prioritas ${priorityScore}).`,
+      });
       showNotification(
         `Batch panen ${harvest.commodity} berhasil dicatat! Skor prioritas: ${priorityScore}`,
         "success",
@@ -402,9 +473,99 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
     async (preOrderId: string) => {
       const updated = await preOrderComplete(preOrderId);
       setPreOrders(updated);
+
+      // Catat transaksi ke hash-chain ledger (tamper-evident)
+      const po = updated.find((p) => p.id === preOrderId);
+      if (po) {
+        const recordData = JSON.stringify({
+          preOrderId: po.id,
+          commodity: po.commodity,
+          volumeKg: po.agreedVolumeKg,
+          pricePerKg: po.agreedPricePerKg,
+          totalValue: po.agreedVolumeKg * po.agreedPricePerKg,
+          farmer: po.farmerName,
+          buyer: po.buyerName,
+          completedAt: new Date().toISOString(),
+        });
+        try {
+          await ledgerAdd(po.id, recordData);
+        } catch (err) {
+          console.warn("[ledger] Gagal mencatat transaksi:", err);
+        }
+      }
+
       showNotification(
-        "Pre-Order selesai! Silakan beri ulasan & rating.",
+        "Pre-Order selesai! Transaksi tercatat di ledger.",
         "success",
+      );
+    },
+    [showNotification],
+  );
+
+  const addMarketplaceListing = useCallback(
+    async (
+      data: Omit<MarketplaceListing, "id" | "listedAt" | "status">,
+    ) => {
+      const listing: MarketplaceListing = {
+        ...data,
+        id: `mp-${Date.now()}`,
+        status: "open",
+        listedAt: new Date().toISOString().split("T")[0],
+      };
+      const updated = await svcMarketplaceAdd(listing);
+      setMarketplaceListings(updated);
+      await notificationAdd({
+        userId: data.farmerId,
+        type: "match",
+        message: `Panen ${data.commodity} kamu tampil di Marketplace Terbuka — pembeli bisa langsung menghubungi.`,
+      });
+      showNotification(
+        `Panen ${data.commodity} berhasil dijual di Marketplace!`,
+        "success",
+      );
+    },
+    [showNotification],
+  );
+
+  const updateMarketplaceStatus = useCallback(
+    async (id: string, status: MarketplaceListing["status"]) => {
+      const updated = await svcMarketplaceUpdateStatus(id, status);
+      setMarketplaceListings(updated);
+      showNotification(
+        status === "sold"
+          ? "Listing ditandai sudah terjual."
+          : "Status listing diperbarui.",
+        "info",
+      );
+    },
+    [showNotification],
+  );
+
+  const addEducationalContent = useCallback(
+    async (data: Omit<EducationalContent, "id" | "createdAt" | "status">) => {
+      const updated = await svcEduAdd(data);
+      setEducationalContents(updated);
+      showNotification(
+        "Konten edukasi dikirim untuk moderasi admin.",
+        "success",
+      );
+    },
+    [showNotification],
+  );
+
+  const updateEducationalStatus = useCallback(
+    async (id: string, status: EducationalContent["status"]) => {
+      await svcEduUpdateStatus(id, status);
+      setEducationalContents((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, status } : c)),
+      );
+      showNotification(
+        status === "published"
+          ? "Konten dipublikasikan."
+          : status === "rejected"
+            ? "Konten ditolak."
+            : "Status konten diperbarui.",
+        "info",
       );
     },
     [showNotification],
@@ -418,6 +579,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
         matches,
         preOrders,
         harvestBatches,
+        marketplaceListings,
+        educationalContents,
         activeUser,
         addHarvest,
         addDemand,
@@ -426,6 +589,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
         updateBatchStatus,
         setDeliveryMode,
         completePreOrder,
+        addMarketplaceListing,
+        updateMarketplaceStatus,
+        addEducationalContent,
+        updateEducationalStatus,
       }}
     >
       {children}

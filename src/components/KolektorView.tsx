@@ -22,6 +22,7 @@ import {
   ArrowLeftRight,
   ClipboardList,
 } from "lucide-react";
+import RouteMap from "./shared/RouteMap";
 
 export default function KolektorView() {
   const { harvestBatches, preOrders, updateBatchStatus, activeUser } =
@@ -48,25 +49,25 @@ export default function KolektorView() {
     [harvestBatches, activeUser.KOLEKTOR.region],
   );
 
+  // Default depot coordinates per region
+  const depotCoords: Record<string, { lat: number; lng: number }> = {
+    Brebes: { lat: -6.871, lng: 109.042 },
+    Garut: { lat: -7.227, lng: 107.908 },
+    Malang: { lat: -7.982, lng: 112.63 },
+    Cianjur: { lat: -6.822, lng: 107.138 },
+    Lampung: { lat: -5.402, lng: 105.263 },
+  };
+  const depot = depotCoords[activeUser.KOLEKTOR.region] || {
+    lat: -6.871,
+    lng: 109.042,
+  };
+
   // Compute route recommendation
   const optimizedRoutes = useMemo(() => {
     if (regionalBatches.length === 0) return [];
 
-    // Default depot coordinates for the region
-    const depotCoords: Record<string, { lat: number; lng: number }> = {
-      Brebes: { lat: -6.871, lng: 109.042 },
-      Garut: { lat: -7.227, lng: 107.908 },
-      Malang: { lat: -7.982, lng: 112.63 },
-      Cianjur: { lat: -6.822, lng: 107.138 },
-      Lampung: { lat: -5.402, lng: 105.263 },
-    };
-    const depot = depotCoords[activeUser.KOLEKTOR.region] || {
-      lat: -6.871,
-      lng: 109.042,
-    };
-
     return optimizeBatchRoutes(regionalBatches, depot.lat, depot.lng, 5000, 2);
-  }, [regionalBatches, activeUser.KOLEKTOR.region]);
+  }, [regionalBatches, depot.lat, depot.lng]);
 
   const [selectedRoute, setSelectedRoute] = useState<number>(0);
 
@@ -132,7 +133,7 @@ export default function KolektorView() {
       {/* Route Recommendation */}
       {optimizedRoutes.length > 0 &&
       optimizedRoutes[selectedRoute]?.routeStops.length > 0 ? (
-        <div className="space-y-4">
+        <div id="rute" className="space-y-4 scroll-mt-28">
           {/* Route selector */}
           <div className="flex gap-2">
             {optimizedRoutes.map((r, idx) => (
@@ -219,10 +220,34 @@ export default function KolektorView() {
                 </div>
               </div>
             </div>
+
+            {/* Peta Rute Jalan Aktual */}
+            <RouteMap
+              waypoints={[
+                depot,
+                ...optimizedRoutes[selectedRoute].routeStops.map((s) => ({
+                  lat: s.latitude,
+                  lng: s.longitude,
+                })),
+              ]}
+              stops={[
+                { id: "depot", label: `Depot ${activeUser.KOLEKTOR.region}` },
+                ...optimizedRoutes[selectedRoute].routeStops.map((s) => ({
+                  id: s.harvestId,
+                  label: s.farmerName,
+                  sub: `${s.commodity} • ${s.volumeKg.toLocaleString("id-ID")} kg`,
+                })),
+              ]}
+              height="320px"
+              depotIndex={0}
+            />
           </div>
 
           {/* All ready batches with action buttons */}
-          <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm">
+          <div
+            id="batch"
+            className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+          >
             <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-light-cream flex items-center gap-1.5">
               <ClipboardList className="w-4 h-4 text-amber-600" />
               Batch Siap Dijemput ({regionalBatches.length})
@@ -315,7 +340,10 @@ export default function KolektorView() {
       {allRegionalBatches.filter(
         (b) => b.status === "IN_TRANSIT" || b.status === "DELIVERED",
       ).length > 0 && (
-        <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm">
+        <div
+          id="riwayat"
+          className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+        >
           <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-light-cream flex items-center gap-1.5">
             <Package className="w-4 h-4 text-nat-green" />
             Riwayat Batch Wilayah

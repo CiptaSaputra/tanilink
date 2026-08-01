@@ -1,170 +1,171 @@
 # TaniLink — Code Quality Review
 
+> Diperbarui per 2026-08-01. Sebagian besar temuan versi lama (Vite SPA) sudah diatasi sejak 1.4.0 & 1.5.0.
+
 ## Architecture
 
 ### Strengths
 
-- **Single-responsibility components** — Each view component (FarmerView, BuyerView, etc.) manages its own UI concerns independently.
-- **Context-based state** — Single `AppContext` provides centralized state management without external dependencies (Redux, Zustand).
-- **Separation of logic** — Pure utility functions in `src/utils/` (forecasting, route optimization) are decoupled from UI.
-- **Type-driven development** — All entities are defined in `types.ts` with clear interfaces and no `any` usage.
-- **No routing library overhead** — Single-page role-switching pattern is appropriate for an MVP.
+- **Full-stack clean layering** — `src/services/` (HTTP) → `app/api/` (REST) → Drizzle → PostgreSQL. Frontend tidak pernah menyentuh storage langsung.
+- **Single-responsibility components** — setiap role view mengelola UI-nya sendiri; modals (Payment, Review, HarvestBatch) reusable.
+- **Domain-separated contexts** — 5 context (UI, Data, Chat, Payment, Review) mengisolasi re-render.
+- **Separation of logic** — pure utilities di `src/utils/` (forecasting, matching, routeOptimizer) terdecouple dari UI.
+- **Type-driven development** — semua entity didefinisikan di `types.ts`, zero `any`.
+- **Schema ↔ types alignment** — `src/db/schema.ts` mencerminkan `types.ts` (Drizzle mirror).
+- **Pre-order atomicity** — transaksi DB di `/api/pre-orders/confirm`.
 
 ### Weaknesses
 
-- **No backend layer** — All logic and data live in the frontend. No API routes, no database, no authentication service.
-- **All-in-one context** — `AppContext.tsx` contains state, matching engine logic, localStorage sync, seed data, and UI notification state. This violates separation of concerns and will become unmanageable as the app grows.
-- **No error boundary** — A component crash takes down the entire app.
-- **No routing** — Navigation is limited to role switching. No deep URLs, no browser back/forward support.
-- **Seed data hardcoded** — Sample harvests and demands are embedded in AppContext.tsx rather than in a separate seed file.
+- **No RBAC middleware server** — proteksi role hanya client-side; endpoint API tidak memvalidasi role caller.
+- **Password hash `btoa`** — demo-only, insecure untuk produksi.
+- **Service layer tanpa error states** — fetch failures silent-return `[]` / generic error; tidak ada retry.
+- **Beberapa route handler berisi komentar/sisa logika lama** (mis. `app/api/harvests/route.ts` GET yang masih ragu soal response shape).
+- **Polling 3 detik** untuk sinkronisasi — workable untuk demo, bukan real-time push.
 
 ## Folder Structure
 
-### Current
-
 ```
+app/
+├── (auth)/, dashboard/, api/ (45+ routes)
 src/
-├── components/     (9 components)
-├── context/        (1 context)
-├── utils/          (2 utilities)
-├── types.ts        (all types)
-├── App.tsx         (root)
-├── main.tsx        (entry)
-└── index.css       (tailwind theme)
+├── components/     (role views + modals + shared)
+├── context/        (Auth, UI, Data, Chat, Payment, Review)
+├── services/       (HTTP service layer)
+├── db/             (Drizzle connection, schema, seed, migrate)
+├── utils/          (forecasting, matching, routeOptimizer, bmkg, geocoding)
+├── constants/      (commodities.ts — runtime data)
+├── data/           (seed data, demo users)
+└── types.ts        (pure types)
+drizzle/            (migration files)
 ```
 
 ### Observations
 
-- ✅ Clean separation of components, context, and utilities.
-- ❌ `types.ts` is a dumping ground — includes types, commodity metadata, and default weights.
-- ❌ No `hooks/`, `services/`, or `api/` directories for future backend integration.
-- ❌ No `constants/` directory — seed data lives in AppContext.tsx.
-- ✅ Utility files are well-named and focused on one concern each.
+- ✅ Clean separation of components, context, services, utils.
+- ✅ `types.ts` murni type — runtime data pindah ke `constants/` & `data/`.
+- ✅ `services/` dan `db/` ada untuk backend integration.
+- ⚠️ `app/api/harvests/route.ts` masih ada komentar TODO lama.
+- ⚠️ Dependencies tidak terpakai (`@tensorflow/tfjs`, `qrcode.react`, `@google/genai`, `express`, `@vitejs/plugin-react`, `vite`) — bloat.
 
 ## Naming Conventions
 
 | Aspect | Verdict | Notes |
 |--------|---------|-------|
-| Components | ✅ PascalCase | All view components follow standard |
-| Files | ✅ camelCase | All source files use camelCase |
-| Types/interfaces | ✅ PascalCase | Harvest, Demand, Match, etc. |
-| Functions | ✅ camelCase | calculateDistance, scoreMatch, etc. |
+| Components | ✅ PascalCase | FarmerView, BuyerView, dsb. |
+| Files | ✅ camelCase | Semua source file |
+| Types/interfaces | ✅ PascalCase | Harvest, Demand, Match |
+| Functions | ✅ camelCase | calculateDistance, scoreMatch |
 | Constants | ✅ UPPER_CASE | COMMODITY_LIST, COMMODITY_WEIGHTS |
-| Props interfaces | ⚠️ Inline | Some props typed inline rather than exported |
-| Event handlers | ⚠️ Inconsistent | Mix of `handleX` and inline arrow functions |
+| DB schema | ✅ snake_case | `land_area`, `pre_order_id` (mapped via Drizzle) |
+| Props interfaces | ⚠️ Inline | Sebagian props di-type inline |
 
 ## Component Design
 
 ### Strengths
 
-- Components are moderately sized (300–1100 lines each), with clear sections separated by comments.
-- State is co-located with the component that uses it.
-- Modals are rendered inline within parent components rather than at a global level.
-- Motion (Framer Motion) usage is tasteful — subtle entrance animations, not excessive.
+- Components terdekomposisi (FarmerView/BuyerView sudah dipecah jadi sub-komponen + modal reusable).
+- State co-located dengan komponen.
+- Modals reusable (PaymentModal, ReviewModal, HarvestBatchModal) dipakai lintas role.
+- ErrorBoundary membungkus semua role view.
 
 ### Weaknesses
 
-- **FarmerView (820 lines) and BuyerView (630 lines) are too large** — should be split into sub-components (PlantingForm, MatchCard, PreOrderPanel, ReviewModal, PaymentModal).
-- **Modal rendering is duplicated** — Payment modal and review modal are duplicated across FarmerView and BuyerView. Should be reusable components.
-- **No loading states** — All interactions are instant with no async operations. When a backend is added, every data fetch will need loading states.
-- **No empty state diversity** — Empty states use a uniform "Belum ada..." pattern. Acceptable for MVP.
+- **InteractiveMap (~600+ baris)** masih monolith — map, sidebar, filter, geolocation dalam satu file.
+- **No loading states** — semua interaksi dianggap instant; fetch async belum punya skeleton/spinner.
+- **No empty state diversity** — pola "Belum ada..." seragam.
+- **Form validation** sebagian besar ada di auth, tapi form planting/demand/batch belum field-level.
 
 ## TypeScript Quality
 
 ### Score: 8/10
 
-- ✅ Zero `any` types (excellent).
-- ✅ Strict interfaces for all entities.
-- ✅ Discriminated unions for status fields.
-- ✅ Enums-like patterns using union types.
-- ⚠️ `Komoditas` is a string union but used as both type and object key — some indexing requires casting.
-- ⚠️ Some components don't export their props interfaces for reuse.
+- ✅ Zero `any`.
+- ✅ Strict interfaces untuk semua entity.
+- ✅ Discriminated unions untuk status fields.
+- ⚠️ `Komoditas` dipakai sebagai type & object key — kadang perlu cast.
+- ⚠️ Beberapa komponen tidak mengekspor props interface.
+- ⚠️ `next.config.mjs` masih `ignoreBuildErrors: true` — strict errors belum dibereskan.
 
 ## React Best Practices
 
-### Score: 7/10
+### Score: 8/10
 
 | Practice | Status |
 |----------|--------|
 | Hooks used correctly | ✅ |
 | No class components | ✅ |
 | useMemo/useCallback used appropriately | ✅ |
-| useEffect dependencies correct | ✅ (verified from tsconfig) |
-| Key props on list items | ✅ (unique IDs) |
-| Props destructured | ✅ |
-| Event handlers properly typed | ✅ |
-| No prop drilling abuse | 🟡 (some props passed through App.tsx) |
-| Custom hooks for reusable logic | ❌ (no custom hooks) |
-| Error boundaries | ❌ |
+| Key props on list items | ✅ |
+| Context split untuk isolasi re-render | ✅ |
+| Error boundaries | ✅ |
+| Custom hooks untuk reusable logic | 🟡 (hanya hooks context: useData, useChat, dsb.) |
 | Suspense boundaries | ❌ |
+| Memoized components | ⚠️ sebagian |
 
 ## State Management
 
-### Score: 5/10
+### Score: 7/10
 
-- **Current:** React Context + localStorage persistence.
-- **Strengths:** Simple, zero dependencies, localStorage enables page-refresh persistence.
+- **Current:** 5 domain contexts + polling API (3s).
+- **Strengths:** terisolasi per domain, data dari backend nyata (PostgreSQL), service layer swappable.
 - **Weaknesses:**
-  - Entire app state in one context → every state change re-renders all consumers.
-  - No state normalization — arrays are stored as-is, leading to O(n) lookups.
-  - localStorage has 5MB limit — will overflow with chat messages at scale.
-  - No optimistic updates, no rollback, no transaction support.
-  - No backend sync — state is lost if user clears browser data.
+  - Belum normalisasi (masih array → O(n) lookup).
+  - Polling 3 detik — bukan subscription/push.
+  - Tidak ada optimistic rollback pattern yang konsisten.
+  - Auth session localStorage (acceptable untuk demo, bukan produksi).
 
 ## Performance
 
 ### Score: 6/10
 
-- ✅ `useMemo` used for computed values (forecasts, regional stats, filtered data).
-- ✅ Leaflet map state is stabilized via refs.
-- ❌ No virtualization for lists (all items rendered at once).
-- ❌ Page re-renders on every context change due to single-context architecture.
-- ❌ SVG chart renders on every forecast computation even when hidden in other tabs.
-- ❌ No lazy loading — all components mount immediately regardless of role.
+- ✅ `useMemo` untuk computed values.
+- ✅ Leaflet map state stabil via refs.
+- ❌ Belum ada virtualisasi list (semua item dirender).
+- ❌ Polling 3 detik fetch seluruh dataset — boros di skala besar.
+- ❌ Tidak ada code splitting per-route untuk komponen besar.
 
 ## Security
 
-### Score: 2/10
+### Score: 4/10
 
-- ❌ **No authentication** — role switching is a UI toggle. Anyone can access any role.
-- ❌ **No authorization** — RBAC is simulated via conditional rendering. API endpoints don't exist to enforce it.
-- ❌ **No input sanitization** — form inputs are stored directly without validation.
-- ❌ **No XSS protection** — message content is rendered as-is.
-- ❌ **localStorage is insecure** — any browser extension or XSS can read all data.
-- ✅ No passwords stored in code (but no password system at all).
+- ✅ Auth login/register via backend, password tidak pernah dikirim plaintext ke client response.
+- ✅ Admin/Dinas tidak bisa self-register (server-enforced).
+- ✅ Pre-order confirm pakai transaction (atomicity).
+- ❌ **RBAC hanya client-side** — endpoint API tidak memeriksa role/ownership caller. Siapa pun yang tahu endpoint bisa POST data.
+- ❌ **Password hash `btoa`** — dapat di-decode, tidak aman.
+- ❌ Tidak ada input sanitization di semua endpoint (XSS risk pada field text/notes/chat).
+- ❌ Tidak ada rate limiting / session JWT.
 
 ## Technical Debt
 
 ### Critical
 
-1. **Single AppContext monolith** (context/AppContext.tsx — 670 lines) must be split before backend integration.
-2. **No backend** — all data is ephemeral localStorage. Real users cannot share or persist data.
-3. **No authentication** — the role switcher is a mock, not a real security boundary.
+1. **RBAC middleware server-side belum ada** — endpoint API tidak diverifikasi role/ownership. Ini gap terbesar menuju produksi.
+2. **Password hash `btoa`** — harus bcrypt/argon + JWT session.
+3. **XSS/sanitization** — content chat & notes dirender apa adanya.
 
 ### High
 
-1. **FarmerView (820 lines) and BuyerView (630 lines) need decomposition** into smaller components.
-2. **Duplicated modal patterns** — PaymentModal and ReviewModal replicated across roles.
-3. **No error handling pattern** — all errors swallowed in `catch` blocks with generic messages.
-4. **Seed data in AppContext** creates tight coupling between demo data and application logic.
+1. **`ignoreBuildErrors: true`** — TypeScript strict errors belum dibersihkan.
+2. **Polling 3 detik full-fetch** — boros; perlu incremental/etag atau websocket.
+3. **Dependencies tidak terpakai** — kurangi bundle (tfjs, qrcode, genai, express, vite).
+4. **`app/api/harvests/route.ts`** — komentar/sisa logika response shape perlu dibersihkan.
 
 ### Medium
 
-1. **`type.ts` contains runtime data** (`COMMODITY_LIST`, `COMMODITY_WEIGHTS`) alongside type definitions.
-2. **No single source of truth for API endpoints** — backend integration will require search-and-replace across all components.
-3. **`Komoditas` type requires casts** when used as object keys.
-4. **InteractiveMap.tsx (660 lines)** contains geolocation, map rendering, popups, and side panel — should be split.
-5. **CSS variables duplicated** between `index.css` Tailwind theme and inline styles.
+1. **InteractiveMap monolith (~600+ baris)** — perlu dipecah.
+2. **Form validation** planting/demand/batch belum field-level.
+3. **Loading states** belum ada untuk operasi async.
+4. **State belum dinormalisasi** — O(n) array lookup.
+5. **Service layer error handling** — silent fail menyembunyikan error backend.
 
 ## Recommendations (Priority Order)
 
-1. **Split AppContext** into domain-specific contexts (AuthContext, DataContext, ChatContext, UIContext) or adopt Zustand for normalized state.
-2. **Extract modals into reusable components** — `PaymentModal`, `ReviewModal`, `HarvestBatchModal`.
-3. **Decompose FarmerView** into `PlantingForm`, `MyHarvestsTable`, `MatchCardList`, `PreOrderPanel`.
-4. **Move seed data** to `src/seed/` or `src/data/` directory.
-5. **Separate types from runtime data** — move `COMMODITY_LIST` and `COMMODITY_WEIGHTS` to `constants/commodities.ts`.
-6. **Add error boundaries** at role-view level.
-7. **Create custom hooks** — `useChat`, `useMatching`, `useGeolocation`.
-8. **Abstract API layer** — create `src/services/api.ts` that wraps localStorage now and can swap to HTTP later.
-9. **Normalize state** — use ID maps (`Record<string, T>`) instead of arrays for O(1) lookups.
-10. **Add form validation** with error messages, not just silent catch-and-toast.
+1. **RBAC middleware** di Next.js (`middleware.ts`) + validasi ownership di tiap endpoint.
+2. **Replace `btoa`** dengan bcrypt/argon + JWT.
+3. **Sanitize input** (text fields, chat content) sebelum disimpan/rendered.
+4. **Bersihkan TypeScript strict errors**, lalu matikan `ignoreBuildErrors`.
+5. **Kurangi dependencies** yang tidak terpakai.
+6. **Refactor InteractiveMap** — split map, sidebar, filters, geolocation.
+7. **Virtualisasi list** (react-window) untuk chat & matches.
+8. **Perbaiki error handling service layer** — surface backend errors ke UI.

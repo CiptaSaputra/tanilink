@@ -7,7 +7,6 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import {
-  Sprout,
   Mail,
   Lock,
   Eye,
@@ -109,9 +108,11 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
       >
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-nat-green rounded-2xl shadow-lg shadow-nat-green/20 mb-4">
-            <Sprout className="w-7 h-7 text-white" />
-          </div>
+          <img
+            src="/logo.jpeg"
+            alt="Logo TaniLink"
+            className="w-28 h-20 object-contain mx-auto mb-4 drop-shadow-sm"
+          />
           <h1 className="text-2xl font-bold text-nat-dark">
             Masuk ke TaniLink
           </h1>

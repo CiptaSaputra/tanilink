@@ -10,7 +10,7 @@
 **Description:** System supports 6 user roles: Petani, Pembeli Institusional, PPL/BPP, Kolektor, Admin, Dinas Pertanian.
 **Business Goal:** Ensure data security and appropriate access per stakeholder.
 **Priority:** Critical
-**Status:** ✅ Complete (partial — no login/auth; role switching via UI buttons)
+**Status:** ✅ Complete (login-based RBAC via AuthContext + user registry in PostgreSQL; Admin & Dinas not self-registerable. No server middleware yet.)
 **Dependencies:** None
 **Acceptance Criteria:**
 - Each role sees only its authorized features and data
@@ -25,7 +25,7 @@
 **Description:** Farmers create accounts and log in to the system.
 **Business Goal:** Establish identity for data ownership.
 **Priority:** Critical
-**Status:** 🔴 Not Started
+**Status:** ✅ Complete (email/password login & registration via `/api/auth/login` + `/api/auth/register`, verified against PostgreSQL. Password hash `btoa` — demo-only.)
 **Dependencies:** FR-01
 
 ### FR-03: Farmer Inputs Own Planting Data
@@ -39,7 +39,7 @@
 **Description:** Location auto-fills from device geolocation when form opens; user can adjust by dragging pin on map.
 **Business Goal:** Reduce input friction, improve coordinate accuracy.
 **Priority:** High
-**Status:** ✅ Complete
+**Status:** 🟡 Partial (GPS auto-fill ✅; manual adjustment via map click, not drag gesture)
 **Dependencies:** FR-03
 
 ### FR-05: Opt-In Publication per Planting
@@ -60,7 +60,7 @@
 **Description:** System analyzes historical prices, demand, and weather data to generate 1–4 week price projections and best-selling-time recommendations.
 **Business Goal:** Reduce farmer dependence on middlemen through price transparency.
 **Priority:** Medium
-**Status:** ✅ Complete (integrated into DinasView forecasting tab)
+**Status:** ✅ Complete (price-per-kg prediction via `/api/prices`: historical from DB + 14-day projection using moving average & linear trend. Not yet persisted to a `price_predictions` table.)
 **Dependencies:** FR-06
 
 ### FR-08: Buyer Publishes Demand Listing
@@ -88,14 +88,14 @@
 **Description:** Matched farmers and buyers communicate via in-app chat for price, volume, and delivery negotiation. History persisted.
 **Business Goal:** Facilitate direct negotiation without exchanging personal contacts.
 **Priority:** High
-**Status:** ✅ Complete (ChatModal component, localStorage persistence)
+**Status:** ✅ Complete (dual channel: in-app ChatModal persisted to DB via API + `wa.me` link on match cards. Not WhatsApp Business API.)
 **Dependencies:** FR-09, FR-10
 
 ### FR-12: Pre-Order Agreement
 **Description:** Pre-order forms only when both parties explicitly confirm. Record includes agreed price, volume, and delivery mode.
 **Business Goal:** Provide commitment before harvest completion.
 **Priority:** Critical
-**Status:** ✅ Complete
+**Status:** ✅ Complete (atomic transaction in `/api/pre-orders/confirm`: match → CONFIRMED, harvest → MATCHED, demand → FULFILLED, pre_order inserted)
 **Dependencies:** FR-10
 
 ### FR-13: Two Delivery Paths (Direct / Consolidated)
@@ -116,7 +116,7 @@
 **Description:** System clusters collection points geographically and **recommends** pickup order to hub using nearest-neighbor heuristic. Routes are visual on interactive map. Not mandatory — collectors may deviate.
 **Business Goal:** Consolidate small-volume farmers into efficient collection routes.
 **Priority:** Medium
-**Status:** ✅ Complete (Clarke-Wright + 2-opt in `routeOptimizer.ts`)
+**Status:** ✅ Complete (Clarke-Wright + 2-opt in `routeOptimizer.ts`; custom heuristic, not Google Maps Directions API)
 **Dependencies:** FR-14
 
 ### FR-16: Payment Confirmation (Optional)
@@ -173,7 +173,7 @@
 **Description:** System must not use blockchain/hash-chain traceability. Simple SHA-256 checksum per transaction record is acceptable if traceability is needed later.
 **Business Goal:** Avoid unnecessary complexity. Decentralized trust is irrelevant for a single-database system.
 **Priority:** Critical
-**Status:** ✅ Complete (not implemented, no blockchain code exists)
+**Status:** ✅ Complete (no blockchain/hash-chain code exists. Note: "Hash-Chain" label in PublicDashboard UI is purely decorative.)
 **Dependencies:** None
 
 ### FR-23: No Third-Party Data Input
@@ -187,5 +187,5 @@
 **Description:** All views must be responsive for mobile access (majority of farmers use phones in the field).
 **Business Goal:** Maximize accessibility for target users.
 **Priority:** High
-**Status:** 🟡 Partial (Tailwind responsive classes present, but no dedicated mobile testing confirmed)
+**Status:** 🟡 Partial (Tailwind responsive classes present; no dedicated mobile testing, touch optimization, or PWA)
 **Dependencies:** None

@@ -21,6 +21,7 @@ import { DataProvider } from "@/context/DataContext";
 import { ChatProvider } from "@/context/ChatContext";
 import { PaymentProvider } from "@/context/PaymentContext";
 import { ReviewProvider } from "@/context/ReviewContext";
+import { NotificationProvider } from "@/context/NotificationContext";
 import ErrorBoundary from "@/components/shared/ErrorBoundary";
 import Navbar from "@/components/Navbar";
 import InteractiveMap from "@/components/InteractiveMap";
@@ -216,7 +217,9 @@ export default function DashboardApp() {
             <ChatProvider>
               <PaymentProvider>
                 <ReviewProvider>
-                  <DashboardContent />
+                  <NotificationProvider>
+                    <DashboardContent />
+                  </NotificationProvider>
                 </ReviewProvider>
               </PaymentProvider>
             </ChatProvider>

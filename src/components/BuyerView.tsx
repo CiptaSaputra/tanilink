@@ -6,9 +6,12 @@
 import React, { useState, useEffect } from "react";
 import { useData } from "../context/DataContext";
 import { useUI } from "../context/UIContext";
+import { useReview } from "../context/ReviewContext";
+import { getSellerRating } from "../utils/rating";
 import { COMMODITY_LIST } from "../constants/commodities";
 import type { Komoditas, Demand, Match, PreOrder } from "../types";
 import RouteMapModal from "./modals/RouteMapModal";
+import { ReviewModal } from "./modals/ReviewModal";
 import {
   ShoppingBag,
   Plus,
@@ -33,10 +36,12 @@ import {
   XCircle,
   AlertCircle,
   Bell,
+  Store,
 } from "lucide-react";
 
 import { Harvest } from "../types";
 import RegionAutocomplete from "./RegionAutocomplete";
+import RouteMap from "./shared/RouteMap";
 
 interface BuyerViewProps {
   mapLat?: number;
@@ -62,8 +67,11 @@ export default function BuyerView({
     addDemand,
     updateMatchStatus,
     activeUser,
+    marketplaceListings,
+    updateMarketplaceStatus,
   } = useData();
   const { showNotification } = useUI();
+  const { reviews } = useReview();
 
   // Form states
   const [commodity, setCommodity] = useState<Komoditas>("Bawang Merah");
@@ -86,6 +94,7 @@ export default function BuyerView({
 
   // Route map modal
   const [routeMapPO, setRouteMapPO] = useState<PreOrder | null>(null);
+  const [reviewPO, setReviewPO] = useState<PreOrder | null>(null);
 
   // Logistics state
   const [selectedLogistics, setSelectedLogistics] = useState<string[]>([]);
@@ -198,6 +207,11 @@ export default function BuyerView({
   // Penawaran yang menunggu keputusan pembeli (WAITING_BUYER_APPROVAL)
   const pendingBids = myMatches.filter(m => m.status === "WAITING_BUYER_APPROVAL");
 
+  // Listing marketplace yang masih terbuka (bisa dibeli buyer)
+  const openMarketplace = marketplaceListings.filter(
+    (l) => l.status === "open",
+  );
+
   return (
     <div className="space-y-6">
       {/* Buyer Profile Status Block */}
@@ -272,7 +286,10 @@ export default function BuyerView({
 
       {/* ───── PENAWARAN MASUK DARI PETANI ───── */}
       {pendingBids.length > 0 && (
-        <div className="bg-white rounded-2xl border-2 border-amber-300 shadow-lg overflow-hidden">
+        <div
+          id="tawaran"
+          className="bg-white rounded-2xl border-2 border-amber-300 shadow-lg overflow-hidden scroll-mt-28"
+        >
           {/* Header */}
           <div className="bg-gradient-to-r from-amber-500 to-amber-400 text-white px-5 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -356,7 +373,7 @@ export default function BuyerView({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div id="input-demand" className="grid grid-cols-1 lg:grid-cols-3 gap-6 scroll-mt-28">
         {/* Left Column: Form & QR Scanner Simulator */}
         <div className="lg:col-span-1 space-y-6">
           {/* Form Input Demand */}
@@ -710,7 +727,10 @@ export default function BuyerView({
           </div>
 
           {/* Pencocokan Petani Terdekat */}
-          <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm">
+          <div
+            id="match"
+            className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+          >
             <div className="flex justify-between items-center mb-4 pb-2 border-b border-nat-light-cream">
               <h3 className="text-sm font-bold text-nat-dark flex items-center gap-1.5">
                 <ArrowRightLeft className="w-4 h-4 text-nat-green" />
@@ -753,8 +773,24 @@ export default function BuyerView({
                           <h4 className="text-xs font-bold text-nat-dark">
                             {harvest.farmerName}
                           </h4>
+                          {(() => {
+                            const r = getSellerRating(reviews, harvest.farmerId);
+                            return r.average > 0 ? (
+                              <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-600">
+                                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                {r.average.toFixed(1)}
+                                <span className="text-nat-sage font-medium">
+                                  ({r.count})
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-[10px] text-nat-sage font-medium">
+                                Belum ada ulasan
+                              </span>
+                            );
+                          })()}
                           <span className="text-[10px] text-nat-sage font-medium">
-                            • Wilayah Tani: {harvest.region}
+                            • {harvest.region}
                           </span>
                         </div>
 
@@ -924,7 +960,10 @@ export default function BuyerView({
       </div>
       
       {/* Daftar Pre-Order Aktif (PO) */}
-      <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm mt-6">
+      <div
+        id="po"
+        className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm mt-6 scroll-mt-28"
+      >
         <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-light-cream flex items-center gap-1.5">
           <Activity className="w-4 h-4 text-nat-green" />
           Daftar Pre-Order Aktif ({myPreOrders.length})
@@ -1012,7 +1051,7 @@ export default function BuyerView({
 
                             {po.status === "COMPLETED" ? (
                               <button
-                                onClick={() => showNotification("Terima kasih, ulasan Anda berhasil disimpan!", "success")}
+                                onClick={() => setReviewPO(po)}
                                 className="bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
                               >
                                 <Star className="w-3 h-3" />
@@ -1044,7 +1083,10 @@ export default function BuyerView({
       </div>
       
       {/* Logistik & Penjemputan (Pooling) */}
-      <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm mt-6">
+      <div
+        id="logistik"
+        className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm mt-6 scroll-mt-28"
+      >
         <div className="flex justify-between items-center mb-4 pb-2 border-b border-nat-light-cream">
           <h3 className="text-sm font-bold text-nat-dark flex items-center gap-1.5">
             <Truck className="w-4 h-4 text-nat-green" />
@@ -1127,7 +1169,48 @@ export default function BuyerView({
                     <div className="text-[10px] text-nat-sage">Selesai</div>
                   </div>
                 </div>
-                
+
+                {/* Peta Rute Jalan Aktual */}
+                {selectedLogistics.length > 0 && (
+                  <div className="mt-4">
+                    <RouteMap
+                      waypoints={[
+                        { lat: latitude, lng: longitude },
+                        ...selectedLogistics
+                          .map((poId) => {
+                            const po = myPreOrders.find((p) => p.id === poId);
+                            const h = harvests.find(
+                              (x) => x.id === po?.harvestId,
+                            );
+                            return h
+                              ? { lat: h.latitude, lng: h.longitude }
+                              : null;
+                          })
+                          .filter(
+                            (x): x is { lat: number; lng: number } => x !== null,
+                          ),
+                      ]}
+                      stops={[
+                        {
+                          id: "depot",
+                          label: "Gudang Koperasi",
+                          sub: activeUser.PEMBELI.region,
+                        },
+                        ...selectedLogistics.map((poId, index) => {
+                          const po = myPreOrders.find((p) => p.id === poId);
+                          return {
+                            id: poId,
+                            label: `Titik ${index + 1}: ${po?.farmerName ?? ""}`,
+                            sub: `${po?.commodity ?? ""} (${po?.agreedVolumeKg ?? 0} kg)`,
+                          };
+                        }),
+                      ]}
+                      height="300px"
+                      depotIndex={0}
+                    />
+                  </div>
+                )}
+
                 <button
                   onClick={() => {
                     setShowRoute(false);
@@ -1147,6 +1230,97 @@ export default function BuyerView({
         )}
       </div>
 
+      {/* ───── Marketplace Terbuka ───── */}
+      <div
+        id="marketplace"
+        className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm mt-6 scroll-mt-28"
+      >
+        <div className="flex justify-between items-center mb-4 pb-2 border-b border-nat-light-cream">
+          <h3 className="text-sm font-bold text-nat-dark flex items-center gap-1.5">
+            <Store className="w-4 h-4 text-nat-green" />
+            Marketplace Terbuka (Panen Tanpa Match)
+          </h3>
+          <span className="text-[10px] bg-nat-light-cream text-nat-green border border-nat-border font-bold px-2.5 py-0.5 rounded-full">
+            {openMarketplace.length} Listing
+          </span>
+        </div>
+
+        {openMarketplace.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {openMarketplace.map((listing) => {
+              const crop = COMMODITY_LIST[listing.commodity];
+              return (
+                <div
+                  key={listing.id}
+                  className="border border-nat-border rounded-xl p-4 bg-nat-light-cream/40 hover:border-nat-green/50 hover:shadow-sm transition-all"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span
+                      className="w-3 h-3 rounded"
+                      style={{ backgroundColor: crop?.color || "#ccc" }}
+                    />
+                    <span className="font-bold text-nat-dark text-xs">
+                      {listing.commodity}
+                    </span>
+                    <span className="text-[9px] text-nat-sage ml-auto">
+                      {listing.region}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-nat-sage">
+                    {listing.farmerName}
+                    {(() => {
+                      const r = getSellerRating(reviews, listing.farmerId);
+                      return r.average > 0 ? (
+                        <span className="ml-1.5 inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-600">
+                          <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                          {r.average.toFixed(1)}
+                          <span className="text-nat-sage font-medium">
+                            ({r.count})
+                          </span>
+                        </span>
+                      ) : null;
+                    })()}
+                  </p>
+                  <div className="flex justify-between mt-3 text-xs">
+                    <span className="font-bold text-nat-dark">
+                      {listing.volumeKg.toLocaleString("id-ID")} Kg
+                    </span>
+                    <span className="font-bold text-nat-green">
+                      Rp{listing.pricePerKg.toLocaleString("id-ID")}/kg
+                    </span>
+                  </div>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={() =>
+                        showNotification(
+                          `Listing ${listing.commodity} (${listing.farmerName}) dipilih. Detail kontak dibuka saat order.`,
+                          "info",
+                        )
+                      }
+                      className="flex-1 text-center bg-nat-green hover:bg-nat-green-hover text-white font-bold py-1.5 rounded-lg text-[10px] transition-colors cursor-pointer"
+                    >
+                      💬 Pilih Listing
+                    </button>
+                    <button
+                      onClick={() =>
+                        updateMarketplaceStatus(listing.id, "sold")
+                      }
+                      className="flex-1 text-center bg-nat-cream hover:bg-nat-border text-nat-brown font-bold py-1.5 rounded-lg text-[10px] transition-colors border border-nat-border cursor-pointer"
+                    >
+                      ✓ Tandai Dibeli
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-6 text-nat-sage italic text-xs">
+            Belum ada listing terbuka dari petani.
+          </div>
+        )}
+      </div>
+
       {/* ───── Route Map Modal ───── */}
       {routeMapPO && (
         <RouteMapModal
@@ -1154,6 +1328,19 @@ export default function BuyerView({
           harvest={harvests.find(h => h.id === routeMapPO.harvestId)}
           demand={demands.find(d => d.id === routeMapPO.demandId)}
           onClose={() => setRouteMapPO(null)}
+        />
+      )}
+
+      {/* ───── Review Modal (Beri Rating) ───── */}
+      {reviewPO && (
+        <ReviewModal
+          preOrderId={reviewPO.id}
+          reviewerUserId={activeUser.PEMBELI.id}
+          revieweeUserId={
+            harvests.find((h) => h.id === reviewPO.harvestId)?.farmerId ??
+            reviewPO.harvestId
+          }
+          onClose={() => setReviewPO(null)}
         />
       )}
     </div>

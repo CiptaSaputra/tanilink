@@ -4,6 +4,41 @@
 
 ---
 
+## 1.5.0 (2026-08-01 — H-02/H-03 selesai: PostgreSQL + API backend nyata)
+
+### Added
+- **Database layer (PostgreSQL 15 + Drizzle ORM)** — menggantikan seluruh akses localStorage untuk data domain.
+  - `src/db/index.ts` — koneksi Drizzle + Pool (DATABASE_URL, fallback `127.0.0.1:5434`).
+  - `src/db/schema.ts` — 12 tabel: users, harvests, demands, matches, pre_orders, harvest_batches, conversations, messages, payment_confirmations, reviews, market_prices.
+  - `drizzle/0000_*.sql` — migrasi awal. `drizzle.config.ts` + script `db:push` / `db:seed`.
+  - `src/db/seed.ts` — seed users, harvests, demands, matches, pre-orders, market_prices (30 hari historis).
+- **`app/api/` routes (45+ handlers)** — semua CRUD via REST:
+  - Auth: `POST /api/auth/login`, `POST /api/auth/register` (validasi + cek duplikat email + blokir self-register ADMIN/DINAS).
+  - Data: harvests, demands, matches (+ status), pre-orders (+ confirm atomic transaction), harvest-batches (+ status), conversations, messages, payments, reviews, prices.
+- **Service layer HTTP** — semua `src/services/*.ts` diubah dari localStorage → `fetch("/api/...")`.
+- **`/api/prices`** — prediksi harga per kg 14 hari (moving average + tren linier) dari data `market_prices` di DB.
+- **Matching engine di backend** — POST `/api/harvests` memicu `runMatchingForHarvest` (Haversine + volume + price fit, bobot per komoditas).
+
+### Changed
+- **`src/context/DataContext.tsx`** — data di-fetch dari API (polling tiap 3 detik), bukan localStorage. Pre-order confirm via API atomic transaction.
+- **`src/context/AuthContext.tsx`** — login/register memanggil `/api/auth/*`. Session tetap di localStorage.
+- **`src/components/AdminView.tsx`** — tombol reset kini juga membersihkan DB backend (`clearAllDatabaseAndStorage`).
+- **`README.md`** — setup sekarang butuh Docker + `npx drizzle-kit push` + `tsx src/db/seed.ts`.
+
+### Architecture
+- Frontend → Service layer (`src/services`) → API Routes → Drizzle → PostgreSQL.
+- localStorage hanya untuk auth session (`flw_auth_session`), bukan data domain.
+
+### Known Issues (baru)
+1. **Password hash masih `btoa`** — demo-only, tidak aman produksi (perlu bcrypt/argon).
+2. **Tidak ada RBAC middleware server** — proteksi role hanya client-side (belum ada `middleware.ts`).
+3. **`ignoreBuildErrors` aktif** di `next.config.mjs` — ada beberapa TypeScript strict error yang belum dibereskan.
+4. **`/api/harvests` GET** masih ada komentar/duplikasi logika response shape.
+5. **Manual pin drag gesture** belum — seleksi koordinat via map click.
+6. **`@tensorflow/tfjs`, `qrcode.react`, `@google/genai`, `express`** ter-install tapi tidak terpakai (bloat dependencies).
+
+---
+
 ## 1.4.0 (2026-07-02 — H-04: Split AppContext Monolith)
 
 ### Added
@@ -164,12 +199,12 @@ Service layer saat ini backed oleh localStorage. Untuk swap ke HTTP/database:
 - **localStorage data cleaning** — Legacy H-LIVE simulator entries stripped on load.
 - **Seed data migration** — Old entries without `isPublished` auto-migrated to `true`.
 
-### Known Issues
-1. **No authentication** — Role switching is a UI toggle. No login, password, or session management.
-2. **No backend API** — All data is in-memory + localStorage. No multi-user support.
-3. **No error boundaries** — Component crash crashes entire app.
-4. **Monolith AppContext** — All state in one context causes unnecessary re-renders.
-5. **FarmerView (820 lines) and BuyerView (630 lines)** — Need decomposition into sub-components.
-6. **Price prediction is volume-only** — Price-per-kg forecasting not yet implemented.
+### Known Issues (status per 1.5.0)
+1. ~~**No authentication**~~ → **Resolved** (1.1.0) — login/register + RBAC via AuthContext & backend API.
+2. ~~**No backend API**~~ → **Resolved** (1.5.0) — PostgreSQL + Drizzle + 45+ API routes.
+3. ~~**No error boundaries**~~ → **Resolved** (M-02) — semua role view di-wrap ErrorBoundary.
+4. ~~**Monolith AppContext**~~ → **Resolved** (1.4.0) — 5 domain contexts (UI, Data, Chat, Payment, Review).
+5. ~~**FarmerView/BuyerView too large**~~ → **Resolved** (H-05, H-06, M-01) — decomposed + reusable modals.
+6. ~~**Price prediction volume-only**~~ → **Resolved** (1.5.0) — `/api/prices` price-per-kg prediction.
 7. **Komoditas type casts** — Required when using as object keys.
 8. **No form validation** — Missing error states and field-level validation messages.

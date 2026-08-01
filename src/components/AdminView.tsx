@@ -6,7 +6,7 @@
  * resolusi dispute, dan distribusi. Tidak mengatur bobot secara bebas.
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useData } from "../context/DataContext";
 import { usePayment } from "../context/PaymentContext";
 import { useReview } from "../context/ReviewContext";
@@ -29,6 +29,7 @@ import {
   MapPin,
   Star,
   DollarSign,
+  BookOpen,
 } from "lucide-react";
 
 export default function AdminView() {
@@ -40,6 +41,8 @@ export default function AdminView() {
     preOrders,
     updateMatchStatus,
     updateBatchStatus,
+    educationalContents,
+    updateEducationalStatus,
   } = useData();
   const { reviews } = useReview();
   const { paymentConfirmations } = usePayment();
@@ -48,6 +51,26 @@ export default function AdminView() {
   const [activeTab, setActiveTab] = useState<"matching" | "distribution">(
     "matching",
   );
+
+  const pendingEduContents = educationalContents.filter(
+    (c) => c.status === "pending",
+  );
+
+  // Listen SectionNav global (dari DashboardApp) untuk switch tab
+  useEffect(() => {
+    function handleSectionClick(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      if (!detail || detail.role !== "ADMIN") return;
+      if (detail.id === "prioritas" || detail.id === "po") {
+        setActiveTab("distribution");
+      } else {
+        setActiveTab("matching");
+      }
+    }
+    window.addEventListener("tanilink:sectionclick", handleSectionClick);
+    return () =>
+      window.removeEventListener("tanilink:sectionclick", handleSectionClick);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -106,7 +129,10 @@ export default function AdminView() {
       {activeTab === "matching" && (
         <div className="space-y-6">
           {/* Bobot Default per Komoditas */}
-          <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm">
+          <div
+            id="bobot"
+            className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+          >
             <div className="flex items-start gap-2 mb-4 pb-2 border-b border-nat-light-cream">
               <Scale className="w-4 h-4 text-nat-green shrink-0 mt-0.5" />
               <div>
@@ -171,7 +197,10 @@ export default function AdminView() {
           </div>
 
           {/* Daftar Match & Sengketa */}
-          <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm">
+          <div
+            id="dispute"
+            className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+          >
             <div className="flex justify-between items-center mb-4 pb-2 border-b border-nat-light-cream">
               <h3 className="text-sm font-bold text-nat-dark flex items-center gap-1.5">
                 <Layers className="w-4 h-4 text-nat-green" />
@@ -287,7 +316,10 @@ export default function AdminView() {
 
           {/* Ulasan & Rating Summary */}
           {reviews.length > 0 && (
-            <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm">
+            <div
+              id="review"
+              className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+            >
               <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-light-cream flex items-center gap-1.5">
                 <Star className="w-4 h-4 text-nat-brown" />
                 Ulasan & Rating ({reviews.length})
@@ -321,6 +353,77 @@ export default function AdminView() {
               </div>
             </div>
           )}
+
+          {/* Moderasi Konten Edukasi */}
+          <div
+            id="moderasi"
+            className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+          >
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-nat-light-cream">
+              <h3 className="text-sm font-bold text-nat-dark flex items-center gap-1.5">
+                <BookOpen className="w-4 h-4 text-nat-green" />
+                Moderasi Konten Edukasi
+              </h3>
+              <span className="text-[10px] text-nat-sage">
+                Menunggu:{" "}
+                {
+                  educationalContents.filter((c) => c.status === "pending")
+                    .length
+                }
+              </span>
+            </div>
+
+            {pendingEduContents.length > 0 ? (
+              <div className="space-y-3">
+                {pendingEduContents.map((c) => (
+                  <div
+                    key={c.id}
+                    className="border border-nat-border rounded-xl p-4 bg-nat-light-cream/40"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold text-nat-dark">
+                          {c.title}
+                        </p>
+                        <p className="text-[10px] text-nat-sage mt-0.5">
+                          {c.pplName} · Wilayah {c.region} ·{" "}
+                          {new Date(c.createdAt).toLocaleDateString("id-ID")}
+                        </p>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200 shrink-0">
+                        Pending
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-nat-text mt-2 leading-relaxed">
+                      {c.body}
+                    </p>
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() =>
+                          updateEducationalStatus(c.id, "published")
+                        }
+                        className="bg-nat-green hover:bg-nat-green-hover text-white font-bold py-1.5 px-3 rounded-lg text-[10px] transition-colors cursor-pointer"
+                      >
+                        ✓ Publish
+                      </button>
+                      <button
+                        onClick={() =>
+                          updateEducationalStatus(c.id, "rejected")
+                        }
+                        className="bg-red-50 hover:bg-red-100 text-red-600 font-bold py-1.5 px-3 rounded-lg text-[10px] border border-red-200 transition-colors cursor-pointer"
+                      >
+                        ✕ Tolak
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-nat-sage italic text-xs">
+                Tidak ada konten edukasi yang menunggu moderasi.
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -368,7 +471,10 @@ export default function AdminView() {
           </div>
 
           {/* Distribution Priority */}
-          <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm">
+          <div
+            id="prioritas"
+            className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+          >
             <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-border flex items-center gap-1.5">
               <Truck className="w-4 h-4 text-nat-brown" />
               Prioritas Distribusi (Distribution Priority)
@@ -496,7 +602,10 @@ export default function AdminView() {
 
           {/* Pre-Orders */}
           {preOrders.length > 0 && (
-            <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm">
+            <div
+              id="po"
+              className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+            >
               <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-border flex items-center gap-1.5">
                 <Activity className="w-4 h-4 text-nat-green" />
                 Pre-Order ({preOrders.length})

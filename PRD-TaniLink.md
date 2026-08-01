@@ -64,17 +64,18 @@ Setelah PO disepakati, petani mendapat kepastian pasar dari awal musim tanam —
 - [x] *(Frontend)* Refactor frontend service untuk menggunakan endpoints API (Next.js App Router).
 
 **Input Komoditas & Harvest Forecasting (BMKG-Integrated)**
-- [x] *(UI)* Petani input jenis komoditas, tanggal tanam, luas lahan, titik lokasi (geolocation otomatis + geser pin manual).
-- [ ] *(Backend)* Sistem menarik data cuaca/musim dari BMKG untuk wilayah terkait dan menghasilkan estimasi tanggal panen serta indikator risiko cuaca.
+- [x] *(UI)* Petani input jenis komoditas, tanggal tanam, luas lahan, titik lokasi (geolocation otomatis + penyesuaian pin via click — belum drag gesture).
+- [ ] *(Backend)* Sistem menarik data cuaca/musim real-time dari API BMKG (saat ini memakai pola musim statis + `bmkg.ts` mock risk engine).
 
 **Deteksi Penyakit Tanaman dari Foto**
 - [ ] *(Backend)* Petani foto tanaman lewat HP, sistem mendiagnosis kemungkinan penyakit/hama secara cepat.
 - [ ] *(Backend)* Hasil diagnosis memengaruhi estimasi volume panen di modul Harvest Forecasting.
 - [ ] *(Backend)* Riwayat diagnosis tersimpan di dashboard petani.
+- **Catatan:** `@tensorflow/tfjs` ter-install tapi belum dipakai. **Roadmap item.**
 
 **Dashboard Petani**
-- [x] *(UI)* Prediksi harga per komoditas, prediksi waktu panen, harga pasar terkini, status penyakit tanaman terakhir.
-- [x] *(UI)* Histori penjualan sebagai rekam jejak transaksi yang dapat diverifikasi.
+- [x] *(UI)* Prediksi harga per komoditas, prediksi waktu panen, harga pasar terkini.
+- [ ] *(UI)* Histori penjualan sebagai rekam jejak transaksi yang dapat diverifikasi (hash-chain). — **belum: hanya histori PO biasa**
 - [x] *(UI)* Status prioritas distribusi saat batch panennya diminati lebih dari satu pembeli.
 
 **Manajemen Demand (Pembeli)**
@@ -82,31 +83,34 @@ Setelah PO disepakati, petani mendapat kepastian pasar dari awal musim tanam —
 - [x] *(UI)* Melihat peta sebaran prediksi panen petani di sekitar lokasinya.
 
 **Smart Matching Engine**
-- [x] *(Logic)* Skor gabungan dari jarak, kesesuaian waktu panen, kesesuaian harga, dan rating/histori transaksi petani.
+- [x] *(Logic)* Skor gabungan dari jarak, kesesuaian waktu panen, kesesuaian harga.
+- [ ] *(Logic)* Rating/histori transaksi petani sebagai faktor skor. — **belum masuk scoring**
 - [x] *(Logic)* Bobot default berbeda per kategori komoditas.
 - [x] *(Logic)* Bersifat rekomendasi — PO baru terbentuk setelah kedua pihak menyetujui.
 
 **Purchase Order (PO)**
 - [x] *(UI/Logic)* Pembeli mengunci stok petani sebelum panen selesai berdasarkan rekomendasi match.
-- [x] *(UI/Logic)* Status PO: `pending` → `confirmed` → `completed`/`cancelled`, dengan kolom bukti pembayaran opsional.
+- [x] *(UI/Logic)* Status PO: `confirmed` → `completed`, dengan kolom bukti pembayaran opsional (atomic transaction di `/api/pre-orders/confirm`).
 
 **Marketplace Fallback**
-- [ ] *(Backend)* Batch panen yang tidak ter-match dengan demand institusional dalam jangka waktu tertentu otomatis tampil di listing terbuka sederhana.
+- [ ] *(Backend)* Batch panen yang tidak ter-match dengan demand institusional dalam jangka waktu tertentu otomatis tampil di listing terbuka sederhana. — **roadmap item**
 
 **Chat via WhatsApp**
-- [x] *(UI Mock)* Setelah match/PO terbentuk, petani dan pembeli terhubung (Saat ini via In-App Chat Modal).
-- [ ] *(Backend)* Terhubung lewat WhatsApp Business API langsung dari platform.
+- [x] *(UI)* Chat in-app (ChatModal) persisted ke DB via `/api/conversations` & `/api/messages`.
+- [x] *(UI)* Link `wa.me` langsung ke WhatsApp di kartu match.
+- [ ] *(Backend)* Terhubung lewat WhatsApp Business API langsung dari platform. — **roadmap item**
 
 **Push Notifikasi WhatsApp**
-- [ ] *(Backend)* Notifikasi otomatis: match baru, PO masuk/berubah status, peringatan cuaca.
+- [ ] *(Backend)* Notifikasi otomatis: match baru, PO masuk/berubah status, peringatan cuaca. — **roadmap item (saat ini in-app toast)**
 
 **Rekomendasi Rute Pengambilan (Route Optimization)**
-- [ ] *(UI/Backend)* Untuk pembeli yang mengambil dari banyak petani sekaligus dalam satu hari (pooling).
-- [ ] *(Backend)* Menggunakan Google Maps Waypoints API dengan pendekatan TSP untuk menyarankan urutan rute terpendek.
-- [ ] *(UI)* Bersifat rekomendasi — pembeli tetap bisa menyesuaikan urutan di lapangan.
+- [x] *(UI/Backend)* Untuk pembeli/kolektor yang mengambil dari banyak titik sekaligus (pooling).
+- [x] *(Logic)* **Clarke-Wright Savings + 2-opt Local Search** (`routeOptimizer.ts`) — bukan Google Maps Waypoints API.
+- [x] *(UI)* Bersifat rekomendasi — kolektor bisa deviasi via status `PICKED_UP_DIRECTLY`.
 
 **Histori Penjualan Berbasis Hash-Chain**
-- [ ] *(Backend)* Setiap transaksi PO yang selesai dicatat sebagai entri yang menyimpan hash dari entri sebelumnya (saat ini ditangani via local state).
+- [ ] *(Backend)* Setiap transaksi PO yang selesai dicatat sebagai entri yang menyimpan hash dari entri sebelumnya. — **belum diimplementasi (roadmap item)**
+- **Catatan:** label "Hash-Chain" di PublicDashboard hanyalah teks dekoratif.
 
 **Prioritas Distribusi**
 - [x] *(UI/Logic)* Menentukan urutan layanan bila satu batch panen diminati lebih dari satu pembeli.
@@ -115,18 +119,18 @@ Setelah PO disepakati, petani mendapat kepastian pasar dari awal musim tanam —
 - [x] *(UI/Logic)* Petani dan pembeli saling menilai setelah PO selesai.
 
 **Konten Edukasi Budidaya (Kontribusi PPL/BPP)**
-- [ ] *(Backend)* PPL/BPP dapat mempublikasikan konten edukasi budidaya per wilayah binaan.
+- [ ] *(Backend)* PPL/BPP dapat mempublikasikan konten edukasi budidaya per wilayah binaan. — **roadmap item**
 - [x] *(UI)* Tampil di landing page/dashboard petani sesuai wilayahnya.
 
 ### B. Dashboard Publik
 - [x] *(UI)* Peta persebaran komoditas (berdasarkan data planting yang dipublikasikan petani).
 - [x] *(UI)* Harga komoditas per wilayah.
-- [ ] *(Backend)* AI Q&A: publik dapat bertanya dalam bahasa natural terkait data yang tersedia.
-- [ ] *(Backend)* Ekspor dataset (CSV/JSON) untuk peneliti.
+- [ ] *(Backend)* AI Q&A: publik dapat bertanya dalam bahasa natural terkait data yang tersedia. — **roadmap item**
+- [ ] *(Backend)* Ekspor dataset (CSV/JSON) untuk peneliti. — **roadmap item**
 
 ### C. Dashboard Admin
 - [x] *(UI)* Ringkasan planting, demand, match, dan PO aktif.
-- [x] *(UI)* Panel pemantauan performa bobot Smart Matching per kategori komoditas.
+- [x] *(UI)* Panel pemantauan performa bobot Smart Matching per kategori komoditas (read-only).
 - [ ] *(Backend)* Moderasi konten edukasi PPL, resolusi dispute data, dan moderasi rating/review.
 
 ### D. Dashboard Dinas Pertanian (Read-Only)
@@ -472,19 +476,19 @@ erDiagram
 
 | Kategori | Teknologi | Keterangan |
 |---|---|---|
-| Framework | Next.js | Landing page, form input komoditas, dashboard multi-role, API route dalam satu project |
-| Styling | Tailwind CSS | UI responsif dan mobile-friendly |
-| UI Components | shadcn/ui | Dashboard Admin/PPL, form input, tabel planting/demand/PO |
+| Framework | Next.js 15 (App Router) | Landing page, form input komoditas, dashboard multi-role, API route dalam satu project |
+| Styling | Tailwind CSS v4 | UI responsif dan mobile-friendly |
+| UI Components | Lucide React + Motion | Dashboard Admin/PPL, form input, tabel planting/demand/PO (bukan shadcn/ui) |
 | Peta Interaktif & Geolocation | Leaflet.js + Browser Geolocation API | Sebaran planting, lokasi demand, visualisasi rute |
-| Route Optimization | Google Maps Directions API + Waypoints Optimization | Pendekatan TSP untuk rute pengambilan multi-petani |
-| Data Cuaca | API BMKG | Input Harvest Forecasting Engine dan indikator risiko cuaca |
-| Disease Detection | TensorFlow.js atau model terlatih yang di-serve lewat API terpisah | Deteksi penyakit tanaman dari foto |
-| Chat & Notifikasi | WhatsApp Business API (Meta Cloud API/Twilio) | Chat petani-pembeli dan push notifikasi otomatis |
-| AI Q&A | LLM API (misalnya Claude API) | Di-grounding ke data agregat platform untuk dashboard publik |
-| Visualisasi Data | Chart.js | Grafik prediksi harga dan tren permintaan |
+| Route Optimization | Clarke-Wright Savings + 2-opt Local Search (custom) | Pendekatan TSP untuk rute pengambilan multi-titik *(bukan Google Maps Directions API)* |
+| Data Cuaca | BMKG mock engine (`src/utils/bmkg.ts`) + pola musim statis | Input Harvest Forecasting Engine *(integrasi API BMKG real-time masih roadmap)* |
+| Disease Detection | TensorFlow.js | Deteksi penyakit tanaman dari foto — **belum dipakai, roadmap item** |
+| Chat & Notifikasi | Chat in-app (DB) + link `wa.me` | Chat petani-pembeli *(WhatsApp Business API masih roadmap)* |
+| AI Q&A | LLM API (misalnya Claude API) | Di-grounding ke data agregat platform — **roadmap item** |
+| Visualisasi Data | Recharts | Grafik prediksi harga dan tren permintaan |
 | ORM | Drizzle ORM | Skema database relasional |
-| Database | PostgreSQL | Skala production untuk data planting, match, dan ledger transaksi |
-| Authentication | Better Auth | RBAC di level endpoint API untuk seluruh peran |
-| Hash-Chain Ledger | Implementasi custom (SHA-256 per entri) | Lapisan tamper-evidence sederhana, tanpa blockchain publik/terdesentralisasi |
+| Database | PostgreSQL 15 (Docker) | Skala production untuk data planting, match, dan transaksi |
+| Authentication | Custom API routes (`/api/auth/*`) | Login/register multi-role *(Better Auth masih roadmap)* |
+| Hash-Chain Ledger | — | **Belum diimplementasi — roadmap item** |
 | Deployment | Vercel (aplikasi) + storage terpisah (UploadThing/S3-compatible) | Untuk foto tanaman |
-| Dataset Export | Endpoint API custom | Generate CSV/JSON dari data agregat untuk dashboard publik |
+| Dataset Export | Endpoint API custom | Generate CSV/JSON dari data agregat — **roadmap item** |

@@ -3,9 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useUI } from "../context/UIContext";
 import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../context/NotificationContext";
+import SectionNav from "./shared/SectionNav";
+import type { SectionNavItem } from "./shared/SectionNav";
 import {
   Sprout,
   ShieldAlert,
@@ -19,12 +22,122 @@ import {
   UserCircle,
   MapPin,
   Globe,
+  Bell,
+  CheckCheck,
+  MessageCircle,
+  PackageCheck,
+  Truck as TruckIcon,
+  CloudRain,
+  Info,
+  Plus,
+  Handshake,
+  FileCheck,
+  Store,
+  TrendingUp,
+  BookOpen,
+  Inbox,
+  Megaphone,
+  BarChart3,
+  Route,
+  List,
+  Scale,
+  Download,
+  Star,
+  AlertTriangle,
+  Gauge,
+  Boxes,
+  LineChart,
 } from "lucide-react";
 import { Role } from "../types";
+
+// ─── Section Navigation per role ────────────────────────────────────────────────
+// Dirender di dalam Navbar (yang sudah sticky top-0 z-50) agar selalu tampil
+// di atas tanpa bug offset sticky terpisah.
+
+const ROLE_SECTIONS: Record<string, SectionNavItem[]> = {
+  PETANI: [
+    { id: "input", label: "Input Lahan", icon: <Plus className="w-3.5 h-3.5" /> },
+    { id: "harga", label: "Prediksi Harga", icon: <TrendingUp className="w-3.5 h-3.5" /> },
+    { id: "lahan", label: "Lahan Saya", icon: <Sprout className="w-3.5 h-3.5" /> },
+    { id: "match", label: "Pencocokan & PO", icon: <Handshake className="w-3.5 h-3.5" /> },
+    { id: "po", label: "Pre-Order", icon: <FileCheck className="w-3.5 h-3.5" /> },
+    { id: "edukasi", label: "Edukasi", icon: <BookOpen className="w-3.5 h-3.5" /> },
+  ],
+  PEMBELI: [
+    { id: "tawaran", label: "Penawaran Masuk", icon: <Inbox className="w-3.5 h-3.5" /> },
+    { id: "input-demand", label: "Rilis Kebutuhan", icon: <Megaphone className="w-3.5 h-3.5" /> },
+    { id: "match", label: "Pencocokan Petani", icon: <Handshake className="w-3.5 h-3.5" /> },
+    { id: "po", label: "Pre-Order Aktif", icon: <FileCheck className="w-3.5 h-3.5" /> },
+    { id: "logistik", label: "Logistik & Jemput", icon: <Truck className="w-3.5 h-3.5" /> },
+    { id: "marketplace", label: "Marketplace", icon: <Store className="w-3.5 h-3.5" /> },
+  ],
+  PPL: [
+    { id: "ringkasan", label: "Ringkasan", icon: <BarChart3 className="w-3.5 h-3.5" /> },
+    { id: "komoditas", label: "Komoditas", icon: <Layers className="w-3.5 h-3.5" /> },
+    { id: "lahan", label: "Daftar Lahan", icon: <Sprout className="w-3.5 h-3.5" /> },
+    { id: "batch", label: "Status Batch", icon: <Truck className="w-3.5 h-3.5" /> },
+    { id: "edukasi", label: "Konten Edukasi", icon: <BookOpen className="w-3.5 h-3.5" /> },
+  ],
+  DINAS: [
+    { id: "indeks", label: "Indeks Nasional", icon: <Gauge className="w-3.5 h-3.5" /> },
+    { id: "komoditas", label: "Neraca Komoditas", icon: <Boxes className="w-3.5 h-3.5" /> },
+    { id: "risiko", label: "Risiko Food Loss", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+    { id: "forecast", label: "Peramalan", icon: <LineChart className="w-3.5 h-3.5" /> },
+    { id: "rute", label: "Optimasi Rute", icon: <Truck className="w-3.5 h-3.5" /> },
+  ],
+  ADMIN: [
+    { id: "bobot", label: "Bobot Matching", icon: <Sliders className="w-3.5 h-3.5" /> },
+    { id: "dispute", label: "Sengketa", icon: <ShieldAlert className="w-3.5 h-3.5" /> },
+    { id: "review", label: "Ulasan", icon: <Star className="w-3.5 h-3.5" /> },
+    { id: "moderasi", label: "Moderasi", icon: <BookOpen className="w-3.5 h-3.5" /> },
+    { id: "prioritas", label: "Prioritas", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+    { id: "po", label: "Pre-Order", icon: <FileCheck className="w-3.5 h-3.5" /> },
+  ],
+  KOLEKTOR: [
+    { id: "rute", label: "Rute Rekomendasi", icon: <Route className="w-3.5 h-3.5" /> },
+    { id: "batch", label: "Batch Siap Jemput", icon: <Truck className="w-3.5 h-3.5" /> },
+    { id: "riwayat", label: "Riwayat Batch", icon: <List className="w-3.5 h-3.5" /> },
+  ],
+  PUBLIK: [
+    { id: "ringkasan", label: "Ringkasan", icon: <Globe className="w-3.5 h-3.5" /> },
+    { id: "data", label: "Data Dampak", icon: <Scale className="w-3.5 h-3.5" /> },
+    { id: "aksi", label: "Ekspor & AI", icon: <Download className="w-3.5 h-3.5" /> },
+  ],
+};
 
 export default function Navbar() {
   const { activeRole, setRole, resetAllData } = useUI();
   const { currentUser, logout } = useAuth();
+  const { notifications, unreadCount, markRead, markAllRead } =
+    useNotifications();
+  const [showNotif, setShowNotif] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  // Tutup dropdown saat klik di luar
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setShowNotif(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const notifTypeIcon = (type: string) => {
+    switch (type) {
+      case "match":
+        return <MessageCircle className="w-3.5 h-3.5 text-nat-green" />;
+      case "preorder":
+        return <PackageCheck className="w-3.5 h-3.5 text-nat-brown" />;
+      case "batch":
+        return <TruckIcon className="w-3.5 h-3.5 text-amber-600" />;
+      case "weather":
+        return <CloudRain className="w-3.5 h-3.5 text-sky-600" />;
+      default:
+        return <Info className="w-3.5 h-3.5 text-nat-sage" />;
+    }
+  };
 
   const rolesList: {
     id: Role;
@@ -115,9 +228,11 @@ export default function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Brand Logo */}
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-nat-green rounded-xl flex items-center justify-center shadow-md shadow-nat-green/10">
-              <Sprout className="w-5.5 h-5.5 text-white" />
-            </div>
+            <img
+              src="/logo.jpeg"
+              alt="Logo TaniLink"
+              className="w-12 h-9 object-contain drop-shadow-sm"
+            />
             <div>
               <h1 className="text-lg font-bold text-nat-dark tracking-tight leading-none">
                 TaniLink
@@ -130,6 +245,81 @@ export default function Navbar() {
 
           {/* User info + actions */}
           <div className="flex items-center space-x-3">
+            {/* Notifikasi bell + dropdown */}
+            {currentUser && (
+              <div className="relative" ref={notifRef}>
+                <button
+                  onClick={() => setShowNotif((v) => !v)}
+                  className="relative flex items-center justify-center w-9 h-9 rounded-lg text-nat-sage hover:text-nat-green hover:bg-nat-light-cream transition-colors cursor-pointer"
+                  title="Riwayat notifikasi"
+                  aria-label="Notifikasi"
+                >
+                  <Bell className="w-4.5 h-4.5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotif && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-nat-border overflow-hidden z-50">
+                    <div className="flex items-center justify-between px-4 py-2.5 bg-nat-light-cream border-b border-nat-border">
+                      <span className="text-xs font-bold text-nat-dark">
+                        Notifikasi
+                      </span>
+                      {unreadCount > 0 && (
+                        <button
+                          onClick={markAllRead}
+                          className="flex items-center gap-1 text-[10px] text-nat-green font-semibold hover:underline cursor-pointer"
+                        >
+                          <CheckCheck className="w-3 h-3" />
+                          Tandai dibaca
+                        </button>
+                      )}
+                    </div>
+                    <div className="max-h-72 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="py-8 text-center text-xs text-nat-sage italic">
+                          Belum ada notifikasi.
+                        </div>
+                      ) : (
+                        notifications.slice(0, 30).map((n) => (
+                          <button
+                            key={n.id}
+                            onClick={() => markRead(n.id)}
+                            className={`w-full text-left flex gap-2.5 px-4 py-2.5 border-b border-nat-light-cream transition-colors cursor-pointer ${
+                              n.read
+                                ? "opacity-60 hover:opacity-100"
+                                : "bg-white hover:bg-nat-light-cream"
+                            }`}
+                          >
+                            <span className="mt-0.5 shrink-0">
+                              {notifTypeIcon(n.type)}
+                            </span>
+                            <span>
+                              <span
+                                className={`block text-[11px] ${
+                                  n.read
+                                    ? "text-nat-sage font-medium"
+                                    : "text-nat-dark font-bold"
+                                }`}
+                              >
+                                {n.message}
+                              </span>
+                              <span className="block text-[9px] text-nat-sage mt-0.5">
+                                {new Date(n.createdAt).toLocaleString("id-ID")}
+                              </span>
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Reset Data (tetap tersedia untuk demo) */}
             <button
               onClick={resetAllData}
@@ -234,6 +424,21 @@ export default function Navbar() {
               — Dashboard disesuaikan dengan peran Anda
             </span>
           </div>
+        )}
+
+        {/* Section Navigation — di dalam Navbar (sudah sticky) agar selalu di atas */}
+        {ROLE_SECTIONS[displayRole as string] && (
+          <SectionNav
+            sections={ROLE_SECTIONS[displayRole as string]}
+            onSectionClick={(id) => {
+              // View bertab (Dinas/Admin) mendengarkan event ini untuk switch tab
+              window.dispatchEvent(
+                new CustomEvent("tanilink:sectionclick", {
+                  detail: { role: displayRole, id },
+                }),
+              );
+            }}
+          />
         )}
       </div>
     </header>

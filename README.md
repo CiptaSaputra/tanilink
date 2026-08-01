@@ -47,20 +47,22 @@ Indonesia kehilangan **23–48 juta ton pangan per tahun** (setara Rp213–551 t
 
 ## ✨ Fitur Utama
 
-| Modul | Deskripsi |
-|---|---|
-| 🌤️ **BMKG Forecasting** | Prediksi risiko cuaca per komoditas & wilayah terintegrasi data musim |
-| 🤖 **Smart Matching AI** | Rekomendasi petani-pembeli berbobot (Haversine + volume + harga + histori) |
-| 📦 **Pre-Order (PO) Flow** | Kesepakatan sebelum panen, dari PENDING → CONFIRMED → COMPLETED |
-| 🔗 **Hash-Chain Ledger** | Histori transaksi tamper-evident yang tidak bisa dimanipulasi |
-| 💬 **Chat via WhatsApp** | Integrasi `wa.me` langsung ke WhatsApp petani/pembeli |
-| 🗺️ **Route Optimization** | Algoritma Clarke-Wright + 2-opt untuk rute penjemputan multi-titik |
-| 📊 **Prediksi Harga** | Grafik harga historis 30 hari + prediksi 14 hari ke depan |
-| ⭐ **Rating & Review** | Ulasan dua arah setelah PO selesai |
-| 🗺️ **Peta Interaktif** | Leaflet.js dengan geolocation otomatis & geser pin manual |
-| 📡 **Dashboard Publik** | Transparansi data pangan nasional tanpa login |
-| 👩‍🌾 **Dashboard PPL/BPP** | Monitoring wilayah binaan + konten edukasi budidaya |
-| 📈 **Dashboard Dinas** | Agregat regional, tren harga, potensi surplus/defisit |
+| Modul | Deskripsi | Status |
+|---|---|---|
+| 🌤️ **Harvest Forecasting** | Prediksi panen (Holt's Double ES + Fourier + rain factor) per komoditas & wilayah | ✅ |
+| 🤖 **Smart Matching** | Rekomendasi petani-pembeli berbobot (Haversine + volume + harga) per komoditas | ✅ |
+| 📦 **Pre-Order (PO) Flow** | Kesepakatan sebelum panen, atomic transaction (CONFIRMED → COMPLETED) | ✅ |
+| 💬 **Chat In-App + wa.me** | Chat modal persisted ke DB + link langsung ke WhatsApp (bukan Business API) | ✅ |
+| 🗺️ **Route Optimization** | Algoritma Clarke-Wright + 2-opt untuk rute penjemputan multi-titik | ✅ |
+| 📊 **Prediksi Harga** | Harga historis dari DB + prediksi 14 hari (moving average + tren linier) | ✅ |
+| ⭐ **Rating & Review** | Ulasan dua arah setelah PO selesai | ✅ |
+| 🗺️ **Peta Interaktif** | Leaflet.js dengan geolocation otomatis & pin adjustment via click | ✅ |
+| 🔐 **Auth & RBAC** | Login/registrasi multi-role, user registry di PostgreSQL | ✅ |
+| 📡 **Dashboard Publik** | Transparansi data pangan nasional tanpa login | ✅ |
+| 👩‍🌾 **Dashboard PPL/BPP** | Monitoring wilayah binaan (read-only) | ✅ |
+| 📈 **Dashboard Dinas** | Agregat regional, tren harga, potensi surplus/defisit | ✅ |
+
+> **Roadmap (belum di MVP):** disease detection (TensorFlow.js), hash-chain ledger, WhatsApp Business API, AI Q&A publik, ekspor dataset, marketplace fallback.
 
 ---
 
@@ -76,7 +78,7 @@ Indonesia kehilangan **23–48 juta ton pangan per tahun** (setara Rp213–551 t
 | **ORM** | Drizzle ORM |
 | **Maps** | Leaflet.js + Nominatim |
 | **Charts** | Recharts |
-| **Route Algorithm** | Clarke-Wright Savings + 2-opt Local Search |
+| **Route Algorithm** | Clarke-Wright Savings + 2-opt Local Search (custom, bukan Google Maps) |
 | **Deployment** | Vercel (app) + Docker (database) |
 
 ---
@@ -364,7 +366,7 @@ tani-link-app/
 | **PPL/BPP** | Monitoring data wilayah binaan (read-only), lihat konten edukasi |
 | **Kolektor** | Lihat rekomendasi rute pengambilan, update status batch |
 | **Dinas** | Lihat agregat regional, tren harga, peta sebaran panen |
-| **Admin** | Semua akses + kalibrasi bobot Smart Matching |
+| **Admin** | Semua akses + pemantauan performa bobot Smart Matching (read-only, tidak bisa diubah) |
 | **Publik** | Dashboard transparansi pangan (tanpa login) |
 
 ---

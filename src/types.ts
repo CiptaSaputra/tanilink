@@ -217,3 +217,53 @@ export interface HarvestBatch {
   status: "READY" | "IN_TRANSIT" | "DELIVERED" | "PICKED_UP_DIRECTLY"; // PICKED_UP_DIRECTLY = pembeli jemput langsung
   createdAt: string;
 }
+
+/** Listing terbuka di marketplace — batch panen yang tidak ter-match */
+export interface MarketplaceListing {
+  id: string;
+  harvestId?: string;
+  batchId?: string;
+  farmerId: string;
+  farmerName: string;
+  commodity: Komoditas;
+  volumeKg: number;
+  pricePerKg: number;
+  region: string;
+  latitude: number;
+  longitude: number;
+  status: "open" | "sold" | "expired";
+  notes?: string;
+  listedAt: string;
+}
+
+/** Notifikasi ter-persist (riwayat) per user */
+export interface NotificationItem {
+  id: string;
+  userId: string;
+  type: "match" | "preorder" | "batch" | "weather" | "system";
+  message: string;
+  read: boolean;
+  createdAt: string;
+}
+
+/** Entri hash-chain ledger (tamper-evident riwayat transaksi) */
+export interface LedgerEntry {
+  id: string;
+  preOrderId: string;
+  recordData: string;
+  previousHash: string;
+  currentHash: string;
+  createdAt: string;
+}
+
+/** Konten edukasi budidaya yang dipublikasi PPL/BPP */
+export interface EducationalContent {
+  id: string;
+  pplUserId: string;
+  pplName: string;
+  region: string;
+  title: string;
+  body: string;
+  status: "pending" | "published" | "rejected";
+  createdAt: string;
+}

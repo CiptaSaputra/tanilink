@@ -52,7 +52,7 @@ export const ReviewProvider: React.FC<{ children: React.ReactNode }> = ({
         revieweeUserId,
         rating,
         comment,
-        createdAt: new Date().toISOString().split("T")[0],
+        createdAt: new Date().toISOString(),
       };
       const updated = await reviewAdd(newReview);
       setReviews(updated);

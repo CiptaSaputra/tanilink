@@ -7,7 +7,7 @@
  * PPL hanya memantau data agregat yang sudah dipublikasikan petani.
  */
 
-import React, { useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useData } from "../context/DataContext";
 import { COMMODITY_LIST } from "../constants/commodities";
 import {
@@ -21,10 +21,20 @@ import {
   Package,
   TrendingUp,
   Eye,
+  BookOpen,
 } from "lucide-react";
 
 export default function PPLView() {
-  const { harvests, harvestBatches, preOrders, activeUser } = useData();
+  const {
+    harvests,
+    harvestBatches,
+    preOrders,
+    activeUser,
+    educationalContents,
+    addEducationalContent,
+  } = useData();
+  const [eduTitle, setEduTitle] = useState("");
+  const [eduBody, setEduBody] = useState("");
 
   // Data agregat wilayah binaan — hanya dari planting yang dipublikasikan
   const regionalHarvests = useMemo(() => {
@@ -90,6 +100,11 @@ export default function PPLView() {
     return breakdown;
   }, [regionalHarvests]);
 
+  // Konten edukasi milik PPL ini
+  const myEduContents = educationalContents.filter(
+    (c) => c.pplUserId === activeUser.PPL.id,
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -146,7 +161,7 @@ export default function PPLView() {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div id="ringkasan" className="grid grid-cols-2 sm:grid-cols-4 gap-4 scroll-mt-28">
         <div className="bg-white rounded-2xl border border-nat-border p-4 shadow-sm">
           <p className="text-[10px] text-nat-sage uppercase tracking-wider font-bold flex items-center gap-1">
             <Sprout className="w-3.5 h-3.5 text-nat-green" />
@@ -182,7 +197,10 @@ export default function PPLView() {
       </div>
 
       {/* Komoditas Breakdown */}
-      <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm">
+      <div
+        id="komoditas"
+        className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+      >
         <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-light-cream flex items-center gap-1.5">
           <Activity className="w-4 h-4 text-teal-600" />
           Komoditas Wilayah {activeUser.PPL.region}
@@ -257,7 +275,10 @@ export default function PPLView() {
       </div>
 
       {/* Daftar Lahan */}
-      <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm">
+      <div
+        id="lahan"
+        className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+      >
         <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-light-cream flex items-center gap-1.5">
           <MapPin className="w-4 h-4 text-teal-600" />
           Daftar Lahan Wilayah ({regionalHarvests.length})
@@ -341,7 +362,10 @@ export default function PPLView() {
 
       {/* Batch Distribution Status */}
       {regionalBatches.length > 0 && (
-        <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm">
+        <div
+          id="batch"
+          className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+        >
           <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-light-cream flex items-center gap-1.5">
             <Package className="w-4 h-4 text-nat-brown" />
             Status Distribusi Batch ({regionalBatches.length})
@@ -389,6 +413,96 @@ export default function PPLView() {
           </div>
         </div>
       )}
+
+      {/* ───── Konten Edukasi Budidaya ───── */}
+      <div
+        id="edukasi"
+        className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+      >
+        <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-light-cream flex items-center gap-1.5">
+          <BookOpen className="w-4 h-4 text-teal-600" />
+          Konten Edukasi Budidaya
+        </h3>
+
+        {/* Form buat konten */}
+        <div className="mb-5 bg-nat-light-cream/50 border border-nat-border rounded-xl p-4 space-y-3">
+          <p className="text-xs font-bold text-nat-dark">
+            Publikasi Konten Edukasi untuk Wilayah {activeUser.PPL.region}
+          </p>
+          <input
+            value={eduTitle}
+            onChange={(e) => setEduTitle(e.target.value)}
+            placeholder="Judul konten (mis. Cara Mencegah Busuk Bawang Merah)"
+            className="w-full bg-white border border-nat-border rounded-lg px-3 py-2 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green"
+          />
+          <textarea
+            value={eduBody}
+            onChange={(e) => setEduBody(e.target.value)}
+            placeholder="Isi konten edukasi budidaya..."
+            rows={3}
+            className="w-full bg-white border border-nat-border rounded-lg px-3 py-2 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green"
+          />
+          <button
+            onClick={() => {
+              if (!eduTitle.trim() || !eduBody.trim()) {
+                alert("Judul dan isi wajib diisi.");
+                return;
+              }
+              addEducationalContent({
+                pplUserId: activeUser.PPL.id,
+                pplName: activeUser.PPL.name,
+                region: activeUser.PPL.region,
+                title: eduTitle.trim(),
+                body: eduBody.trim(),
+              });
+              setEduTitle("");
+              setEduBody("");
+            }}
+            className="bg-nat-green hover:bg-nat-green-hover text-white font-bold py-2 px-4 rounded-lg text-xs transition-colors cursor-pointer"
+          >
+            Kirim untuk Moderasi
+          </button>
+          <p className="text-[10px] text-nat-sage">
+            Konten akan ditinjau admin sebelum dipublikasikan ke petani wilayah
+            {activeUser.PPL.region}.
+          </p>
+        </div>
+
+        {/* Daftar konten milik PPL ini */}
+        {myEduContents.length > 0 && (
+          <div className="space-y-2">
+            {myEduContents.map((c) => (
+              <div
+                key={c.id}
+                className="flex items-center justify-between p-3 bg-nat-light-cream/40 border border-nat-border rounded-xl text-xs"
+              >
+                <div>
+                  <p className="font-bold text-nat-dark">{c.title}</p>
+                  <p className="text-[10px] text-nat-sage">
+                    {c.region} ·{" "}
+                    {new Date(c.createdAt).toLocaleDateString("id-ID")}
+                  </p>
+                </div>
+                <span
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                    c.status === "published"
+                      ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                      : c.status === "rejected"
+                        ? "bg-red-100 text-red-700 border-red-200"
+                        : "bg-amber-100 text-amber-700 border-amber-200"
+                  }`}
+                >
+                  {c.status === "published"
+                    ? "Tayang"
+                    : c.status === "rejected"
+                      ? "Ditolak"
+                      : "Menunggu"}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -7,9 +7,13 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useData } from "../context/DataContext";
 import { useUI } from "../context/UIContext";
+import { useReview } from "../context/ReviewContext";
+import { getSellerRating } from "../utils/rating";
 import { COMMODITY_LIST } from "../constants/commodities";
 import type { Komoditas, Harvest, Match, PreOrder } from "../types";
 import RouteMapModal from "./modals/RouteMapModal";
+import { SellerRatingModal } from "./modals/SellerRatingModal";
+import { PriceChart } from "./farmer/PriceChart";
 import RegionAutocomplete from "./RegionAutocomplete";
 import {
   Sprout,
@@ -37,6 +41,10 @@ import {
   Map,
   Send,
   XCircle,
+  Handshake,
+  FileCheck,
+  Store,
+  BookOpen,
 } from "lucide-react";
 
 interface FarmerViewProps {
@@ -64,8 +72,17 @@ export default function FarmerView({
     activeUser,
     createHarvestBatch,
     harvestBatches,
+    addMarketplaceListing,
+    educationalContents,
   } = useData();
   const { showNotification } = useUI();
+  const { reviews } = useReview();
+  const myRating = getSellerRating(reviews, activeUser.PETANI.id);
+  const regionEduContents = educationalContents.filter(
+    (c) =>
+      c.status === "published" &&
+      c.region.toLowerCase() === activeUser.PETANI.region.toLowerCase(),
+  );
 
   const [selectedTraceHarvest, setSelectedTraceHarvest] =
     useState<Harvest | null>(null);
@@ -77,6 +94,9 @@ export default function FarmerView({
 
   // Route map modal
   const [routeMapPO, setRouteMapPO] = useState<PreOrder | null>(null);
+
+  // Rating modal
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
   // Harvest batch creation modal states
   const [showHarvestModal, setShowHarvestModal] = useState(false);
@@ -268,6 +288,26 @@ export default function FarmerView({
               Transaksi
             </p>
           </div>
+          <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
+            <p className="text-[10px] text-nat-light-cream uppercase tracking-wider font-semibold">
+              Rating Petani
+            </p>
+            <p className="text-lg font-bold text-nat-sand flex items-center gap-1">
+              {myRating.average > 0 ? (
+                <>
+                  <Star className="w-4 h-4 text-amber-300 fill-amber-300" />
+                  {myRating.average.toFixed(1)}
+                  <span className="text-[10px] text-nat-light-cream/70">
+                    ({myRating.count} ulasan)
+                  </span>
+                </>
+              ) : (
+                <span className="text-[10px] text-nat-light-cream/70 font-medium">
+                  Belum ada
+                </span>
+              )}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -284,7 +324,42 @@ export default function FarmerView({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Prediksi Harga Komoditas */}
+      <div id="harga" className="scroll-mt-28">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h3 className="text-sm font-bold text-nat-dark flex items-center gap-1.5">
+              <TrendingUp className="w-4 h-4 text-nat-green" />
+              Prediksi Harga Komoditas
+            </h3>
+            <p className="text-[10px] text-nat-sage mt-0.5">
+              Pantau tren & proyeksi harga untuk memilih waktu panen & jual terbaik
+            </p>
+          </div>
+          {/* Pilih komoditas untuk grafik */}
+          <div className="flex items-center gap-1 bg-white border border-nat-border rounded-xl px-2 py-1.5">
+            {(Object.keys(COMMODITY_LIST) as Komoditas[]).map((crop) => (
+              <button
+                key={crop}
+                onClick={() => setCommodity(crop)}
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                  commodity === crop
+                    ? "bg-nat-green text-white"
+                    : "text-nat-sage hover:bg-nat-light-cream hover:text-nat-dark"
+                }`}
+              >
+                {crop}
+              </button>
+            ))}
+          </div>
+        </div>
+        <PriceChart
+          commodity={commodity}
+          region={activeUser.PETANI.region}
+        />
+      </div>
+
+      <div id="input" className="grid grid-cols-1 lg:grid-cols-3 gap-6 scroll-mt-28">
         {/* Form Input Lahan */}
         <div className="lg:col-span-1 bg-white rounded-2xl border border-nat-border p-5 shadow-sm flex flex-col space-y-4">
           <div className="pb-2 border-b border-nat-light-cream">
@@ -533,7 +608,10 @@ export default function FarmerView({
         {/* Lahan Saya & Hasil Pencocokan */}
         <div className="lg:col-span-2 space-y-6">
           {/* Lahan Saya */}
-          <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm">
+          <div
+            id="lahan"
+            className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+          >
             <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-light-cream flex items-center gap-1.5">
               <Activity className="w-4 h-4 text-nat-green" />
               Laporan Lahan Aktif Saya ({myHarvests.length})
@@ -633,6 +711,29 @@ export default function FarmerView({
                                   Siap Kirim
                                 </button>
                               )}
+                              {h.status === "ACTIVE" && (
+                                <button
+                                  onClick={() =>
+                                    addMarketplaceListing({
+                                      harvestId: h.id,
+                                      farmerId: h.farmerId,
+                                      farmerName: h.farmerName,
+                                      commodity: h.commodity,
+                                      volumeKg: h.expectedVolume,
+                                      pricePerKg: h.askingPrice,
+                                      region: h.region,
+                                      latitude: h.latitude,
+                                      longitude: h.longitude,
+                                      notes: h.notes,
+                                    })
+                                  }
+                                  className="px-2 py-1 rounded-lg bg-nat-green hover:bg-nat-green-hover text-white font-bold text-[9px] transition-all flex items-center gap-1 cursor-pointer"
+                                  title="Jual ke Marketplace terbuka"
+                                >
+                                  <Store className="w-3 h-3" />
+                                  Jual Marketplace
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -650,7 +751,10 @@ export default function FarmerView({
           </div>
 
           {/* Pencocokan Cerdas & Pre-Order */}
-          <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm">
+          <div
+            id="match"
+            className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+          >
             <div className="flex justify-between items-center mb-4 pb-2 border-b border-nat-light-cream">
               <h3 className="text-sm font-bold text-nat-dark flex items-center gap-1.5">
                 <ArrowRightLeft className="w-4 h-4 text-nat-green" />
@@ -904,7 +1008,10 @@ export default function FarmerView({
       </div>
 
       {/* Daftar Pre-Order Aktif (PO) Petani */}
-      <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm mt-6">
+      <div
+        id="po"
+        className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm mt-6 scroll-mt-28"
+      >
         <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-light-cream flex items-center gap-1.5">
           <Layers className="w-4 h-4 text-nat-green" />
           Daftar Kontrak Transaksi (PO) Anda ({myPreOrders.length})
@@ -989,7 +1096,7 @@ export default function FarmerView({
 
                             {po.status === "COMPLETED" && (
                               <button
-                                onClick={() => showNotification("Terima kasih, ulasan Anda telah disimpan!", "success")}
+                                onClick={() => setShowRatingModal(true)}
                                 className="bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
                               >
                                 <Star className="w-3 h-3" />
@@ -1008,6 +1115,43 @@ export default function FarmerView({
         ) : (
           <div className="text-center py-6 text-nat-sage italic text-xs">
             Belum ada kontrak Pre-Order (PO) yang disepakati.
+          </div>
+        )}
+      </div>
+
+      {/* ───── Edukasi Budidaya ───── */}
+      <div
+        id="edukasi"
+        className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm scroll-mt-28"
+      >
+        <h3 className="text-sm font-bold text-nat-dark mb-4 pb-2 border-b border-nat-light-cream flex items-center gap-1.5">
+          <BookOpen className="w-4 h-4 text-nat-green" />
+          Edukasi Budidaya ({regionEduContents.length})
+        </h3>
+
+        {regionEduContents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {regionEduContents.map((c) => (
+              <div
+                key={c.id}
+                className="border border-nat-border rounded-xl p-4 bg-nat-light-cream/40 hover:border-nat-green/50 transition-all"
+              >
+                <p className="text-xs font-bold text-nat-dark">{c.title}</p>
+                <p className="text-[10px] text-nat-sage mt-0.5">
+                  oleh {c.pplName} · {c.region}
+                </p>
+                <p className="text-[11px] text-nat-text mt-2 leading-relaxed">
+                  {c.body.length > 160
+                    ? `${c.body.slice(0, 160)}...`
+                    : c.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-6 text-nat-sage italic text-xs">
+            Belum ada konten edukasi untuk wilayah{" "}
+            {activeUser.PETANI.region}.
           </div>
         )}
       </div>
@@ -1200,6 +1344,15 @@ export default function FarmerView({
           harvest={harvests.find(h => h.id === routeMapPO.harvestId)}
           demand={demands.find(d => d.id === routeMapPO.demandId)}
           onClose={() => setRouteMapPO(null)}
+        />
+      )}
+
+      {/* ───── Seller Rating Modal ───── */}
+      {showRatingModal && (
+        <SellerRatingModal
+          sellerName={activeUser.PETANI.name}
+          sellerUserId={activeUser.PETANI.id}
+          onClose={() => setShowRatingModal(false)}
         />
       )}
     </div>

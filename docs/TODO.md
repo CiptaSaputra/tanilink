@@ -79,18 +79,20 @@
 **Files:** new: `src/constants/commodities.ts`; updated: 15 files import path
 **Status:** ✅ Selesai — `types.ts` sekarang pure type definitions. Semua runtime data pindah ke `src/constants/commodities.ts`. 15 files diupdate import-nya.
 
-### M-05: Implement Price Prediction (per kg)
+### [DONE] M-05: Implement Price Prediction (per kg)
 **Description:** Add price-per-kg forecasting using historical price data and regression/exponential smoothing. Display trend chart in farmer dashboard.
 **Why:** PRD specifies Price & Demand Prediction as a core module. Currently only volume forecasting exists.
 **Difficulty:** Medium (2–3 days)
 **Files:** `src/utils/forecasting.ts`, `src/components/DinasView.tsx`, `src/components/FarmerView.tsx`
 **PRD:** FR-07
+**Status:** ✅ Selesai — `/api/prices` baca `market_prices` dari DB + prediksi 14 hari (moving average + tren linier). Belum dipersist ke tabel `price_predictions`, belum pakai variabel cuaca eksogen.
 
-### M-06: Create API Service Abstraction
+### [DONE] M-06: Create API Service Abstraction
 **Description:** Create `src/services/api.ts` that wraps all data operations. Initially backed by localStorage, but swappable to HTTP fetch when backend is ready.
 **Why:** Smooths the transition from frontend-only to full-stack. All data access goes through one layer.
 **Difficulty:** Medium (2 days)
 **Files:** New: `src/services/api.ts`, `src/context/AppContext.tsx`
+**Status:** ✅ Selesai — semua `src/services/*.ts` sudah `fetch("/api/...")` ke backend PostgreSQL.
 
 ### M-07: Add Pagination / Virtualization
 **Description:** Virtualize long lists (harvests, demands, matches, messages) using react-window or intersection observer.
@@ -102,7 +104,7 @@
 **Description:** Replace arrays with `Record<string, T>` (ID maps) for O(1) lookups. Keep sorted array for display.
 **Why:** Current array lookups are O(n) and become slow with hundreds of records.
 **Difficulty:** Medium (1–2 days)
-**Files:** `src/context/AppContext.tsx`
+**Files:** `src/context/DataContext.tsx`
 
 ---
 
@@ -139,12 +141,13 @@
 **Difficulty:** Easy (0.5 day)
 **Files:** `src/components/FarmerView.tsx`, `src/components/BuyerView.tsx`
 
-### L-06: Upgrade to Next.js + App Router
+### [DONE] L-06: Upgrade to Next.js + App Router
 **Description:** Migrate from Vite SPA to Next.js for SSR, API routes, and SEO.
 **Why:** PRD specifies Next.js. Enables landing page SEO and unified frontend+backend.
 **Difficulty:** Hard (1–2 weeks)
 **Files:** Entire project structure
 **PRD:** Tech Stack
+**Status:** ✅ Selesai — Next.js 15 App Router + 45+ API routes + PostgreSQL (CHANGELOG 1.3.0).
 
 ### L-07: Integrate WhatsApp API for Chat
 **Description:** Replace or augment in-app chat with WhatsApp Business API.

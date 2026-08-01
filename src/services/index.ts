@@ -16,3 +16,7 @@ export * from "./preOrderService";
 export * from "./chatService";
 export * from "./paymentService";
 export * from "./reviewService";
+export * from "./marketplaceService";
+export * from "./notificationService";
+export * from "./ledgerService";
+export * from "./educationalService";
