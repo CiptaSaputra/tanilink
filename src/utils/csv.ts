@@ -10,7 +10,15 @@
 /** Escape satu nilai untuk CSV (koma, quote, newline) */
 function escapeCell(value: unknown): string {
   if (value === null || value === undefined) return "";
-  const s = typeof value === "object" ? JSON.stringify(value) : String(value);
+  // Date → string ISO polos (tanpa JSON.stringify yang menambah tanda kutip)
+  let s: string;
+  if (value instanceof Date) {
+    s = value.toISOString();
+  } else if (typeof value === "object") {
+    s = JSON.stringify(value);
+  } else {
+    s = String(value);
+  }
   if (/[",\n\r]/.test(s)) {
     return `"${s.replace(/"/g, '""')}"`;
   }

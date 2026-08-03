@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Upload } from "lucide-react";
 import { usePayment } from "../../context/PaymentContext";
@@ -15,7 +16,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const { addPaymentConfirmation } = usePayment();
   const [payProofUrl, setPayProofUrl] = useState("");
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {preOrderId && (
         <motion.div
@@ -81,6 +82,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 };

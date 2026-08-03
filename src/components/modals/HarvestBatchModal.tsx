@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { CheckCircle } from "lucide-react";
 import { useData } from "../../context/DataContext";
@@ -19,7 +20,7 @@ export const HarvestBatchModal: React.FC<HarvestBatchModalProps> = ({
   const h = harvestingId ? harvests.find((x) => x.id === harvestingId) : null;
   const crop = h ? COMMODITY_LIST[h.commodity] : null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {harvestingId && h && (
         <motion.div
@@ -92,6 +93,7 @@ export const HarvestBatchModal: React.FC<HarvestBatchModalProps> = ({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 };

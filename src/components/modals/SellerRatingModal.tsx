@@ -11,6 +11,7 @@
 "use client";
 
 import React from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Star, X } from "lucide-react";
 import { useReview } from "../../context/ReviewContext";
@@ -33,7 +34,7 @@ export const SellerRatingModal: React.FC<SellerRatingModalProps> = ({
     .filter((r) => r.revieweeUserId === sellerUserId)
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
@@ -161,6 +162,7 @@ export const SellerRatingModal: React.FC<SellerRatingModalProps> = ({
           )}
         </motion.div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 };

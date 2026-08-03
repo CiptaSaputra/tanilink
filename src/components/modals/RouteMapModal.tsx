@@ -1,13 +1,16 @@
 "use client";
 /**
- * RouteMapModal — Menampilkan peta Leaflet dengan garis rute dari titik panen ke titik pembeli
+ * RouteMapModal — Menampilkan peta rute JALAN AKTUAL (OSRM) dari titik panen ke titik pembeli.
+ * Menggunakan komponen reusable RouteMap (OSRM), bukan garis lurus.
  * @license Apache-2.0
  */
 
-import React, { useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Navigation, Sprout, Store, MapPin, Truck, Clock } from "lucide-react";
-import { renderToString } from "react-dom/server";
 import type { PreOrder, Harvest, Demand } from "../../types";
+import RouteMap from "../shared/RouteMap";
+import { fetchOSRMRoute } from "../../utils/osrm";
 
 interface RouteMapModalProps {
   po: PreOrder;
@@ -17,16 +20,34 @@ interface RouteMapModalProps {
 }
 
 export default function RouteMapModal({ po, harvest, demand, onClose }: RouteMapModalProps) {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<unknown>(null);
-
   // Koordinat titik asal & tujuan
   const farmerLat = harvest?.latitude ?? -7.0;
   const farmerLng = harvest?.longitude ?? 110.0;
   const buyerLat = demand?.latitude ?? -6.9;
   const buyerLng = demand?.longitude ?? 109.9;
 
-  // Hitung jarak & estimasi via Haversine
+  const [osrmInfo, setOsrmInfo] = useState<{
+    distanceMeters: number;
+    durationSeconds: number;
+  } | null>(null);
+
+  // Ambil jarak/durasi aktual dari OSRM untuk info bar atas
+  useEffect(() => {
+    let cancelled = false;
+    fetchOSRMRoute([
+      { lat: farmerLat, lng: farmerLng },
+      { lat: buyerLat, lng: buyerLng },
+    ]).then((r) => {
+      if (!cancelled && r) {
+        setOsrmInfo({ distanceMeters: r.distanceMeters, durationSeconds: r.durationSeconds });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [farmerLat, farmerLng, buyerLat, buyerLng]);
+
+  // Fallback Haversine jika OSRM gagal
   const toRad = (v: number) => (v * Math.PI) / 180;
   const R = 6371;
   const dLat = toRad(buyerLat - farmerLat);
@@ -34,119 +55,16 @@ export default function RouteMapModal({ po, harvest, demand, onClose }: RouteMap
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(farmerLat)) * Math.cos(toRad(buyerLat)) * Math.sin(dLon / 2) ** 2;
-  const distanceKm = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-  const estimasiJam = Math.round((distanceKm / 40) * 10) / 10; // asumsi truk 40 km/h
+  const haversineKm = Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 
-  useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current) return;
+  const distanceKm = osrmInfo
+    ? Math.round(osrmInfo.distanceMeters / 1000)
+    : haversineKm;
+  const durationMin = osrmInfo
+    ? Math.round(osrmInfo.durationSeconds / 60)
+    : Math.round((haversineKm / 40) * 10) / 10 * 60;
 
-    // Dynamic import Leaflet untuk SSR safety
-    import("leaflet").then((L) => {
-      if (!mapContainerRef.current || mapRef.current) return;
-
-      // Fix default icon paths
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      L.Icon.Default.mergeOptions({
-        iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-        iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-      });
-
-      const midLat = (farmerLat + buyerLat) / 2;
-      const midLng = (farmerLng + buyerLng) / 2;
-      const map = L.map(mapContainerRef.current!, { attributionControl: false }).setView([midLat, midLng], 9);
-      mapRef.current = map;
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 18,
-      }).addTo(map);
-
-      // Marker Petani (hijau)
-      const farmerHtml = renderToString(
-        <div className="relative flex flex-col items-center group">
-          <div className="absolute -bottom-1 w-5 h-1.5 bg-black/20 rounded-full blur-[2px]"></div>
-          <div className="relative flex items-center justify-center w-8 h-8 rounded-full border-2 border-white shadow-md transition-transform group-hover:-translate-y-1 z-10 bg-[#16a34a]">
-            <Sprout size={16} color="white" />
-          </div>
-          <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-white -mt-[2px] transition-transform group-hover:-translate-y-1 z-0 shadow-sm"></div>
-          <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent border-t-[#16a34a] -mt-[9px] transition-transform group-hover:-translate-y-1 z-10"></div>
-        </div>
-      );
-
-      const farmerIcon = L.divIcon({
-        className: "bg-transparent",
-        html: farmerHtml,
-        iconSize: [32, 40],
-        iconAnchor: [16, 38],
-        popupAnchor: [0, -38],
-      });
-      L.marker([farmerLat, farmerLng], { icon: farmerIcon })
-        .addTo(map)
-        .bindPopup(
-          `<div style="font-size:13px;font-weight:bold;color:#16a34a">📍 Titik Panen</div>
-           <div style="font-size:12px">${po.farmerName}</div>
-           <div style="font-size:11px;color:#666">${harvest?.region ?? ""}</div>
-           <div style="font-size:11px;margin-top:4px">🌾 ${po.commodity} — ${po.agreedVolumeKg.toLocaleString("id-ID")} kg</div>`,
-          { maxWidth: 200 }
-        )
-        .openPopup();
-
-      // Marker Pembeli (biru)
-      const buyerHtml = renderToString(
-        <div className="relative flex flex-col items-center group">
-          <div className="absolute -bottom-1 w-5 h-1.5 bg-black/20 rounded-full blur-[2px]"></div>
-          <div className="relative flex items-center justify-center w-8 h-8 rounded-full border-2 border-white shadow-md transition-transform group-hover:-translate-y-1 z-10 bg-[#2563eb]">
-            <Store size={15} color="white" />
-          </div>
-          <div className="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[8px] border-l-transparent border-r-transparent border-t-white -mt-[2px] transition-transform group-hover:-translate-y-1 z-0 shadow-sm"></div>
-          <div className="w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent border-t-[#2563eb] -mt-[9px] transition-transform group-hover:-translate-y-1 z-10"></div>
-        </div>
-      );
-
-      const buyerIcon = L.divIcon({
-        className: "bg-transparent",
-        html: buyerHtml,
-        iconSize: [32, 40],
-        iconAnchor: [16, 38],
-        popupAnchor: [0, -38],
-      });
-      L.marker([buyerLat, buyerLng], { icon: buyerIcon })
-        .addTo(map)
-        .bindPopup(
-          `<div style="font-size:13px;font-weight:bold;color:#2563eb">📦 Titik Tujuan</div>
-           <div style="font-size:12px">${po.buyerName}</div>
-           <div style="font-size:11px;color:#666">${demand?.region ?? ""}</div>
-           <div style="font-size:11px;margin-top:4px">💰 Rp${po.agreedPricePerKg.toLocaleString("id-ID")}/kg</div>`,
-          { maxWidth: 200 }
-        );
-
-      // Garis rute (polyline dengan arrow)
-      const polyline = L.polyline(
-        [[farmerLat, farmerLng], [buyerLat, buyerLng]],
-        {
-          color: "#f59e0b",
-          weight: 4,
-          opacity: 0.85,
-          dashArray: "10, 8",
-        }
-      ).addTo(map);
-
-      // Fit bounds ke kedua marker
-      map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
-    });
-
-    return () => {
-      if (mapRef.current) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (mapRef.current as any).remove();
-        mapRef.current = null;
-      }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
       style={{ backgroundColor: "rgba(0,0,0,0.65)" }}
@@ -184,7 +102,11 @@ export default function RouteMapModal({ po, harvest, demand, onClose }: RouteMap
           <div className="flex flex-col items-center py-3 gap-1">
             <Truck className="w-4 h-4 text-amber-600" />
             <span className="text-[10px] text-gray-500 uppercase tracking-wider">Estimasi</span>
-            <span className="text-sm font-bold text-gray-800">{estimasiJam} jam</span>
+            <span className="text-sm font-bold text-gray-800">
+              {durationMin >= 60
+                ? `${(durationMin / 60).toFixed(1)} jam`
+                : `${durationMin} mnt`}
+            </span>
           </div>
           <div className="flex flex-col items-center py-3 gap-1">
             <Clock className="w-4 h-4 text-blue-600" />
@@ -196,27 +118,45 @@ export default function RouteMapModal({ po, harvest, demand, onClose }: RouteMap
         {/* Legend */}
         <div className="flex items-center gap-4 px-5 py-2 bg-gray-50 border-b border-gray-100 text-xs text-gray-600">
           <span className="flex items-center gap-1.5">
-            <span className="text-base">🌾</span>
+            <Sprout className="w-3.5 h-3.5 text-green-600" />
             <span className="font-medium">{po.farmerName}</span>
             <span className="text-gray-400">({harvest?.region})</span>
           </span>
           <span className="text-gray-400">→</span>
           <span className="flex items-center gap-1.5">
-            <span className="text-base">🏢</span>
+            <Store className="w-3.5 h-3.5 text-blue-600" />
             <span className="font-medium">{po.buyerName}</span>
             <span className="text-gray-400">({demand?.region})</span>
           </span>
         </div>
 
-        {/* Map */}
-        <div ref={mapContainerRef} style={{ height: "380px", width: "100%" }} />
+        {/* Map — rute jalan aktual via OSRM */}
+        <div className="p-3">
+          <RouteMap
+            waypoints={[
+              { lat: farmerLat, lng: farmerLng },
+              { lat: buyerLat, lng: buyerLng },
+            ]}
+            stops={[
+              { id: "farmer", label: po.farmerName, sub: `🌾 ${po.commodity}` },
+              { id: "buyer", label: po.buyerName, sub: `🏢 ${po.commodity}` },
+            ]}
+            height="360px"
+            depotIndex={0}
+          />
+        </div>
 
         {/* Footer */}
         <div className="px-5 py-3 bg-amber-50 border-t border-amber-100 text-xs text-amber-700 flex items-center gap-2">
           <span className="font-bold">ℹ️</span>
-          <span>Garis kuning menunjukkan jarak garis lurus. Rute aktual mengikuti jalan raya.</span>
+          <span>
+            Rute mengikuti jalan aktual (OSRM). Jarak & estimasi adalah perkiraan.
+          </span>
         </div>
       </div>
-    </div>
+    </div>,
+    // Portal ke document.body — modal dirender di dalam motion.div bertransform,
+    // sehingga position:fixed terkait ke viewport (bukan ancestor bertransform).
+    document.body,
   );
 }

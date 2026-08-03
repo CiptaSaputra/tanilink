@@ -18,11 +18,15 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const normalized = {
+      ...body,
+      sentAt: body.sentAt ? new Date(body.sentAt) : new Date(),
+    };
     await db
       .insert(messages)
-      .values(body)
-      .onConflictDoUpdate({ target: messages.id, set: body });
-    return NextResponse.json(body);
+      .values(normalized)
+      .onConflictDoUpdate({ target: messages.id, set: normalized });
+    return NextResponse.json(normalized);
   } catch (err) {
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }

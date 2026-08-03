@@ -49,20 +49,27 @@ Indonesia kehilangan **23–48 juta ton pangan per tahun** (setara Rp213–551 t
 
 | Modul | Deskripsi | Status |
 |---|---|---|
-| 🌤️ **Harvest Forecasting** | Prediksi panen (Holt's Double ES + Fourier + rain factor) per komoditas & wilayah | ✅ |
+| 🌤️ **Harvest Forecasting + Cuaca Real** | Prediksi panen (Holt's Double ES + Fourier) + risiko cuaca dari Open-Meteo real-time | ✅ |
 | 🤖 **Smart Matching** | Rekomendasi petani-pembeli berbobot (Haversine + volume + harga) per komoditas | ✅ |
 | 📦 **Pre-Order (PO) Flow** | Kesepakatan sebelum panen, atomic transaction (CONFIRMED → COMPLETED) | ✅ |
-| 💬 **Chat In-App + wa.me** | Chat modal persisted ke DB + link langsung ke WhatsApp (bukan Business API) | ✅ |
-| 🗺️ **Route Optimization** | Algoritma Clarke-Wright + 2-opt untuk rute penjemputan multi-titik | ✅ |
-| 📊 **Prediksi Harga** | Harga historis dari DB + prediksi 14 hari (moving average + tren linier) | ✅ |
-| ⭐ **Rating & Review** | Ulasan dua arah setelah PO selesai | ✅ |
-| 🗺️ **Peta Interaktif** | Leaflet.js dengan geolocation otomatis & pin adjustment via click | ✅ |
+| 💬 **Chat In-App + wa.me** | Chat modal persisted ke DB + link langsung ke WhatsApp | ✅ |
+| 🗺️ **Peta Rute Jalan Aktual (OSRM)** | Rute mengikuti jalan nyata (bukan garis lurus) di kolektor, dinas, & logistik pembeli | ✅ |
+| 📊 **Prediksi Harga Petani** | Harga historis + prediksi 14 hari (grafik interaktif, pilih komoditas) | ✅ |
+| 🔗 **Hash-Chain Ledger** | Riwayat transaksi tamper-evident (SHA-256), verifikasi rantai publik | ✅ |
+| 🔔 **Notifikasi & Riwayat** | Bell icon + badge unread + panel riwayat (match, PO, batch, cuaca) | ✅ |
+| 🛒 **Marketplace Fallback** | Batch panen tak ter-match otomatis masuk listing terbuka + beli langsung | ✅ |
+| 🏫 **Konten Edukasi PPL + Moderasi** | PPL publikasi konten budidaya → admin moderasi → tampil ke petani | ✅ |
+| 🤖 **AI Q&A (Rule-based)** | Jawab pertanyaan publik dari data agregat (tonase, harga, surplus wilayah) | ✅ |
+| 📥 **Export Dataset** | Unduh CSV/JSON (transaksi, panen, permintaan) untuk peneliti | ✅ |
+| ⭐ **Rating & Review** | Rating penjual 1-5 + distribusi bintang + detail ulasan | ✅ |
+| 🗺️ **Peta Interaktif** | Leaflet.js dengan geolocation otomatis & pin adjustment | ✅ |
 | 🔐 **Auth & RBAC** | Login/registrasi multi-role, user registry di PostgreSQL | ✅ |
-| 📡 **Dashboard Publik** | Transparansi data pangan nasional tanpa login | ✅ |
-| 👩‍🌾 **Dashboard PPL/BPP** | Monitoring wilayah binaan (read-only) | ✅ |
+| 📡 **Dashboard Publik** | Transparansi data pangan nasional **tanpa login** (`/public`) | ✅ |
+| 👩‍🌾 **Dashboard PPL/BPP** | Monitoring wilayah binaan + publikasi konten edukasi | ✅ |
 | 📈 **Dashboard Dinas** | Agregat regional, tren harga, potensi surplus/defisit | ✅ |
+| 📱 **Mobile-Friendly** | Responsif di HP (viewport, navbar adaptif, tabel scroll, modal via portal) | ✅ |
 
-> **Roadmap (belum di MVP):** disease detection (TensorFlow.js), hash-chain ledger, WhatsApp Business API, AI Q&A publik, ekspor dataset, marketplace fallback.
+> **Roadmap (belum di MVP):** disease detection (TensorFlow.js), WhatsApp Business API, landing page terpisah.
 
 ---
 
@@ -76,9 +83,10 @@ Indonesia kehilangan **23–48 juta ton pangan per tahun** (setara Rp213–551 t
 | **UI Components** | Lucide React, Motion (Framer Motion) |
 | **Database** | PostgreSQL 15 (via Docker) |
 | **ORM** | Drizzle ORM |
-| **Maps** | Leaflet.js + Nominatim |
+| **Maps** | Leaflet.js + Nominatim + OSRM (rute jalan aktual) |
+| **Cuaca** | Open-Meteo API (gratis, tanpa key) |
 | **Charts** | Recharts |
-| **Route Algorithm** | Clarke-Wright Savings + 2-opt Local Search (custom, bukan Google Maps) |
+| **Route Algorithm** | Clarke-Wright Savings + 2-opt Local Search (custom) |
 | **Deployment** | Vercel (app) + Docker (database) |
 
 ---
@@ -296,13 +304,17 @@ tani-link-app/
 │   │   └── modals/             # Modal dialogs
 │   │
 │   ├── context/
-│   │   ├── DataContext.tsx     # State management global (harvests, demands, dll)
+│   │   ├── DataContext.tsx     # State global (harvests, demands, marketplace, edukasi)
 │   │   ├── AuthContext.tsx     # Auth state
-│   │   └── UIContext.tsx       # Notifikasi & UI state
+│   │   ├── UIContext.tsx       # UI & notifikasi toast
+│   │   ├── NotificationContext.tsx # Riwayat notifikasi per user
+│   │   ├── ChatContext.tsx     # Chat state
+│   │   ├── PaymentContext.tsx  # Pembayaran
+│   │   └── ReviewContext.tsx   # Rating & ulasan
 │   │
 │   ├── db/
 │   │   ├── index.ts            # Drizzle DB connection
-│   │   ├── schema.ts           # Database schema
+│   │   ├── schema.ts           # Database schema (16 tabel)
 │   │   └── seed.ts             # Script seeding database
 │   │
 │   ├── services/               # API service layer (frontend → backend)
@@ -310,13 +322,29 @@ tani-link-app/
 │   │   ├── demandService.ts
 │   │   ├── matchService.ts
 │   │   ├── preOrderService.ts
+│   │   ├── marketplaceService.ts
+│   │   ├── notificationService.ts
+│   │   ├── ledgerService.ts
+│   │   ├── educationalService.ts
 │   │   └── ...
 │   │
 │   ├── utils/
-│   │   ├── bmkg.ts             # BMKG weather risk engine
+│   │   ├── bmkg.ts             # Risiko cuaca (Open-Meteo real + fallback musim)
+│   │   ├── osrm.ts             # Rute jalan aktual (OSRM API)
+│   │   ├── ledger.ts           # Hash-chain SHA-256
+│   │   ├── rating.ts           # Agregasi rating penjual
+│   │   ├── marketplaceAuto.ts  # Auto-fallback marketplace
+│   │   ├── csv.ts              # Export CSV
 │   │   ├── matchingEngine.ts   # Smart Matching algoritma
 │   │   ├── routeOptimizer.ts   # Clarke-Wright + 2-opt TSP
 │   │   └── forecasting.ts      # Price prediction engine
+│   │
+│   ├── components/
+│   │   ├── modals/             # RouteMap, Review, Payment, QA, SellerRating, HarvestBatch
+│   │   ├── shared/             # RouteMap (OSRM), SectionNav, ErrorBoundary, MatchCardList
+│   │   ├── farmer/             # PlantingForm, MyHarvestsTable, PriceChart
+│   │   ├── buyer/              # DemandForm
+│   │   └── auth/               # Login & Register
 │   │
 │   ├── data/
 │   │   ├── seed.ts             # Data dummy untuk seeding
@@ -344,16 +372,25 @@ tani-link-app/
 |---|---|---|
 | `POST` | `/api/auth/login` | Login user |
 | `POST` | `/api/auth/register` | Registrasi user baru |
-| `GET/POST` | `/api/harvests` | Daftar & tambah data panen |
+| `GET/POST` | `/api/harvests` | Daftar & tambah data panen (otomatis hitung risiko cuaca) |
 | `GET/PATCH` | `/api/harvests/[id]` | Detail & update panen |
 | `GET/POST` | `/api/demands` | Daftar & tambah permintaan |
 | `GET` | `/api/matches` | Hasil Smart Matching |
-| `POST` | `/api/pre-orders/confirm` | Konfirmasi Pre-Order |
+| `POST` | `/api/pre-orders/confirm` | Konfirmasi Pre-Order (atomic transaction) |
 | `PATCH` | `/api/pre-orders/[id]/status` | Update status PO |
 | `POST` | `/api/payments` | Upload bukti pembayaran |
 | `POST` | `/api/reviews` | Beri rating & ulasan |
 | `GET` | `/api/prices?commodity=X&region=Y` | Harga + prediksi 14 hari |
 | `GET/POST` | `/api/harvest-batches` | Manajemen batch distribusi |
+| `GET/POST` | `/api/marketplace` | Listing marketplace terbuka |
+| `POST` | `/api/marketplace/auto` | Auto-fallback batch tak ter-match |
+| `GET/POST` | `/api/notifications` | Notifikasi & riwayat per user |
+| `GET/POST` | `/api/ledger` | Hash-chain ledger transaksi |
+| `GET/POST` | `/api/educational-contents` | Konten edukasi PPL |
+| `POST` | `/api/qa` | AI Q&A (rule-based) |
+| `GET` | `/api/export?format=csv\|json` | Export dataset |
+| `GET/POST` | `/api/conversations` | Chat conversation |
+| `GET/POST` | `/api/messages` | Pesan chat |
 
 ---
 
@@ -361,13 +398,13 @@ tani-link-app/
 
 | Role | Yang Bisa Dilakukan |
 |---|---|
-| **Petani** | Input rencana tanam, lihat prediksi BMKG, terima rekomendasi match, buat batch panen, lihat & kelola PO, chat via WA |
-| **Pembeli** | Publikasi kebutuhan (demand), lihat Smart Matching, setujui PO, konfirmasi pembayaran, lihat rute logistik |
-| **PPL/BPP** | Monitoring data wilayah binaan (read-only), lihat konten edukasi |
-| **Kolektor** | Lihat rekomendasi rute pengambilan, update status batch |
-| **Dinas** | Lihat agregat regional, tren harga, peta sebaran panen |
-| **Admin** | Semua akses + pemantauan performa bobot Smart Matching (read-only, tidak bisa diubah) |
-| **Publik** | Dashboard transparansi pangan (tanpa login) |
+| **Petani** | Input rencana tanam, prediksi harga per komoditas, risiko cuaca, terima match, buat batch, kelola PO, jual ke marketplace, lihat rating & edukasi, chat via WA |
+| **Pembeli** | Publikasi demand, Smart Matching, setujui PO, konfirmasi bayar, rute logistik + peta OSRM, beli dari marketplace, beri rating |
+| **PPL/BPP** | Monitoring wilayah (read-only) + publikasi konten edukasi budidaya |
+| **Kolektor** | Rekomendasi rute penjemputan + peta jalan aktual, update status batch |
+| **Dinas** | Agregat regional, tren harga, surplus/defisit, optimasi rute VRP |
+| **Admin** | Pemantauan bobot matching, moderasi konten edukasi, prioritas distribusi, dispute |
+| **Publik** | Dashboard transparansi pangan tanpa login, AI Q&A, export dataset, verifikasi ledger |
 
 ---
 

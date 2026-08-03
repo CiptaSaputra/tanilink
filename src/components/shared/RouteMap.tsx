@@ -61,15 +61,15 @@ export default function RouteMap({
   useEffect(() => {
     if (!mapContainerRef.current || waypoints.length < 2) return;
 
-    // Guard: skip jika koordinat tidak berubah
-    if (coordsKey === prevCoordsRef.current) return;
+    // Guard: skip jika koordinat tidak berubah DAN map sudah ada
+    if (coordsKey === prevCoordsRef.current && mapRef.current) return;
     prevCoordsRef.current = coordsKey;
 
     let cancelled = false;
 
     // Dynamic import Leaflet untuk SSR safety
     import("leaflet").then(async (L) => {
-      if (cancelled || !mapContainerRef.current || mapRef.current) return;
+      if (cancelled || !mapContainerRef.current) return;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -88,9 +88,32 @@ export default function RouteMap({
       }).setView([mid.lat, mid.lng], 9);
       mapRef.current = map;
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 18,
-      }).addTo(map);
+      // Tile layer utama: OSM. Jika gagal dimuat (mis. diblokir), fallback CARTO.
+      const osmTiles = L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        { maxZoom: 18, crossOrigin: true },
+      ).addTo(map);
+      let tileFallbackShown = false;
+      osmTiles.on("tileerror", () => {
+        if (tileFallbackShown || cancelled) return;
+        tileFallbackShown = true;
+        L.tileLayer(
+          "https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
+          { maxZoom: 18, attribution: "© CARTO" },
+        ).addTo(map);
+      });
+
+      // Map dibuat saat modal sedang animasi (ukuran container 0) → panggil
+      // invalidateSize agar tile ter-render dengan ukuran benar (cegah peta putih)
+      const invalidate = () => {
+        if (cancelled || !mapRef.current) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (mapRef.current as any).invalidateSize();
+      };
+      requestAnimationFrame(invalidate);
+      setTimeout(invalidate, 100);
+      setTimeout(invalidate, 400);
+      setTimeout(invalidate, 800);
 
       // Marker bernomor per stop
       waypoints.forEach((wp, idx) => {
@@ -156,6 +179,10 @@ export default function RouteMap({
       if (bounds) {
         map.fitBounds(bounds, { padding: [45, 45] });
       }
+
+      // Setelah OSRM & fitBounds, pastikan ukuran sudah benar
+      invalidate();
+      setTimeout(invalidate, 200);
     });
 
     return () => {
@@ -170,8 +197,8 @@ export default function RouteMap({
   }, [coordsKey]);
 
   return (
-    <div className="rounded-xl overflow-hidden border border-nat-border shadow-sm bg-white">
-      <div ref={mapContainerRef} style={{ height, width: "100%" }} />
+    <div className="rounded-xl overflow-hidden border border-nat-border shadow-sm bg-white relative z-0">
+      <div ref={mapContainerRef} style={{ height, width: "100%", position: "relative", zIndex: 1 }} />
       {routeInfo ? (
         <div className="flex items-center justify-between px-3 py-2 bg-amber-50 border-t border-amber-100 text-xs">
           <span className="text-amber-800 font-semibold">

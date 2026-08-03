@@ -11,6 +11,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { X, Send, Bot, Loader2 } from "lucide-react";
 
@@ -54,7 +55,7 @@ export const QAInput: React.FC<QAInputProps> = ({ onClose }) => {
     }
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
@@ -155,6 +156,7 @@ export const QAInput: React.FC<QAInputProps> = ({ onClose }) => {
           </div>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 };

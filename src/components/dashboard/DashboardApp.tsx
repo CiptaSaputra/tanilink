@@ -169,7 +169,7 @@ function DashboardContent() {
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 30, transition: { duration: 0.15 } }}
-            className={`fixed top-20 right-6 z-[9999] flex items-center space-x-3 px-4 py-3.5 rounded-xl shadow-xl border border-nat-border text-xs font-semibold select-none min-w-[320px] max-w-md transition-all ${
+            className={`fixed top-20 inset-x-4 sm:inset-x-auto sm:right-6 z-[9999] flex items-center space-x-3 px-4 py-3.5 rounded-xl shadow-xl border border-nat-border text-xs font-semibold select-none sm:min-w-[320px] sm:max-w-md transition-all ${
               notification.type === "success"
                 ? "bg-nat-light-cream text-emerald-900 border-l-4 border-l-nat-green"
                 : notification.type === "warning"

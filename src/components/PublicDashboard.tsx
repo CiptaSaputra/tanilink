@@ -59,6 +59,24 @@ export default function PublicDashboard() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Header publik */}
+      <div className="flex items-center justify-between py-2">
+        <div className="flex items-center gap-2">
+          <img
+            src="/logo.jpeg"
+            alt="Logo TaniLink"
+            className="w-10 h-8 object-contain"
+          />
+          <span className="text-sm font-bold text-nat-dark">TaniLink</span>
+        </div>
+        <a
+          href="/login"
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-nat-border text-nat-dark text-xs font-bold hover:bg-nat-light-cream transition-colors shadow-sm"
+        >
+          Masuk
+        </a>
+      </div>
+
       {/* Hero Section */}
       <div className="bg-gradient-to-br from-blue-900 to-blue-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>

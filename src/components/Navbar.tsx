@@ -227,17 +227,17 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Brand Logo */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
             <img
               src="/logo.jpeg"
               alt="Logo TaniLink"
-              className="w-12 h-9 object-contain drop-shadow-sm"
+              className="w-10 h-8 sm:w-12 sm:h-9 object-contain drop-shadow-sm shrink-0"
             />
-            <div>
-              <h1 className="text-lg font-bold text-nat-dark tracking-tight leading-none">
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg font-bold text-nat-dark tracking-tight leading-none truncate">
                 TaniLink
               </h1>
-              <p className="text-[10px] font-semibold text-nat-sage tracking-wider uppercase mt-1">
+              <p className="hidden sm:block text-[10px] font-semibold text-nat-sage tracking-wider uppercase mt-1 truncate">
                 Sinergi Hulu-Hilir Pertanian
               </p>
             </div>
@@ -387,7 +387,23 @@ export default function Navbar() {
               </span>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            {/* Dropdown (mobile) */}
+            <div className="md:hidden w-full">
+              <select
+                value={activeRole}
+                onChange={(e) => setRole(e.target.value as Role)}
+                className="w-full bg-white border border-nat-border rounded-lg px-3 py-2 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green cursor-pointer"
+              >
+                {rolesList.map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Tombol row (desktop) */}
+            <div className="hidden md:flex overflow-x-auto no-scrollbar gap-2">
               {rolesList.map((role) => {
                 const isSelected = activeRole === role.id;
                 return (
@@ -395,7 +411,7 @@ export default function Navbar() {
                     key={role.id}
                     id={`role-btn-${role.id.toLowerCase()}`}
                     onClick={() => setRole(role.id)}
-                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150 cursor-pointer ${
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150 cursor-pointer shrink-0 ${
                       isSelected
                         ? `${role.color} ring-2 ring-nat-green/20 font-semibold shadow-sm`
                         : "bg-white text-nat-text border-nat-border hover:bg-nat-light-cream hover:text-nat-dark"
@@ -413,14 +429,14 @@ export default function Navbar() {
 
         {/* Role indicator bar — untuk user non-Admin yang sudah login */}
         {currentUser && currentUser.role !== "ADMIN" && (
-          <div className="border-t border-nat-light-cream py-2.5 flex items-center gap-2">
+          <div className="border-t border-nat-light-cream py-2.5 flex items-center gap-2 overflow-x-auto no-scrollbar">
             <div
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${roleBadgeColor[currentUser.role]}`}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border whitespace-nowrap shrink-0 ${roleBadgeColor[currentUser.role]}`}
             >
               <div className="w-1.5 h-1.5 rounded-full bg-current opacity-70 animate-pulse" />
               <span>Aktif sebagai {roleBadgeLabel[currentUser.role]}</span>
             </div>
-            <span className="text-[11px] text-nat-sage">
+            <span className="text-[11px] text-nat-sage whitespace-nowrap shrink-0">
               — Dashboard disesuaikan dengan peran Anda
             </span>
           </div>

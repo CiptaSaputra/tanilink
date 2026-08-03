@@ -27,6 +27,8 @@ body {
   background-color: var(--color-nat-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Cegah horizontal scroll tak sengaja di mobile */
+  overflow-x: hidden;
 }
 
 /* Sembunyikan scrollbar horizontal (untuk SectionNav di mobile) */

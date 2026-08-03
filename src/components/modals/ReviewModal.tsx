@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { Star } from "lucide-react";
 import { useReview } from "../../context/ReviewContext";
@@ -20,7 +21,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {preOrderId && (
         <motion.div
@@ -100,6 +101,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 };
