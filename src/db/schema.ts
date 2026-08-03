@@ -123,6 +123,11 @@ export const paymentConfirmations = pgTable("payment_confirmations", {
   proofImageUrl: varchar("proof_image_url"),
   status: varchar("status").notNull(),
   notes: text("notes"),
+  bankName: varchar("bank_name"),
+  accountNumber: varchar("account_number"),
+  accountName: varchar("account_name"),
+  amount: doublePrecision("amount"),
+  paidAt: varchar("paid_at"),
 });
 
 export const reviews = pgTable("reviews", {

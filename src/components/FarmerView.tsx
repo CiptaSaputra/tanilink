@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useData } from "../context/DataContext";
 import { useUI } from "../context/UIContext";
 import { useReview } from "../context/ReviewContext";
+import { usePayment } from "../context/PaymentContext";
 import { getSellerRating } from "../utils/rating";
 import { COMMODITY_LIST } from "../constants/commodities";
 import type { Komoditas, Harvest, Match, PreOrder } from "../types";
@@ -74,9 +75,11 @@ export default function FarmerView({
     harvestBatches,
     addMarketplaceListing,
     educationalContents,
+    completePreOrder,
   } = useData();
   const { showNotification } = useUI();
   const { reviews } = useReview();
+  const { paymentConfirmations, confirmPayment } = usePayment();
   const myRating = getSellerRating(reviews, activeUser.PETANI.id);
   const regionEduContents = educationalContents.filter(
     (c) =>
@@ -949,6 +952,40 @@ export default function FarmerView({
                                   </span>
                                 )}
                               </motion.div>
+                            ) : match.status === "ACCEPTED_BY_BUYER" ? (
+                              <motion.div
+                                key="accepted"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                className="flex flex-col items-end gap-1.5"
+                              >
+                                <div className="flex items-center space-x-1.5 text-nat-brown font-bold text-[11px] bg-nat-cream px-2.5 py-1 rounded-lg border border-nat-border">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-nat-brown animate-pulse" />
+                                  <span>Pembeli Mengajak Kerja Sama</span>
+                                </div>
+                                <div className="flex gap-1.5">
+                                  <button
+                                    onClick={() =>
+                                      updateMatchStatus(match.id, "REJECTED")
+                                    }
+                                    className="flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2.5 py-1 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
+                                  >
+                                    <XCircle className="w-3 h-3" />
+                                    Tolak
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      updateMatchStatus(match.id, "CONFIRMED")
+                                    }
+                                    className="flex items-center gap-1 text-[10px] font-bold text-white bg-nat-green hover:bg-nat-green-hover px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                                  >
+                                    <CheckCircle className="w-3 h-3" />
+                                    Terima & Buat Kontrak
+                                  </button>
+                                </div>
+                              </motion.div>
                             ) : match.status === "REJECTED" ? (
                               <motion.div
                                 key="rejected"
@@ -1062,11 +1099,59 @@ export default function FarmerView({
                             <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
                               Lunas & Selesai
                             </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
-                              Menunggu Pelunasan
-                            </span>
-                          )}
+                          ) : (() => {
+                            const pay = paymentConfirmations.find(
+                              (p) => p.preOrderId === po.id,
+                            );
+                            if (pay?.status === "confirmed") {
+                              return (
+                                <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                  ✓ Pembayaran Diterima
+                                </span>
+                              );
+                            }
+                            if (pay?.status === "submitted") {
+                              return (
+                                <div className="flex flex-col items-end gap-1.5">
+                                  <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-sky-100 text-sky-700 border border-sky-200">
+                                    Bukti Bayar Masuk
+                                  </span>
+                                  {/* Detail transfer */}
+                                  <div className="bg-sky-50 border border-sky-200 rounded-lg p-2 text-[10px] text-sky-900 space-y-0.5 text-left min-w-[180px]">
+                                    {pay.proofImageUrl &&
+                                      pay.proofImageUrl.startsWith(
+                                        "data:image",
+                                      ) && (
+                                        <img
+                                          src={pay.proofImageUrl}
+                                          alt="Bukti transfer"
+                                          className="w-full h-24 object-cover rounded-md mb-1 border border-sky-200"
+                                        />
+                                      )}
+                                    <p>
+                                      💳 {pay.bankName ?? "-"} •{" "}
+                                      {pay.accountNumber ?? "-"}
+                                    </p>
+                                    <p>👤 {pay.accountName ?? "-"}</p>
+                                    {pay.amount ? (
+                                      <p className="font-bold">
+                                        Rp
+                                        {pay.amount.toLocaleString("id-ID")}
+                                      </p>
+                                    ) : null}
+                                    {pay.paidAt ? (
+                                      <p>📅 {pay.paidAt}</p>
+                                    ) : null}
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
+                                Menunggu Pelunasan
+                              </span>
+                            );
+                          })()}
                           <div className="flex items-center gap-2 flex-wrap">
                              <a
                               href={(() => {
@@ -1103,6 +1188,31 @@ export default function FarmerView({
                                 Lihat Rating
                               </button>
                             )}
+
+                            {/* Konfirmasi Terima Pembayaran — saat bukti bayar masuk dari pembeli */}
+                            {po.status === "CONFIRMED" &&
+                              paymentConfirmations.find(
+                                (p) =>
+                                  p.preOrderId === po.id &&
+                                  p.status === "submitted",
+                              ) && (
+                                <button
+                                  onClick={() => {
+                                    const pay = paymentConfirmations.find(
+                                      (p) => p.preOrderId === po.id,
+                                    );
+                                    if (pay) {
+                                      confirmPayment(pay.id).then(() =>
+                                        completePreOrder(po.id),
+                                      );
+                                    }
+                                  }}
+                                  className="bg-nat-green hover:bg-nat-green-hover text-white font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
+                                >
+                                  <CheckCircle className="w-3 h-3" />
+                                  Konfirmasi Terima Bayar
+                                </button>
+                              )}
                           </div>
                         </div>
                       </td>

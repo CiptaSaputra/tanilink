@@ -64,24 +64,43 @@ export async function paymentUpdate(
   return paymentGetAll();
 }
 
+export interface PaymentTransferData {
+  proofImageUrl?: string;
+  notes?: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountName?: string;
+  amount?: number;
+  paidAt?: string;
+}
+
 export async function paymentUpsertByPreOrder(
   preOrderId: string,
-  proofImageUrl?: string,
-  notes?: string,
+  data: PaymentTransferData = {},
 ): Promise<PaymentConfirmation[]> {
   const existing = await paymentGetByPreOrder(preOrderId);
   if (existing) {
     return paymentUpdate(existing.id, {
-      proofImageUrl: proofImageUrl ?? existing.proofImageUrl,
-      notes: notes ?? existing.notes,
+      proofImageUrl: data.proofImageUrl ?? existing.proofImageUrl,
+      notes: data.notes ?? existing.notes,
+      bankName: data.bankName ?? existing.bankName,
+      accountNumber: data.accountNumber ?? existing.accountNumber,
+      accountName: data.accountName ?? existing.accountName,
+      amount: data.amount ?? existing.amount,
+      paidAt: data.paidAt ?? existing.paidAt,
       status: "submitted",
     });
   } else {
     const newPayment: PaymentConfirmation = {
       id: `pay-${Date.now()}`,
       preOrderId,
-      proofImageUrl,
-      notes,
+      proofImageUrl: data.proofImageUrl,
+      notes: data.notes,
+      bankName: data.bankName,
+      accountNumber: data.accountNumber,
+      accountName: data.accountName,
+      amount: data.amount,
+      paidAt: data.paidAt,
       status: "submitted",
     };
     return paymentAdd(newPayment);

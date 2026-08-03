@@ -16,6 +16,7 @@ import {
   paymentUpsertByPreOrder,
   paymentConfirm,
   paymentClear,
+  type PaymentTransferData,
 } from "../services";
 import { useUI } from "./UIContext";
 
@@ -23,8 +24,7 @@ interface PaymentContextProps {
   paymentConfirmations: PaymentConfirmation[];
   addPaymentConfirmation: (
     preOrderId: string,
-    proofImageUrl?: string,
-    notes?: string,
+    data?: PaymentTransferData,
   ) => Promise<void>;
   confirmPayment: (paymentId: string) => Promise<void>;
 }
@@ -46,15 +46,11 @@ export const PaymentProvider: React.FC<{ children: React.ReactNode }> = ({
   const { showNotification } = useUI();
 
   const addPaymentConfirmation = useCallback(
-    async (preOrderId: string, proofImageUrl?: string, notes?: string) => {
-      const updated = await paymentUpsertByPreOrder(
-        preOrderId,
-        proofImageUrl,
-        notes,
-      );
+    async (preOrderId: string, data?: PaymentTransferData) => {
+      const updated = await paymentUpsertByPreOrder(preOrderId, data);
       setPaymentConfirmations(updated);
       showNotification(
-        "Bukti pembayaran berhasil diunggah (opsional).",
+        "Bukti pembayaran berhasil diunggah.",
         "success",
       );
     },

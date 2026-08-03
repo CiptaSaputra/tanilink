@@ -27,6 +27,7 @@
 - [Struktur Folder](#-struktur-folder)
 - [Peran Pengguna](#-peran-pengguna)
 - [API Endpoints](#-api-endpoints)
+- [Panduan Mencoba Fitur](#-panduan-mencoba-fitur)
 - [Kontribusi](#-kontribusi)
 
 ---
@@ -405,6 +406,12 @@ tani-link-app/
 | **Dinas** | Agregat regional, tren harga, surplus/defisit, optimasi rute VRP |
 | **Admin** | Pemantauan bobot matching, moderasi konten edukasi, prioritas distribusi, dispute |
 | **Publik** | Dashboard transparansi pangan tanpa login, AI Q&A, export dataset, verifikasi ledger |
+
+---
+
+## 🧪 Panduan Mencoba Fitur
+
+Lihat **[`docs/CARA_MENCOBA.md`](docs/CARA_MENCOBA.md)** — panduan lengkap mengetes semua fitur: akun demo, alur petani→pembeli→PO→pembayaran→kolektor, dashboard per role, AI Q&A, marketplace, dan troubleshooting.
 
 ---
 

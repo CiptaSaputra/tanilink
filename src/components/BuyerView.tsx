@@ -7,11 +7,13 @@ import React, { useState, useEffect } from "react";
 import { useData } from "../context/DataContext";
 import { useUI } from "../context/UIContext";
 import { useReview } from "../context/ReviewContext";
+import { usePayment } from "../context/PaymentContext";
 import { getSellerRating } from "../utils/rating";
 import { COMMODITY_LIST } from "../constants/commodities";
 import type { Komoditas, Demand, Match, PreOrder } from "../types";
 import RouteMapModal from "./modals/RouteMapModal";
 import { ReviewModal } from "./modals/ReviewModal";
+import { PaymentModal } from "./modals/PaymentModal";
 import {
   ShoppingBag,
   Plus,
@@ -63,7 +65,6 @@ export default function BuyerView({
     demands,
     matches,
     preOrders,
-    completePreOrder,
     addDemand,
     updateMatchStatus,
     activeUser,
@@ -72,6 +73,7 @@ export default function BuyerView({
   } = useData();
   const { showNotification } = useUI();
   const { reviews } = useReview();
+  const { paymentConfirmations } = usePayment();
 
   // Form states
   const [commodity, setCommodity] = useState<Komoditas>("Bawang Merah");
@@ -95,6 +97,7 @@ export default function BuyerView({
   // Route map modal
   const [routeMapPO, setRouteMapPO] = useState<PreOrder | null>(null);
   const [reviewPO, setReviewPO] = useState<PreOrder | null>(null);
+  const [paymentPO, setPaymentPO] = useState<PreOrder | null>(null);
 
   // Logistics state
   const [selectedLogistics, setSelectedLogistics] = useState<string[]>([]);
@@ -1014,11 +1017,30 @@ export default function BuyerView({
                             <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
                               Lunas & Selesai
                             </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
-                              Belum Lunas
-                            </span>
-                          )}
+                          ) : (() => {
+                            const pay = paymentConfirmations.find(
+                              (p) => p.preOrderId === po.id,
+                            );
+                            if (pay?.status === "confirmed") {
+                              return (
+                                <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                  ✓ Pembayaran Dikonfirmasi
+                                </span>
+                              );
+                            }
+                            if (pay?.status === "submitted") {
+                              return (
+                                <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-sky-100 text-sky-700 border border-sky-200">
+                                  ⏳ Menunggu Konfirmasi Petani
+                                </span>
+                              );
+                            }
+                            return (
+                              <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
+                                Belum Bayar
+                              </span>
+                            );
+                          })()}
 
                           <div className="flex items-center gap-2 flex-wrap">
                             <a
@@ -1059,7 +1081,7 @@ export default function BuyerView({
                               </button>
                             ) : (
                               <button
-                                onClick={() => completePreOrder(po.id)}
+                                onClick={() => setPaymentPO(po)}
                                 className="bg-nat-green hover:bg-nat-green-hover text-white font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
                               >
                                 <DollarSign className="w-3 h-3" />
@@ -1341,6 +1363,14 @@ export default function BuyerView({
             reviewPO.harvestId
           }
           onClose={() => setReviewPO(null)}
+        />
+      )}
+
+      {/* ───── Payment Modal (Upload Bukti Bayar) ───── */}
+      {paymentPO && (
+        <PaymentModal
+          preOrderId={paymentPO.id}
+          onClose={() => setPaymentPO(null)}
         />
       )}
     </div>

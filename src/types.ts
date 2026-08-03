@@ -188,6 +188,11 @@ export interface PaymentConfirmation {
   proofImageUrl?: string;
   status: "not_submitted" | "submitted" | "confirmed";
   notes?: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountName?: string;
+  amount?: number;
+  paidAt?: string;
 }
 
 export interface Review {
