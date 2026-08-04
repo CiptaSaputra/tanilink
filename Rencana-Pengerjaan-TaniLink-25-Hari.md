@@ -2,12 +2,19 @@
 
 Rencana ini disusun untuk mengimplementasikan **GAGASAN INTI** TaniLink: memberdayakan petani mikro berlahan kecil agar memiliki akses pasar yang adil dan efisien.
 
-> **Catatan (per 2026-08-01):** dokumen ini adalah rencana & checklist pengerjaan. Sebagian item yang dicentang `[x]` menyimpang dari implementasi final di kode. Perbedaan penting:
+> **Catatan (per 2026-08-03 — Update Terbaru):** dokumen ini adalah rencana & checklist pengerjaan.
+>
+> **Update progress sejak rencana awal:**
+> - **Landing Page** ✅ — Terintegrasi penuh dari `landing-page-test-main`. Hero video scroll-scrub, timeline musim tanam, sticky cards, dashboard preview peta interaktif, FAQ accordion, CTA split panel, footer. Route `/` sekarang menampilkan landing page (bukan redirect ke login).
+> - **Disease Detection** ✅ — Terimplementasi via `ml-tumbu-main` (FastAPI + ResNet9 + Gemini API). Proxy endpoint `/api/disease-detections/predict`. Mode Gemini-only berjalan tanpa file `.pth`. DiseaseDetector di dashboard petani sudah fully functional.
+> - **QR Trace & Lacak Batch** ✅ — `HarvestTraceModal` dengan 3 tab (Info+QR, Lacak Batch stepper, Riwayat Penyakit). API publik `GET /api/trace/:id`. `TracePublicView` di `/public?trace=id` tanpa login.
+> - **Next.js upgrade** ✅ — 15.5.20 → **16.2.12 (Turbopack)**. Dev server ~5x lebih cepat.
+>
+> **Perbedaan dari rencana awal yang masih berlaku:**
 > - **Route Optimization**: rencana pakai Google Maps Directions API → final: **Clarke-Wright + 2-opt custom** (`src/utils/routeOptimizer.ts`).
-> - **WhatsApp**: rencana Twilio/Meta Cloud API → final: **chat in-app (DB) + link `wa.me`**. WhatsApp Business API **belum** terintegrasi.
-> - **Hash-Chain Ledger**: rencana simulasi tamper-evident → final: **tidak diimplementasi**. Label "Hash-Chain" di PublicDashboard hanyalah teks dekoratif.
-> - **Disease Detection**: dilewati (Hari 9–10), `@tensorflow/tfjs` ter-install tapi tidak dipakai.
-> - **Harvest Forecasting "BMKG"**: final memakai **pola musim statis** + mock engine (`src/utils/bmkg.ts`), bukan API BMKG real-time.
+> - **WhatsApp**: rencana Twilio/Meta Cloud API → final: **chat in-app (DB) + link `wa.me`**.
+> - **Hash-Chain Ledger**: sudah diimplementasi SHA-256 tamper-evident di `src/utils/ledger.ts` dan terverifikasi di PublicDashboard.
+> - **Harvest Forecasting "BMKG"**: final memakai **Open-Meteo API (real-time)** + mock engine (`src/utils/bmkg.ts`), bukan API BMKG langsung.
 >
 > Status implementasi terkini lihat `docs/IMPLEMENTATION_STATUS.md`.
 
@@ -93,17 +100,18 @@ Rencana ini disusun untuk mengimplementasikan **GAGASAN INTI** TaniLink: memberd
 - [x] Simpan hasil ke `harvest_forecasts`, tampilkan di dashboard petani
 - **Output**: setiap planting otomatis punya estimasi panen + risiko cuaca.
 
-### Hari 9: Deteksi Penyakit Tanaman — Model & API *(Dilewati)*
-- [ ] Siapkan/latih model klasifikasi citra penyakit tanaman (atau pakai model open-source terlatih)
-- [ ] Deploy model sebagai API terpisah (mis. FastAPI/Flask ringan atau serverless function)
-- [ ] Endpoint upload foto dari petani → panggil API model
-- **Output**: API deteksi penyakit siap dipanggil dari aplikasi utama.
+### Hari 9: Deteksi Penyakit Tanaman — Model & API ✅ *(Dikerjakan Ulang)*
+- [x] Deploy model sebagai API terpisah — **FastAPI di `ml-tumbu-main/`** (ResNet9 + Gemini)
+- [x] Endpoint upload foto (base64) dari petani → proxy `/api/disease-detections/predict`
+- [x] Mode Gemini-only berjalan tanpa file `.pth`
+- **Output**: ML server siap, Gemini API aktif untuk diagnosis dalam Bahasa Indonesia.
 
-### Hari 10: Integrasi Disease Detection ke Harvest Forecasting *(Dilewati)*
-- [ ] Simpan hasil diagnosis ke `disease_detections`
-- [ ] Logika koreksi `predicted_volume_kg` berdasarkan `volume_adjustment_pct`
-- [ ] Tampilkan riwayat diagnosis di dashboard petani per siklus tanam
-- **Output**: estimasi volume panen otomatis terkoreksi bila tanaman terdeteksi sakit.
+### Hari 10: Integrasi Disease Detection ke Harvest Forecasting ✅ *(Dikerjakan Ulang)*
+- [x] Simpan hasil diagnosis ke `disease_detections`
+- [x] Logika koreksi `predicted_volume_kg` berdasarkan `volume_adjustment_pct`
+- [x] Riwayat diagnosis di dashboard petani (DiseaseDetector: health check, semua predictions, toggle history)
+- [x] Riwayat penyakit tampil di QR Trace Modal tab "Kesehatan"
+- **Output**: estimasi volume panen otomatis terkoreksi + riwayat tersimpan.
 
 ### Hari 11: Prediksi Harga (Price Prediction Engine)
 - [x] Kumpulkan/seed data harga historis (`market_prices`) per komoditas & wilayah
@@ -222,3 +230,42 @@ Rencana ini disusun untuk mengimplementasikan **GAGASAN INTI** TaniLink: memberd
 - **Jika hanya 1 orang**: pertimbangkan memotong Hari 9–10 (Disease Detection) dan Hari 21 (Route Optimization) menjadi versi paling sederhana (mis. disease detection pakai API pihak ketiga siap pakai, route optimization cukup urutan berdasarkan jarak terdekat tanpa Google Maps dulu), lalu alokasikan waktu yang tersisa untuk stabilisasi di fase inti (matching & PO).
 - **Jika 2 orang**: bagi berdasarkan layer — 1 orang fokus backend/data (schema, BMKG, matching engine, hash-chain), 1 orang fokus frontend/UX (form, dashboard, peta) — supaya fase 2–4 bisa paralel dan sedikit mempercepat total waktu.
 - Fitur di **P3** (Public Dashboard + AI Q&A + Export) adalah kandidat pertama yang dipangkas/disederhanakan bila di Hari 18–20 progres meleset dari rencana.
+
+---
+
+## Fase 7 — Fitur Tambahan Post-Rencana (Dikerjakan Setelah Hari 25)
+
+> Fitur-fitur di bawah ini dikerjakan setelah rencana 25 hari selesai sebagai peningkatan kualitas dan kelengkapan platform.
+
+### Landing Page (Terintegrasi dari `landing-page-test-main`)
+- [x] Hero section dengan video scroll-scrub (GSAP + Framer Motion)
+- [x] Timeline musim tanam interaktif (GrowingSeasonRail)
+- [x] Sticky problem cards dengan before/after (CardStack)
+- [x] Dashboard preview dengan peta Leaflet (Leaflet vanilla — bukan react-leaflet)
+- [x] FAQ accordion animasi
+- [x] CTA split panel Petani / Pembeli → `/register`
+- [x] Footer dengan ilustrasi sawah
+- [x] Font Instrument Serif + IBM Plex Mono via `next/font`
+- [x] Route `/` sekarang menampilkan landing page (bukan redirect login)
+
+### ML Disease Detection (FastAPI + Gemini)
+- [x] Setup `ml-tumbu-main/` dengan Python 3.11 venv
+- [x] Mode Gemini-only (berjalan tanpa file `.pth` ResNet9)
+- [x] Proxy API Next.js `/api/disease-detections/predict` (server-side, hindari CORS)
+- [x] Health check endpoint — DiseaseDetector badge Online/Offline otomatis
+- [x] Tampil semua predictions dengan confidence bar (bukan hanya top-1)
+- [x] Riwayat deteksi per lahan dengan toggle
+
+### QR Trace & Lacak Batch
+- [x] `HarvestTraceModal` 3-tab: Info+QR, Lacak Batch, Riwayat Penyakit
+- [x] Stepper visual READY → IN_TRANSIT → DELIVERED per batch
+- [x] QR code encode URL `/public?trace=id`
+- [x] API publik `GET /api/trace/:id` (fingerprint SHA256, tanpa auth)
+- [x] `TracePublicView` — halaman verifikasi 3-tab tanpa login
+- [x] BuyerView: fix modal tidak muncul + upgrade scanner QR (input manual + buka halaman publik)
+
+### Upgrade Next.js 16
+- [x] Upgrade 15.5.20 → 16.2.12 (Turbopack)
+- [x] Hapus config `eslint` dari `next.config.mjs` (tidak didukung di v16)
+- [x] Fix `ssr: false` di Server Component
+- [x] Clear `.next` cache untuk fix react version mismatch

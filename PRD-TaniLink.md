@@ -65,18 +65,20 @@ Setelah PO disepakati, petani mendapat kepastian pasar dari awal musim tanam —
 
 **Input Komoditas & Harvest Forecasting (BMKG-Integrated)**
 - [x] *(UI)* Petani input jenis komoditas, tanggal tanam, luas lahan, titik lokasi (geolocation otomatis + penyesuaian pin via click — belum drag gesture).
-- [ ] *(Backend)* Sistem menarik data cuaca/musim real-time dari API BMKG (saat ini memakai pola musim statis + `bmkg.ts` mock risk engine).
+- [x] *(Backend)* Sistem memakai Open-Meteo API (real-time, gratis) untuk risiko cuaca — bukan BMKG langsung.
 
 **Deteksi Penyakit Tanaman dari Foto**
-- [ ] *(Backend)* Petani foto tanaman lewat HP, sistem mendiagnosis kemungkinan penyakit/hama secara cepat.
-- [ ] *(Backend)* Hasil diagnosis memengaruhi estimasi volume panen di modul Harvest Forecasting.
-- [ ] *(Backend)* Riwayat diagnosis tersimpan di dashboard petani.
-- **Catatan:** `@tensorflow/tfjs` ter-install tapi belum dipakai. **Roadmap item.**
+- [x] *(Backend)* Petani foto tanaman lewat HP, sistem mendiagnosis kemungkinan penyakit/hama secara cepat via Gemini AI.
+- [x] *(Backend)* Hasil diagnosis memengaruhi estimasi volume panen di modul Harvest Forecasting.
+- [x] *(Backend)* Riwayat diagnosis tersimpan di dashboard petani dan modal QR Trace.
+- [x] *(Backend)* ML server (FastAPI + ResNet9 + Gemini) di `ml-tumbu-main/`, berjalan di mode Gemini-only tanpa file `.pth`.
+- [x] *(Backend)* Proxy endpoint `/api/disease-detections/predict` menghindari CORS & expose port ML.
 
 **Dashboard Petani**
 - [x] *(UI)* Prediksi harga per komoditas, prediksi waktu panen, harga pasar terkini.
-- [ ] *(UI)* Histori penjualan sebagai rekam jejak transaksi yang dapat diverifikasi (hash-chain). — **belum: hanya histori PO biasa**
+- [x] *(UI)* QR Trace Modal — 3 tab: Info Lahan + QR, Lacak Batch (stepper timeline), Riwayat Penyakit.
 - [x] *(UI)* Status prioritas distribusi saat batch panennya diminati lebih dari satu pembeli.
+- [x] *(UI)* DiseaseDetector: health check ML server, semua predictions + confidence bar, riwayat deteksi toggle.
 
 **Manajemen Demand (Pembeli)**
 - [x] *(UI)* Pembeli membuat listing kebutuhan: komoditas, volume, lokasi, tenggat waktu.
@@ -125,8 +127,10 @@ Setelah PO disepakati, petani mendapat kepastian pasar dari awal musim tanam —
 ### B. Dashboard Publik
 - [x] *(UI)* Peta persebaran komoditas (berdasarkan data planting yang dipublikasikan petani).
 - [x] *(UI)* Harga komoditas per wilayah.
-- [ ] *(Backend)* AI Q&A: publik dapat bertanya dalam bahasa natural terkait data yang tersedia. — **roadmap item**
-- [ ] *(Backend)* Ekspor dataset (CSV/JSON) untuk peneliti. — **roadmap item**
+- [x] *(Backend)* AI Q&A: publik dapat bertanya terkait data yang tersedia (rule-based).
+- [x] *(Backend)* Ekspor dataset (CSV/JSON) untuk peneliti.
+- [x] *(Backend)* Verifikasi publik via QR — `GET /api/trace/:id` return lahan + batch + penyakit tanpa auth.
+- [x] *(UI)* `TracePublicView` — halaman 3-tab verifikasi tanpa login, handle `?trace=id` dari URL.
 
 ### C. Dashboard Admin
 - [x] *(UI)* Ringkasan planting, demand, match, dan PO aktif.

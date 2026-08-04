@@ -6,7 +6,7 @@
 
 *Menghubungkan petani mikro dengan pembeli institusional sejak tahap rencana tanam — bukan setelah panen*
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=next.js&logoColor=white)](https://nextjs.org)
+[![Next.js](https://img.shields.io/badge/Next.js-16.2-000000?logo=next.js&logoColor=white)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
@@ -50,6 +50,9 @@ Indonesia kehilangan **23–48 juta ton pangan per tahun** (setara Rp213–551 t
 
 | Modul | Deskripsi | Status |
 |---|---|---|
+| 🌾 **Landing Page** | Hero video scroll-scrub, timeline musim tanam, sticky cards masalah, dashboard preview peta, FAQ, CTA split panel petani/pembeli | ✅ |
+| 🤖 **Deteksi Penyakit AI** | Upload foto daun → Gemini AI diagnosis dalam Bahasa Indonesia, tampil confidence bar semua prediksi, riwayat deteksi, koreksi estimasi volume | ✅ |
+| 🔍 **QR Trace & Lacak Batch** | Modal 3-tab: Info+QR code, Timeline batch READY→IN_TRANSIT→DELIVERED, Riwayat penyakit. Halaman verifikasi publik `/public?trace=id` tanpa login | ✅ |
 | 🌤️ **Harvest Forecasting + Cuaca Real** | Prediksi panen (Holt's Double ES + Fourier) + risiko cuaca dari Open-Meteo real-time | ✅ |
 | 🤖 **Smart Matching** | Rekomendasi petani-pembeli berbobot (Haversine + volume + harga) per komoditas | ✅ |
 | 📦 **Pre-Order (PO) Flow** | Kesepakatan sebelum panen, atomic transaction (CONFIRMED → COMPLETED) | ✅ |
@@ -70,23 +73,23 @@ Indonesia kehilangan **23–48 juta ton pangan per tahun** (setara Rp213–551 t
 | 📈 **Dashboard Dinas** | Agregat regional, tren harga, potensi surplus/defisit | ✅ |
 | 📱 **Mobile-Friendly** | Responsif di HP (viewport, navbar adaptif, tabel scroll, modal via portal) | ✅ |
 
-> **Roadmap (belum di MVP):** disease detection (TensorFlow.js), WhatsApp Business API, landing page terpisah.
-
 ---
 
 ## 🛠️ Tech Stack
 
 | Layer | Teknologi |
 |---|---|
-| **Framework** | Next.js 15 (App Router) |
+| **Framework** | Next.js 16.2 (App Router, Turbopack) |
 | **Language** | TypeScript 5.8 |
 | **Styling** | Tailwind CSS v4 |
-| **UI Components** | Lucide React, Motion (Framer Motion) |
+| **UI Components** | Lucide React, Motion (Framer Motion), GSAP |
 | **Database** | PostgreSQL 15 (via Docker) |
 | **ORM** | Drizzle ORM |
-| **Maps** | Leaflet.js + Nominatim + OSRM (rute jalan aktual) |
+| **Maps** | Leaflet.js (vanilla) + Nominatim + OSRM (rute jalan aktual) |
 | **Cuaca** | Open-Meteo API (gratis, tanpa key) |
 | **Charts** | Recharts |
+| **ML / AI** | FastAPI + ResNet9 (lokal) + Gemini API (deteksi penyakit tanaman) |
+| **QR Code** | qrcode.react |
 | **Route Algorithm** | Clarke-Wright Savings + 2-opt Local Search (custom) |
 | **Deployment** | Vercel (app) + Docker (database) |
 
@@ -121,64 +124,53 @@ cd tani-link-app
 npm install
 ```
 
-> [!NOTE]
-> Proses ini mungkin memerlukan waktu 1-3 menit tergantung koneksi internet.
-
 ### Langkah 3: Setup Environment Variables
 
-Buat file `.env` di root project (sejajar dengan `package.json`):
-
 ```bash
-# Copy template dan edit sesuai kebutuhan
 cp .env.example .env
 ```
 
-> Jika tidak ada `.env.example`, buat file `.env` baru dengan isi:
+Isi `.env`:
 
 ```env
 DATABASE_URL=postgresql://admin:password123@127.0.0.1:5434/tanilink
+ML_API_URL=http://localhost:8000
 ```
 
 ### Langkah 4: Jalankan Database dengan Docker
 
 ```bash
-# Start PostgreSQL container di background
 docker compose up -d
-
-# Verifikasi container sudah berjalan
-docker ps
-```
-
-Tunggu sekitar 5-10 detik hingga PostgreSQL siap, lalu cek dengan:
-
-```bash
-# Harusnya muncul tabel-tabel TaniLink
-docker exec -it tanilink_db psql -U admin -d tanilink -c "\dt"
 ```
 
 ### Langkah 5: Migrasi & Seed Database
 
 ```bash
-# 1. Buat tabel-tabel database (migrasi schema)
 npx drizzle-kit push
-
-# 2. Isi data awal (users, panen, demand, harga pasar)
 npx tsx src/db/seed.ts
 ```
 
-Output yang diharapkan dari seed:
-```
-Seeding database...
-Seeding users...
-Seeding harvests...
-Seeding demands...
-Seeding matches...
-Seeding pre-orders...
-Seeding market prices...
-Database seeded successfully!
+### Langkah 6: Jalankan ML Server (Opsional — untuk Deteksi Penyakit)
+
+```bash
+cd ml-tumbu-main
+python3.11 -m venv .venv
+.venv/bin/pip install -r requirements-api.txt
+.venv/bin/pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 ```
 
-### Langkah 6: Jalankan Development Server
+Buat `.env` di folder `ml-tumbu-main/`:
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+> Dapatkan API key gratis di [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+
+```bash
+.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000
+```
+
+### Langkah 7: Jalankan Development Server
 
 ```bash
 npm run dev
@@ -269,11 +261,12 @@ Semua akun menggunakan password: **`demo123`**
 ## 📁 Struktur Folder
 
 ```
-tani-link-app/
+tanilink/
 │
 ├── app/                        # Next.js App Router
 │   ├── (auth)/                 # Halaman login & register
 │   ├── (dashboard)/            # Halaman dashboard utama
+│   ├── public/                 # Dashboard publik (/public)
 │   ├── api/                    # REST API endpoints
 │   │   ├── auth/               # Login & Register
 │   │   ├── harvests/           # CRUD data panen
@@ -284,84 +277,81 @@ tani-link-app/
 │   │   ├── reviews/            # Rating & review
 │   │   ├── harvest-batches/    # Batch distribusi panen
 │   │   ├── prices/             # Harga pasar + prediksi
-│   │   └── conversations/      # Chat in-app
-│   ├── layout.tsx
-│   └── page.tsx                # Landing page redirect
+│   │   ├── conversations/      # Chat in-app
+│   │   ├── disease-detections/ # Riwayat deteksi penyakit
+│   │   │   └── predict/        # ← Proxy ke ML server (Gemini/ResNet9)
+│   │   └── trace/[id]/         # ← Verifikasi publik lahan (tanpa auth)
+│   ├── layout.tsx              # Font Instrument Serif + IBM Plex Mono
+│   └── page.tsx                # Landing page (route /)
 │
 ├── src/
-│   ├── components/             # React components per role
+│   ├── components/
+│   │   ├── landing/            # ← Komponen landing page
+│   │   │   ├── LandingPage.tsx
+│   │   │   └── ui/             # Hero, FAQ, Timeline, Map, Cards (15 komponen)
 │   │   ├── FarmerView.tsx      # Dashboard Petani
 │   │   ├── BuyerView.tsx       # Dashboard Pembeli
 │   │   ├── KolektorView.tsx    # Dashboard Kolektor
 │   │   ├── PPLView.tsx         # Dashboard PPL/BPP
 │   │   ├── DinasView.tsx       # Dashboard Dinas
 │   │   ├── AdminView.tsx       # Dashboard Admin
-│   │   ├── PublicDashboard.tsx # Dashboard Publik
+│   │   ├── PublicDashboard.tsx # Dashboard Publik + handle ?trace=id
+│   │   ├── TracePublicView.tsx # ← Halaman verifikasi publik QR
 │   │   ├── InteractiveMap.tsx  # Peta Leaflet
-│   │   ├── Navbar.tsx          # Navigasi global
+│   │   ├── Navbar.tsx
 │   │   ├── auth/               # Login & Register pages
-│   │   ├── farmer/             # Sub-komponen petani
-│   │   ├── buyer/              # Sub-komponen pembeli
-│   │   └── modals/             # Modal dialogs
+│   │   ├── farmer/
+│   │   │   └── DiseaseDetector.tsx  # ← Upload foto + AI diagnosis
+│   │   ├── modals/
+│   │   │   ├── HarvestTraceModal.tsx # ← Modal 3-tab QR + Lacak Batch
+│   │   │   ├── RouteMapModal.tsx
+│   │   │   ├── PaymentModal.tsx
+│   │   │   └── ...
+│   │   └── shared/
 │   │
 │   ├── context/
-│   │   ├── DataContext.tsx     # State global (harvests, demands, marketplace, edukasi)
-│   │   ├── AuthContext.tsx     # Auth state
-│   │   ├── UIContext.tsx       # UI & notifikasi toast
-│   │   ├── NotificationContext.tsx # Riwayat notifikasi per user
-│   │   ├── ChatContext.tsx     # Chat state
-│   │   ├── PaymentContext.tsx  # Pembayaran
-│   │   └── ReviewContext.tsx   # Rating & ulasan
+│   │   ├── DataContext.tsx
+│   │   ├── AuthContext.tsx
+│   │   ├── UIContext.tsx
+│   │   └── ...
 │   │
 │   ├── db/
-│   │   ├── index.ts            # Drizzle DB connection
-│   │   ├── schema.ts           # Database schema (16 tabel)
-│   │   └── seed.ts             # Script seeding database
+│   │   ├── index.ts
+│   │   ├── schema.ts
+│   │   └── seed.ts
 │   │
-│   ├── services/               # API service layer (frontend → backend)
-│   │   ├── harvestService.ts
-│   │   ├── demandService.ts
-│   │   ├── matchService.ts
-│   │   ├── preOrderService.ts
-│   │   ├── marketplaceService.ts
-│   │   ├── notificationService.ts
-│   │   ├── ledgerService.ts
-│   │   ├── educationalService.ts
+│   ├── services/
+│   │   ├── diseaseService.ts   # ← Simpan/ambil riwayat deteksi penyakit
 │   │   └── ...
 │   │
 │   ├── utils/
-│   │   ├── bmkg.ts             # Risiko cuaca (Open-Meteo real + fallback musim)
-│   │   ├── osrm.ts             # Rute jalan aktual (OSRM API)
-│   │   ├── ledger.ts           # Hash-chain SHA-256
-│   │   ├── rating.ts           # Agregasi rating penjual
-│   │   ├── marketplaceAuto.ts  # Auto-fallback marketplace
-│   │   ├── csv.ts              # Export CSV
-│   │   ├── matchingEngine.ts   # Smart Matching algoritma
-│   │   ├── routeOptimizer.ts   # Clarke-Wright + 2-opt TSP
-│   │   └── forecasting.ts      # Price prediction engine
+│   │   ├── disease.ts          # ← Client ML (via proxy /api/disease-detections/predict)
+│   │   ├── bmkg.ts
+│   │   ├── osrm.ts
+│   │   ├── ledger.ts
+│   │   └── ...
 │   │
-│   ├── components/
-│   │   ├── modals/             # RouteMap, Review, Payment, QA, SellerRating, HarvestBatch
-│   │   ├── shared/             # RouteMap (OSRM), SectionNav, ErrorBoundary, MatchCardList
-│   │   ├── farmer/             # PlantingForm, MyHarvestsTable, PriceChart
-│   │   ├── buyer/              # DemandForm
-│   │   └── auth/               # Login & Register
+│   ├── lib/
+│   │   └── utils.ts            # ← cn() helper (Tailwind merge)
 │   │
-│   ├── data/
-│   │   ├── seed.ts             # Data dummy untuk seeding
-│   │   └── users.ts            # Akun demo
-│   │
-│   ├── constants/
-│   │   └── commodities.ts      # Data komoditas (durasi, harga, bobot)
-│   │
-│   └── types.ts                # TypeScript type definitions
+│   └── types.ts
 │
-├── docs/                       # Dokumentasi teknis lengkap
-├── drizzle/                    # Drizzle migration files
-├── docker-compose.yml          # PostgreSQL Docker setup
-├── drizzle.config.ts           # Drizzle ORM config
-├── next.config.mjs             # Next.js config
-├── tsconfig.json               # TypeScript config
+├── ml-tumbu-main/              # FastAPI ML server (Python)
+│   ├── app.py                  # Server utama (Gemini-only mode bila tanpa .pth)
+│   ├── model.py                # Arsitektur ResNet9
+│   ├── class_names.py          # 38 kelas penyakit tanaman
+│   ├── requirements-api.txt
+│   ├── .env.example            # GEMINI_API_KEY template
+│   └── Dockerfile
+│
+├── public/
+│   └── images/                 # Aset landing page
+│
+├── drizzle/                    # Migration files
+├── docker-compose.yml
+├── drizzle.config.ts
+├── next.config.mjs
+├── tsconfig.json
 └── package.json
 ```
 
@@ -373,7 +363,7 @@ tani-link-app/
 |---|---|---|
 | `POST` | `/api/auth/login` | Login user |
 | `POST` | `/api/auth/register` | Registrasi user baru |
-| `GET/POST` | `/api/harvests` | Daftar & tambah data panen (otomatis hitung risiko cuaca) |
+| `GET/POST` | `/api/harvests` | Daftar & tambah data panen |
 | `GET/PATCH` | `/api/harvests/[id]` | Detail & update panen |
 | `GET/POST` | `/api/demands` | Daftar & tambah permintaan |
 | `GET` | `/api/matches` | Hasil Smart Matching |
@@ -392,6 +382,9 @@ tani-link-app/
 | `GET` | `/api/export?format=csv\|json` | Export dataset |
 | `GET/POST` | `/api/conversations` | Chat conversation |
 | `GET/POST` | `/api/messages` | Pesan chat |
+| `GET/POST` | `/api/disease-detections` | Riwayat deteksi penyakit |
+| `POST` | `/api/disease-detections/predict` | **Proxy ML** — kirim foto base64 → Gemini/ResNet9 |
+| `GET` | `/api/trace/[id]` | **Verifikasi publik** — data lahan + batch + penyakit (tanpa auth) |
 
 ---
 
