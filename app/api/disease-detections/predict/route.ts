@@ -1,21 +1,12 @@
 /**
  * app/api/disease-detections/predict/route.ts
- * ─────────────────────────────────────────────────────────────────────────────
  * Proxy endpoint untuk disease detection ML (ml-tumbu / FastAPI).
- *
- * Kenapa perlu proxy:
- * - Browser tidak bisa langsung hit localhost:8000 saat deploy di Vercel.
- * - Server-side fetch bisa memakai ML_API_URL dari env tanpa expose ke client.
- *
- * Usage:
- *   POST /api/disease-detections/predict
- *   Body: { image_base64: string, top?: number, disease_only?: boolean }
- *
- * Env var:
- *   ML_API_URL=http://localhost:8000   (default: localhost:8000)
  */
 
 import { NextRequest, NextResponse } from "next/server";
+
+// Vercel max duration — butuh 60 detik untuk Gemini API
+export const maxDuration = 60;
 
 const ML_API_URL =
   process.env.ML_API_URL ??
