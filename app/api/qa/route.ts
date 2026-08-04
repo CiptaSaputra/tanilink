@@ -14,7 +14,7 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? "";
 async function askGemini(prompt: string): Promise<string | null> {
   if (!GEMINI_API_KEY) return null;
   // Models to try in order
-  const models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-pro"];
+  const models = ["gemini-2.0-flash", "gemini-flash-latest", "gemini-2.5-flash"];
   for (const model of models) {
     try {
       const res = await fetch(
