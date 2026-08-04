@@ -322,15 +322,17 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* Reset Data (tetap tersedia untuk demo) */}
-            <button
-              onClick={resetAllData}
-              className="flex items-center space-x-1.5 px-3 py-1.5 text-xs text-nat-text hover:text-nat-green hover:bg-nat-light-cream rounded-lg transition-colors border border-transparent hover:border-nat-border cursor-pointer"
-              title="Kembalikan data ke kondisi awal"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span className="font-medium hidden sm:inline">Reset Data</span>
-            </button>
+            {/* Reset Data — hanya tampil untuk Admin */}
+            {activeRole === "ADMIN" && (
+              <button
+                onClick={resetAllData}
+                className="flex items-center space-x-1.5 px-3 py-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200 cursor-pointer"
+                title="Reset semua data ke kondisi awal (Admin only)"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span className="font-medium hidden sm:inline">Reset Data</span>
+              </button>
+            )}
 
             {/* Divider */}
             <div className="h-6 w-px bg-nat-border" />

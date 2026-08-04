@@ -30,6 +30,7 @@ import {
   Star,
   DollarSign,
   BookOpen,
+  RefreshCw,
 } from "lucide-react";
 
 export default function AdminView() {
@@ -88,13 +89,21 @@ export default function AdminView() {
         </div>
         <button
           onClick={() => {
-            if (window.confirm("Reset semua data ke awal?")) {
+            const first = window.confirm(
+              "⚠️ PERHATIAN: Ini akan menghapus SEMUA data (panen, permintaan, transaksi, batch, dll) dan tidak bisa dibatalkan.\n\nLanjutkan reset data?"
+            );
+            if (!first) return;
+            const second = window.confirm(
+              "🚨 Konfirmasi terakhir: Yakin ingin reset SEMUA data ke kondisi awal?\n\nKlik OK untuk reset, Cancel untuk batal."
+            );
+            if (second) {
               localStorage.clear();
               window.location.reload();
             }
           }}
-          className="text-[10px] bg-nat-light-cream border border-nat-border text-nat-text px-3 py-1.5 rounded-lg font-bold hover:bg-nat-cream cursor-pointer"
+          className="text-[10px] bg-red-50 border border-red-200 text-red-700 px-3 py-1.5 rounded-lg font-bold hover:bg-red-100 cursor-pointer flex items-center gap-1.5"
         >
+          <RefreshCw className="w-3 h-3" />
           Reset Data
         </button>
       </div>
