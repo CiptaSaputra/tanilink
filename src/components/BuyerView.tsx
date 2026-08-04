@@ -111,6 +111,16 @@ export default function BuyerView({
   const [scannerBatchId, setScannerBatchId] = useState<string>("");
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [showCameraScanner, setShowCameraScanner] = useState(false);
+  const [scanQRResult, setScanQRResult] = useState<string | null>(null);
+
+  // Buka halaman publik setelah QR scan berhasil — via useEffect bukan async callback
+  // agar tidak diblokir popup blocker browser
+  React.useEffect(() => {
+    if (scanQRResult) {
+      window.open(`/public?trace=${encodeURIComponent(scanQRResult)}`, "_blank");
+      setScanQRResult(null);
+    }
+  }, [scanQRResult]);
   const [scanSuccess, setScanSuccess] = useState<boolean>(false);
 
   // Initialize selected batch id for scanner if harvests are available
@@ -1482,6 +1492,7 @@ export default function BuyerView({
       {paymentPO && (
         <PaymentModal
           preOrderId={paymentPO.id}
+          preOrder={paymentPO}
           onClose={() => setPaymentPO(null)}
         />
       )}
@@ -1517,8 +1528,8 @@ export default function BuyerView({
           onScan={(result) => {
             setScannerBatchId(result);
             setShowCameraScanner(false);
-            // Langsung buka halaman verifikasi publik setelah scan berhasil
-            window.open(`/public?trace=${encodeURIComponent(result)}`, "_blank");
+            // Simpan ke state, buka via user gesture di useEffect
+            setScanQRResult(result);
           }}
           onClose={() => setShowCameraScanner(false)}
         />

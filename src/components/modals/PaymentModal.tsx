@@ -1,11 +1,13 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { Upload, X, Banknote, ImageIcon } from "lucide-react";
+import { Upload, X, Banknote, ImageIcon, CheckCircle2 } from "lucide-react";
 import { usePayment } from "../../context/PaymentContext";
+import type { PreOrder } from "../../types";
 
 interface PaymentModalProps {
   preOrderId: string | null;
+  preOrder?: PreOrder | null;
   onClose: () => void;
 }
 
@@ -22,18 +24,29 @@ const BANKS = [
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
   preOrderId,
+  preOrder,
   onClose,
 }) => {
   const { addPaymentConfirmation } = usePayment();
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Hitung total otomatis dari PO
+  const totalAmount = preOrder
+    ? preOrder.agreedVolumeKg * preOrder.agreedPricePerKg
+    : 0;
+
   const [bankName, setBankName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [accountName, setAccountName] = useState("");
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(totalAmount > 0 ? String(totalAmount) : "");
   const [paidAt, setPaidAt] = useState("");
   const [notes, setNotes] = useState("");
   const [proofDataUrl, setProofDataUrl] = useState<string>("");
+
+  // Update amount kalau preOrder berubah
+  useEffect(() => {
+    if (totalAmount > 0) setAmount(String(totalAmount));
+  }, [totalAmount]);
 
   // Baca file foto → base64 data URL
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,6 +130,22 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               Lengkapi detail transfer ke rekening petani. Pembeli melakukan
               transfer di luar sistem, lalu verifikasi oleh petani.
             </p>
+
+            {/* Info PO — otomatis dari kesepakatan */}
+            {preOrder && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-4 space-y-1">
+                <p className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Detail PO yang harus dibayar
+                </p>
+                <div className="grid grid-cols-2 gap-1 text-[11px] text-emerald-700">
+                  <span>Komoditas: <b>{preOrder.commodity}</b></span>
+                  <span>Volume: <b>{preOrder.agreedVolumeKg.toLocaleString("id-ID")} Kg</b></span>
+                  <span>Harga/Kg: <b>Rp{preOrder.agreedPricePerKg.toLocaleString("id-ID")}</b></span>
+                  <span>Total: <b className="text-emerald-900">Rp{totalAmount.toLocaleString("id-ID")}</b></span>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-3">
               {/* Foto bukti */}
@@ -209,14 +238,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-nat-text mb-1">
-                    Nominal (Rp)
+                    Nominal (Rp) {preOrder && <span className="text-emerald-600 font-normal">(otomatis dari PO)</span>}
                   </label>
                   <input
                     type="number"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="8000000"
-                    className="w-full bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green"
+                    className={`w-full border border-nat-border rounded-lg px-3 py-2 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green ${
+                      preOrder ? "bg-emerald-50 font-bold" : "bg-nat-light-cream"
+                    }`}
                   />
                 </div>
                 <div>
