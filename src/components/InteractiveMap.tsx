@@ -59,11 +59,8 @@ export default function InteractiveMap({
     onSelectCoordsRef.current = onSelectCoords;
   }, [onSelectCoords]);
 
-  // Ref untuk harvests — dipakai di click handler snap logic
+  // Ref untuk harvests (diinisialisasi kosong, diisi setelah filteredHarvests tersedia)
   const harvestsRef = useRef<Harvest[]>([]);
-  useEffect(() => {
-    harvestsRef.current = filteredHarvests;
-  }, [filteredHarvests]);
 
   // Approximate region based on coordinates (flexible distance-based fallback)
   const getRegionFromLatLng = (lat: number, lng: number): string => {
@@ -111,6 +108,11 @@ export default function InteractiveMap({
       return true;
     });
   }, [harvests, selectedCommodity]);
+
+  // Update harvestsRef setiap kali filteredHarvests berubah (untuk snap logic di click handler)
+  useEffect(() => {
+    harvestsRef.current = filteredHarvests;
+  }, [filteredHarvests]);
 
   const filteredDemands = useMemo(() => {
     return demands.filter((d) => {
@@ -177,11 +179,15 @@ export default function InteractiveMap({
       const roundedLat = Math.round(lat * 1000) / 1000;
       const roundedLng = Math.round(lng * 1000) / 1000;
 
-      // ── SNAP ke lahan terdekat bila dalam radius 0.05 derajat (~5km) ──
-      const SNAP_RADIUS = 0.05;
+      // ── Cari lahan terdekat untuk info konteks (TIDAK snap koordinat) ──
+      const CONTEXT_RADIUS = 0.15; // ~15km — hanya untuk info popup
       const currentHarvests = harvestsRef.current ?? [];
-      let snapTarget: { lat: number; lng: number; region: string } | null = null;
-      let minDist = SNAP_RADIUS;
+      let nearestHarvest: { 
+        commodity: string; farmerName: string; dist: number;
+        expectedVolume: number; askingPrice: number;
+        plantingDate: string; expectedHarvestDate: string;
+      } | null = null;
+      let minDist = CONTEXT_RADIUS;
 
       for (const h of currentHarvests) {
         if (!h.latitude || !h.longitude) continue;
@@ -190,39 +196,48 @@ export default function InteractiveMap({
         );
         if (dist < minDist) {
           minDist = dist;
-          snapTarget = { lat: h.latitude, lng: h.longitude, region: h.region };
+          nearestHarvest = {
+            commodity: h.commodity,
+            farmerName: h.farmerName,
+            dist,
+            expectedVolume: h.expectedVolume,
+            askingPrice: h.askingPrice,
+            plantingDate: h.plantingDate,
+            expectedHarvestDate: h.expectedHarvestDate,
+          };
         }
       }
 
-      const finalLat = snapTarget ? Math.round(snapTarget.lat * 1000) / 1000 : roundedLat;
-      const finalLng = snapTarget ? Math.round(snapTarget.lng * 1000) / 1000 : roundedLng;
-      const finalRegion = snapTarget ? snapTarget.region : "Mencari Wilayah...";
+      // Koordinat tetap dari klik (tidak di-snap)
+      const finalLat = roundedLat;
+      const finalLng = roundedLng;
 
-      // Automatically zoom in closer to see surroundings
+      // Zoom in ke titik klik
       map.flyTo([finalLat, finalLng], 12, { animate: true, duration: 1 });
 
-      // Show immediate loading indicator in forms (atau region langsung jika snap)
-      onSelectCoordsRef.current(finalLat, finalLng, finalRegion);
+      // Update form dengan koordinat klik
+      onSelectCoordsRef.current(finalLat, finalLng, "Mencari Wilayah...");
 
       setSelectedPoint({
         type: "HARVEST",
         data: {
           id: "new-pin",
-          farmerName: snapTarget ? "📍 Snap ke Lahan Terdekat" : "Lokasi Pilihan Anda",
-          commodity: "Cabai Merah",
+          farmerName: nearestHarvest
+            ? `📍 Area ${nearestHarvest.commodity} (${(nearestHarvest.dist * 111).toFixed(0)}km)`
+            : "📍 Lokasi Pilihan Anda",
+          commodity: nearestHarvest ? nearestHarvest.commodity as Komoditas : "Cabai Merah",
           latitude: finalLat,
           longitude: finalLng,
-          region: finalRegion,
-          expectedVolume: 0,
-          askingPrice: 0,
+          region: nearestHarvest ? nearestHarvest.farmerName : "Mencari Wilayah...",
+          expectedVolume: nearestHarvest ? nearestHarvest.expectedVolume : 0,
+          askingPrice: nearestHarvest ? nearestHarvest.askingPrice : 0,
           status: "ACTIVE",
-          plantingDate: "-",
-          expectedHarvestDate: "-",
+          plantingDate: nearestHarvest ? nearestHarvest.plantingDate : "-",
+          expectedHarvestDate: nearestHarvest ? nearestHarvest.expectedHarvestDate : "-",
         },
       });
 
-      // Kalau sudah snap ke lahan, tidak perlu fetch Nominatim
-      if (snapTarget) return;
+      // Fetch region dari Nominatim untuk koordinat klik
 
       // Fetch dynamic region from Nominatim API
       let region = "Lokasi Kustom";
@@ -268,16 +283,18 @@ export default function InteractiveMap({
         type: "HARVEST",
         data: {
           id: "new-pin",
-          farmerName: "Lokasi Pilihan Anda",
-          commodity: "Cabai Merah",
+          farmerName: nearestHarvest
+            ? `📍 Area ${nearestHarvest.commodity} (${(nearestHarvest.dist * 111).toFixed(0)}km)`
+            : "📍 Lokasi Pilihan Anda",
+          commodity: nearestHarvest ? nearestHarvest.commodity as Komoditas : "Cabai Merah",
           latitude: finalLat,
           longitude: finalLng,
           region,
-          expectedVolume: 0,
-          askingPrice: 0,
+          expectedVolume: nearestHarvest ? nearestHarvest.expectedVolume : 0,
+          askingPrice: nearestHarvest ? nearestHarvest.askingPrice : 0,
           status: "ACTIVE",
-          plantingDate: "-",
-          expectedHarvestDate: "-",
+          plantingDate: nearestHarvest ? nearestHarvest.plantingDate : "-",
+          expectedHarvestDate: nearestHarvest ? nearestHarvest.expectedHarvestDate : "-",
         },
       });
     });
