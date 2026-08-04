@@ -60,7 +60,7 @@ export default function InteractiveMap({
   }, [onSelectCoords]);
 
   // Ref untuk harvests — dipakai di click handler snap logic
-  const harvestsRef = useRef(filteredHarvests);
+  const harvestsRef = useRef<Harvest[]>([]);
   useEffect(() => {
     harvestsRef.current = filteredHarvests;
   }, [filteredHarvests]);
