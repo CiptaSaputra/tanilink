@@ -113,14 +113,20 @@ export default function BuyerView({
   const [showCameraScanner, setShowCameraScanner] = useState(false);
   const [scanQRResult, setScanQRResult] = useState<string | null>(null);
 
-  // Buka halaman publik setelah QR scan berhasil — via useEffect bukan async callback
-  // agar tidak diblokir popup blocker browser
+  // Setelah QR scan berhasil → cari harvest dan buka HarvestTraceModal
   React.useEffect(() => {
-    if (scanQRResult) {
+    if (!scanQRResult) return;
+    const found = harvests.find(
+      (h) => h.id === scanQRResult || h.id === scanQRResult.trim()
+    );
+    if (found) {
+      setSelectedTraceHarvest(found);
+    } else {
+      // Kalau tidak ada di data lokal, fallback ke halaman publik
       window.open(`/public?trace=${encodeURIComponent(scanQRResult)}`, "_blank");
-      setScanQRResult(null);
     }
-  }, [scanQRResult]);
+    setScanQRResult(null);
+  }, [scanQRResult, harvests]);
   const [scanSuccess, setScanSuccess] = useState<boolean>(false);
 
   // Initialize selected batch id for scanner if harvests are available

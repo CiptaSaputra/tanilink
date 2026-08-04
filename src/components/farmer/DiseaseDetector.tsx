@@ -64,10 +64,18 @@ export const DiseaseDetector: React.FC<DiseaseDetectorProps> = ({
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showAllPredictions, setShowAllPredictions] = useState(false);
 
-  /* ── Health check saat mount ── */
+  /* ── Health check + wake up Railway saat mount ── */
   useEffect(() => {
     setMlStatus("checking");
-    fetch("/api/disease-detections/predict", { method: "GET" })
+
+    // Hit Railway langsung untuk wake up (production) atau proxy (lokal)
+    const isProduction = typeof window !== "undefined" &&
+      !window.location.hostname.includes("localhost");
+    const healthUrl = isProduction
+      ? "https://tanilink-app-production.up.railway.app/health"
+      : "/api/disease-detections/predict";
+
+    fetch(healthUrl, { method: "GET", signal: AbortSignal.timeout(35000) })
       .then((r) => {
         if (r.ok) setMlStatus("online");
         else setMlStatus("offline");
