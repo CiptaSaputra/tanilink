@@ -4,6 +4,30 @@ Semua perubahan signifikan dicatat di sini secara kronologis.
 
 ---
 
+## [v1.5.0] — 2026-08-05 · Deployment & Polish Final
+
+### ✨ Fitur Baru
+- **Logo no-background**: ganti semua logo dari `logo.jpeg` → `logo.png` (transparan) di seluruh komponen (Navbar, Landing, Login, Register, PublicDashboard, Favicon)
+- **Payment nominal otomatis**: PaymentModal prefill nominal dari `agreedVolumeKg × agreedPricePerKg`, tampilkan info PO lengkap (komoditas, volume, harga, total) di header modal
+- **Favicon logo tim**: `app/icon.png` → logo muncul di tab browser
+
+### 🐛 Bug Fix
+- **QR scan redirect tidak konsisten**: `window.open` dipindah dari async callback ke `useEffect` → tidak diblokir popup blocker browser
+- **Disease detection timeout di Vercel**: ganti dari proxy Next.js ke hit Railway langsung dari browser (bypass Vercel 10s timeout limit free tier)
+- **Simulasi Peran MVP tersembunyi**: bar "Simulasi Peran MVP" sekarang hanya muncul saat belum login, hilang setelah login (termasuk Admin)
+- **Dockerfile ML**: hapus `COPY plant-disease-model-complete.pth` yang tidak ada → build Railway berhasil
+- **PORT Railway tidak ter-expand**: Dockerfile `CMD` ganti ke shell form `${PORT:-8000}`
+- **`maxDuration` duplikat**: hapus deklarasi ganda di `/api/disease-detections/predict/route.ts`
+- **npm install Railway**: tambah `.npmrc` dengan `legacy-peer-deps=true`
+
+### 🚀 Deployment
+- **Supabase**: database production di-setup, schema di-push, seed data berhasil
+- **Railway**: ML server (FastAPI + Gemini) berjalan di `tanilink-app-production.up.railway.app`
+- **Vercel**: app di-deploy di `tanilink-opal.vercel.app`
+- **Procfile & runtime.txt**: ditambahkan untuk Railway ML deployment
+
+---
+
 ## [v1.4.0] — 2026-08-04 · QR Scanner, AI QnA Gemini & Polish Final
 
 ### ✨ Fitur Baru
