@@ -95,6 +95,7 @@ Isi `.env`:
 ```env
 DATABASE_URL=postgresql://admin:password123@127.0.0.1:5434/tanilink
 ML_API_URL=http://localhost:8000
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 ### 3. Database
@@ -123,6 +124,49 @@ echo "GEMINI_API_KEY=your_key_here" > .env
 .venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 > API key Gemini gratis: [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+
+---
+
+## 🌐 Production Deployment
+
+Stack yang dipakai untuk production:
+
+| Service | Platform | Fungsi |
+|---|---|---|
+| **Next.js App** | [Vercel](https://vercel.com) | Hosting frontend + API routes |
+| **PostgreSQL** | [Supabase](https://supabase.com) | Database production |
+| **ML Server** | [Railway](https://railway.app) | FastAPI disease detection |
+
+### Setup Supabase
+1. Buat project di [supabase.com](https://supabase.com) → region Singapore
+2. Settings → Database → Connection string → **Transaction pooler** → copy URI
+3. Jalankan migrasi + seed:
+```bash
+DATABASE_URL="postgresql://..." npx drizzle-kit push
+DATABASE_URL="postgresql://..." npx tsx src/db/seed.ts
+```
+
+### Setup Railway (ML Server)
+1. New Project → Deploy from GitHub → pilih repo
+2. Root Directory: `ml-tumbu-main`
+3. Variables: tambah `GEMINI_API_KEY`
+4. Generate Domain (port 8080) → dapat URL ML server
+
+### Setup Vercel
+1. Import repo dari GitHub
+2. Environment Variables:
+   - `DATABASE_URL` — connection string dari Supabase
+   - `ML_API_URL` — URL dari Railway
+   - `GEMINI_API_KEY` — API key Gemini
+3. Deploy
+
+### Update setelah ada perubahan kode
+```bash
+git add .
+git commit -m "pesan"
+git push origin main
+# Sync fork di GitHub → Vercel & Railway auto-redeploy
+```
 
 ---
 
