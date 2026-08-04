@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Leaf, ArrowRight, Play } from "lucide-react";
+import { ArrowRight, Play } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navLinks = [
@@ -88,7 +88,11 @@ export function TanilinkHero() {
         >
           <div className="flex items-center justify-between px-6 py-5">
             <span className="flex items-center gap-2 text-white font-semibold text-lg tracking-tight">
-              <Leaf className="w-5 h-5 text-[#E3A73A]" />
+              <img
+                src="/logo.jpeg"
+                alt="TaniLink"
+                className="w-8 h-8 object-contain rounded-md"
+              />
               TaniLink
             </span>
             <button
@@ -167,7 +171,11 @@ export function TanilinkHero() {
               href="/"
               className="flex items-center gap-2 text-white font-semibold text-base md:text-lg tracking-tight"
             >
-              <Leaf className="w-4 h-4 md:w-5 md:h-5 text-[#E3A73A]" />
+              <img
+                src="/logo.jpeg"
+                alt="TaniLink"
+                className="w-7 h-7 md:w-8 md:h-8 object-contain rounded-md"
+              />
               TaniLink
             </Link>
 

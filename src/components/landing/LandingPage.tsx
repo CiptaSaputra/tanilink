@@ -481,7 +481,11 @@ export default function LandingPage() {
         <div className="relative z-10 pt-16 md:pt-20 pb-8 px-5 md:px-12 lg:px-20 text-sm text-green-200">
           <div className="max-w-7xl mx-auto mb-14 md:mb-16">
             <a href="/" className="flex items-center gap-2.5 mb-5">
-              <Leaf className="w-6 h-6 text-green-400" />
+              <img
+                src="/logo.jpeg"
+                alt="TaniLink"
+                className="w-9 h-9 object-contain rounded-lg"
+              />
               <span className="font-instrument-serif font-bold text-2xl text-white tracking-tight">
                 TaniLink
               </span>
