@@ -365,11 +365,11 @@ export default function BuyerView({
                       Tolak
                     </button>
                     <button
-                      onClick={() => updateMatchStatus(match.id, "CONFIRMED")}
+                      onClick={() => updateMatchStatus(match.id, "ACCEPTED_BY_BUYER")}
                       className="flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white font-bold text-xs py-2 px-3 rounded-xl transition-colors shadow-sm cursor-pointer"
                     >
                       <CheckCircle className="w-3.5 h-3.5" />
-                      Terima & Buat Kontrak
+                      Terima Penawaran
                     </button>
                   </div>
                 </div>
@@ -786,13 +786,33 @@ export default function BuyerView({
             </div>
 
             {myMatches.length > 0 ? (
-              <div className="space-y-4">
-                {myMatches.map((match) => {
-                  const harvest = harvests.find(
-                    (h) => h.id === match.harvestId,
-                  )!;
-                  const demand = demands.find((d) => d.id === match.demandId)!;
-                  if (!harvest || !demand) return null;
+              <div className="space-y-6">
+                {myDemands.map((dem) => {
+                  const demandMatches = myMatches.filter((m) => m.demandId === dem.id);
+                  if (demandMatches.length === 0) return null;
+                  return (
+                    <div key={dem.id} className="space-y-3">
+                      {/* Header demand group */}
+                      <div className="flex items-center gap-2 px-1 py-1 bg-nat-light-cream/60 rounded-lg border border-nat-border">
+                        <span
+                          className="w-3 h-3 rounded-full shrink-0"
+                          style={{ backgroundColor: COMMODITY_LIST[dem.commodity as Komoditas]?.color ?? "#ccc" }}
+                        />
+                        <p className="text-xs font-bold text-nat-dark">
+                          Kebutuhan: {dem.commodity}
+                        </p>
+                        <span className="text-[10px] text-nat-sage">
+                          · {dem.requiredVolume.toLocaleString("id-ID")} Kg · {dem.region}
+                        </span>
+                        <span className="ml-auto text-[10px] bg-white text-nat-green border border-nat-border font-bold px-2 py-0.5 rounded-full">
+                          {demandMatches.length} petani cocok
+                        </span>
+                      </div>
+
+                      {demandMatches.map((match) => {
+                        const harvest = harvests.find((h) => h.id === match.harvestId)!;
+                        const demand = demands.find((d) => d.id === match.demandId)!;
+                        if (!harvest || !demand) return null;
 
                   return (
                     <div
@@ -1012,6 +1032,9 @@ export default function BuyerView({
                           )}
                         </div>
                       </div>
+                    </div>
+                  );
+                      })}
                     </div>
                   );
                 })}
