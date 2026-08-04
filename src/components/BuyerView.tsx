@@ -566,143 +566,136 @@ export default function BuyerView({
             </form>
           </div>
 
-          {/* QR Scanner / Lacak Batch Card */}
-          <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm space-y-4">
-            <div>
-              <h3 className="text-sm font-bold text-nat-dark flex items-center gap-1.5">
-                <Scan className="w-4 h-4 text-nat-green" />
-                Lacak Batch (Verifikasi QR)
-              </h3>
-              <p className="text-[11px] text-nat-sage mt-1 font-medium">
-                Scan QR Code dari petani atau masukkan ID lahan untuk verifikasi
-                keaslian dan lacak status pengiriman batch.
-              </p>
-            </div>
-
-            {/* ── Mode 1: Input ID Manual ── */}
-            <div className="space-y-2">
-              <label className="block text-[10px] font-bold text-nat-text uppercase tracking-wider">
-                Input ID Lahan / Scan Hasil
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={scannerBatchId}
-                  onChange={(e) => setScannerBatchId(e.target.value)}
-                  placeholder="Contoh: H-001 atau paste ID dari QR..."
-                  className="flex-1 bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-xs font-mono text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green"
-                />
-                <button
-                  onClick={() => {
-                    if (!scannerBatchId.trim()) return;
-                    window.open(`/public?trace=${encodeURIComponent(scannerBatchId.trim())}`, "_blank");
-                  }}
-                  disabled={!scannerBatchId.trim()}
-                  className="px-3 py-2 bg-nat-green hover:bg-nat-green-hover disabled:opacity-40 text-white rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1.5"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  Verifikasi
-                </button>
+          {/* QR Scanner / Lacak Batch Card — Redesign */}
+          <div className="bg-white rounded-2xl border border-nat-border shadow-sm overflow-hidden">
+            {/* Header card */}
+            <div className="bg-gradient-to-r from-green-800 to-teal-700 px-5 py-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
+                  <QrCode className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Lacak & Verifikasi Batch</h3>
+                  <p className="text-[10px] text-green-200 mt-0.5">
+                    Scan QR code petani atau input ID lahan untuk verifikasi keaslian
+                  </p>
+                </div>
               </div>
-              <p className="text-[10px] text-nat-sage">
-                Halaman verifikasi publik terbuka di tab baru — bisa dibagikan ke siapa saja.
-              </p>
             </div>
 
-            {/* ── Divider ── */}
-            <div className="flex items-center gap-2">
-              <div className="flex-1 h-px bg-nat-border" />
-              <span className="text-[10px] text-nat-sage font-semibold">atau pilih dari daftar</span>
-              <div className="flex-1 h-px bg-nat-border" />
-            </div>
+            <div className="p-5 space-y-4">
 
-            {/* ── Mode 2: Pilih dari harvest yang ada → simulasi scan ── */}
-            {harvests.length > 0 ? (
-              <div className="space-y-3">
-                <select
-                  value={scannerBatchId}
-                  onChange={(e) => setScannerBatchId(e.target.value)}
-                  className="w-full bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green"
-                >
-                  <option value="">— Pilih lahan petani —</option>
-                  {harvests.map((h) => (
-                    <option key={h.id} value={h.id}>
-                      {h.commodity} · {h.farmerName} · {h.region}
-                    </option>
-                  ))}
-                </select>
+              {/* Input ID Manual */}
+              <div className="space-y-2">
+                <p className="text-[10px] font-bold text-nat-text uppercase tracking-wider">Input ID Lahan</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={scannerBatchId}
+                    onChange={(e) => setScannerBatchId(e.target.value)}
+                    placeholder="Paste ID dari QR atau ketik manual..."
+                    className="flex-1 bg-nat-light-cream border border-nat-border rounded-xl px-3 py-2.5 text-xs font-mono text-nat-dark focus:outline-none focus:ring-2 focus:ring-green-600/30 focus:border-green-600"
+                  />
+                  <button
+                    onClick={() => { if (!scannerBatchId.trim()) return; window.open(`/public?trace=${encodeURIComponent(scannerBatchId.trim())}`, "_blank"); }}
+                    disabled={!scannerBatchId.trim()}
+                    className="px-4 py-2.5 bg-green-700 hover:bg-green-800 disabled:opacity-40 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5 whitespace-nowrap"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" /> Verifikasi
+                  </button>
+                </div>
+                <p className="text-[10px] text-nat-sage">Buka halaman verifikasi publik di tab baru — bisa dibagikan ke siapa saja</p>
+              </div>
 
-                {/* Simulated Camera Viewport */}
-                <div className="relative w-full aspect-video bg-slate-900 rounded-xl overflow-hidden border border-slate-700 flex flex-col items-center justify-center text-center">
-                  <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-nat-green" />
-                  <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-nat-green" />
-                  <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-nat-green" />
-                  <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-nat-green" />
+              {/* Divider */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-nat-border" />
+                <span className="text-[10px] text-nat-sage font-semibold bg-white px-2">atau pilih dari daftar</span>
+                <div className="flex-1 h-px bg-nat-border" />
+              </div>
 
-                  {isScanning ? (
-                    <div className="space-y-2 text-center animate-pulse z-10 px-4">
-                      <div className="w-10 h-10 rounded-full border-2 border-nat-green border-dashed animate-spin mx-auto flex items-center justify-center">
-                        <Camera className="w-4 h-4 text-emerald-400" />
+              {/* Pilih dari harvest */}
+              {harvests.length > 0 ? (
+                <div className="space-y-3">
+                  <select
+                    value={scannerBatchId}
+                    onChange={(e) => setScannerBatchId(e.target.value)}
+                    className="w-full bg-nat-light-cream border border-nat-border rounded-xl px-3 py-2.5 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-2 focus:ring-green-600/30"
+                  >
+                    <option value="">— Pilih lahan petani —</option>
+                    {harvests.map((h) => (
+                      <option key={h.id} value={h.id}>
+                        {h.commodity} · {h.farmerName} · {h.region}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Info batch terpilih */}
+                  {scannerBatchId && (() => {
+                    const sel = harvests.find(h => h.id === scannerBatchId);
+                    if (!sel) return null;
+                    const relatedBatches = harvestBatches?.filter(b => b.plantingId === scannerBatchId) ?? [];
+                    const sc: Record<string, string> = {
+                      ACTIVE: "text-green-700 bg-green-50 border-green-200",
+                      MATCHED: "text-amber-700 bg-amber-50 border-amber-200",
+                      HARVESTED: "text-blue-700 bg-blue-50 border-blue-200",
+                    };
+                    return (
+                      <div className="rounded-xl border border-nat-border bg-nat-light-cream/50 p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-bold text-nat-dark">{sel.commodity} · {sel.farmerName}</p>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${sc[sel.status] ?? "text-nat-sage bg-white border-nat-border"}`}>
+                            {sel.status}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1.5 text-[10px] text-nat-sage">
+                          <span>📦 {sel.expectedVolume.toLocaleString("id-ID")} Kg</span>
+                          <span>📍 {sel.region}</span>
+                          <span>🌱 {sel.plantingDate}</span>
+                          <span>🌾 {sel.expectedHarvestDate}</span>
+                        </div>
+                        {relatedBatches.length > 0 && (
+                          <div className="flex items-center gap-1.5 text-[10px] text-teal-700 bg-teal-50 border border-teal-200 rounded-lg px-2.5 py-1.5">
+                            <Truck className="w-3 h-3 shrink-0" />
+                            <span className="font-semibold">{relatedBatches.length} batch</span>
+                            <span className="text-teal-500">· {relatedBatches[0].status}</span>
+                          </div>
+                        )}
                       </div>
-                      <p className="text-[10px] text-emerald-400 font-mono tracking-widest uppercase font-bold">
-                        Memverifikasi...
-                      </p>
-                      <div className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-nat-green to-transparent shadow-lg shadow-nat-green/50 animate-bounce" />
-                    </div>
-                  ) : scanSuccess ? (
-                    <div className="space-y-1.5 z-10 p-4">
-                      <CheckCircle className="w-8 h-8 text-emerald-400 mx-auto" />
-                      <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
-                        Terverifikasi ✓
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-1.5 z-10 p-4">
-                      <QrCode className="w-8 h-8 text-nat-sage mx-auto" />
-                      <p className="text-[10px] text-nat-sage font-semibold uppercase tracking-wider">
-                        Siap Scan
-                      </p>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.65))] pointer-events-none" />
-                </div>
+                    );
+                  })()}
 
-                {/* Tiga tombol aksi */}
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    onClick={handleSimulatedScan}
-                    disabled={isScanning || !scannerBatchId}
-                    className="py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white shadow-sm"
-                  >
-                    {isScanning ? (
-                      <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> ...</>
-                    ) : (
-                      <><Scan className="w-3.5 h-3.5 text-emerald-400" /> Simulasi</>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setShowCameraScanner(true)}
-                    className="py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-                  >
-                    <Camera className="w-3.5 h-3.5" /> Kamera
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (!scannerBatchId) return;
-                      window.open(`/public?trace=${encodeURIComponent(scannerBatchId)}`, "_blank");
-                    }}
-                    disabled={!scannerBatchId}
-                    className="py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-nat-green hover:bg-nat-green-hover disabled:opacity-40 text-white shadow-sm"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" /> Publik
-                  </button>
+                  {/* 3 Tombol */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      onClick={handleSimulatedScan}
+                      disabled={isScanning || !scannerBatchId}
+                      className="py-2.5 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 cursor-pointer bg-slate-800 hover:bg-slate-900 disabled:opacity-40 text-white shadow-sm transition-colors"
+                    >
+                      {isScanning ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> ...</> : <><Scan className="w-3.5 h-3.5 text-emerald-400" /> Simulasi</>}
+                    </button>
+                    <button
+                      onClick={() => setShowCameraScanner(true)}
+                      className="py-2.5 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors"
+                    >
+                      <Camera className="w-3.5 h-3.5" /> Kamera
+                    </button>
+                    <button
+                      onClick={() => { if (!scannerBatchId) return; window.open(`/public?trace=${encodeURIComponent(scannerBatchId)}`, "_blank"); }}
+                      disabled={!scannerBatchId}
+                      className="py-2.5 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 cursor-pointer bg-green-700 hover:bg-green-800 disabled:opacity-40 text-white shadow-sm transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" /> Publik
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-4 text-nat-sage italic text-xs">
-                Belum ada batch panen terdaftar.
-              </div>
-            )}
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 gap-2 text-nat-sage">
+                  <QrCode className="w-8 h-8 opacity-30" />
+                  <p className="text-xs italic">Belum ada batch panen terdaftar.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

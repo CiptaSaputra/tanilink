@@ -4,6 +4,103 @@ Semua perubahan signifikan dicatat di sini secara kronologis.
 
 ---
 
+## [v1.4.0] — 2026-08-04 · QR Scanner, AI QnA Gemini & Polish Final
+
+### ✨ Fitur Baru
+- **QR Scanner Kamera Real**: tombol "Kamera" di Lacak Batch buka kamera MacBook/HP via `jsQR` library — scan frame overlay hijau, laser line animasi, auto-detect hasil
+- **QR Scanner Upload Gambar**: tab "Upload Gambar" sebagai alternatif — preview gambar sebelum scan, feedback loading/sukses/error
+- **AI QnA Gemini**: `/api/qa` sekarang pakai Gemini API dengan data real DB sebagai context (tonase, komoditas, wilayah, harga) — jawaban bahasa Indonesia alami; fallback ke rule-based bila API key kosong
+- **Redesign Lacak Batch**: header gradient hijau/teal, info batch terpilih (komoditas, volume, tanggal, status), 3 tombol Simulasi/Kamera/Publik yang rapi
+
+### 🔧 Improvement
+- `GEMINI_API_KEY` dipakai shared untuk AI QnA dan ML disease detection
+- `.env.example` diupdate dengan dokumentasi lengkap per env var
+
+---
+
+## [v1.3.0] — 2026-08-04 · UI/UX Polish & Bug Fixes
+
+### ✨ Fitur Baru
+- **Peta Interaktif — Info Konteks Dinamis**: klik peta menampilkan komoditas, volume, harga, dan tanggal dari lahan terdekat (~15km)
+- **Chat In-App**: tombol "Chat In-App" di tabel PO petani dan pembeli — ChatModal bubble persisted ke DB
+- **Snap Info Peta**: cari lahan terdekat tanpa lock koordinat
+
+### 🐛 Bug Fix
+- ACC Final & Buat PO gagal: API guard `CONFIRMED` → `FINALIZED`
+- Batch tidak muncul di Kolektor: filter region diperluas ke semua wilayah + dropdown
+- PPLView kosong: hapus filter `isPublished === true`
+- InteractiveMap ReferenceError: `harvestsRef` sebelum `filteredHarvests`
+- Match tampil komoditas salah: match digroup per demand
+- ACC langsung tanpa PO: tombol `CONFIRMED` → `ACCEPTED_BY_BUYER`
+
+### 🔧 Improvement
+- Reset Data hanya Admin (navbar + double confirmation)
+- Nama petani demo: "Pak Joko Widodo" → "Pak Budi Santoso"
+- PPLView & KolektorView: dropdown filter wilayah
+
+---
+
+## [v1.2.0] — 2026-08-03 · Integrasi & Feature Polish
+
+### ✨ Fitur Baru
+- **PO Acceptance Flow 2-Pihak**: `POConfirmModal` klausul → CONFIRMED → ACC Final → FINALIZED → PO
+- **Rating Sekali Pakai**: setelah submit → bintang statis + "Ulasan terkirim"
+- **Link Dashboard Publik** di navbar landing
+- **Redesign PublicDashboard**: hero animated counter, 4 stat cards, top komoditas, layout 2-kolom
+- **Logo TaniLink** di navbar landing dan footer
+
+### 🔧 Improvement
+- KolektorView: semua wilayah + dropdown + depot coords lengkap
+- Match digroup per demand di BuyerView
+
+---
+
+## [v1.1.0] — 2026-08-03 · Landing Page, ML & QR Trace
+
+### ✨ Fitur Baru
+- **Landing Page**: hero video scroll-scrub, timeline, sticky cards, FAQ, CTA split panel
+- **ML Disease Detection**: FastAPI + Gemini API, proxy `/api/disease-detections/predict`
+- **HarvestTraceModal 3-tab**: Info+QR, Lacak Batch stepper, Riwayat Penyakit
+- **API Verifikasi Publik**: `GET /api/trace/:id` (tanpa auth)
+- **TracePublicView**: halaman verifikasi di `/public?trace=id`
+
+### 🔧 Upgrade
+- Next.js 15.5.20 → **16.2.12** (Turbopack)
+
+---
+
+## [v1.0.0] — 2026-08-01 · MVP Core
+
+### ✨ Fitur Inti
+- Auth & RBAC multi-role (Petani, Pembeli, PPL, Kolektor, Dinas, Admin)
+- Smart Matching Engine (Haversine + volume + harga)
+- PO Flow lengkap
+- Hash-Chain Ledger SHA-256
+- Route Optimization (Clarke-Wright + 2-opt + OSRM)
+- Prediksi Harga 14 hari (Holt's Double ES + Fourier)
+- Marketplace Fallback
+- Notifikasi real-time polling 3 detik
+- Rating & Review dua arah
+- Chat In-App + link `wa.me`
+- Export CSV/JSON
+- Peta Interaktif Leaflet.js
+- PostgreSQL 15 + Drizzle ORM (16 tabel)
+
+---
+
+## 📁 Arsip Dokumentasi
+
+| Dokumen | Lokasi |
+|---|---|
+| PRD lengkap | [`docs/PRD-TaniLink.md`](docs/PRD-TaniLink.md) |
+| Rencana 25 Hari + Fase 7 | [`docs/Rencana-Pengerjaan-TaniLink-25-Hari.md`](docs/Rencana-Pengerjaan-TaniLink-25-Hari.md) |
+| Proposal Lomba | [`dokumen/Proposal TaniLink.docx`](dokumen/Proposal%20TaniLink.docx) |
+
+
+Semua perubahan signifikan dicatat di sini secara kronologis.
+
+---
+
 ## [v1.3.0] — 2026-08-04 · UI/UX Polish & Bug Fixes
 
 ### ✨ Fitur Baru

@@ -48,8 +48,10 @@ import {
   Gauge,
   Boxes,
   LineChart,
+  Bot,
 } from "lucide-react";
 import { Role } from "../types";
+import { QAInput } from "./modals/QAInput";
 
 // ─── Section Navigation per role ────────────────────────────────────────────────
 // Dirender di dalam Navbar (yang sudah sticky top-0 z-50) agar selalu tampil
@@ -113,6 +115,7 @@ export default function Navbar() {
   const { notifications, unreadCount, markRead, markAllRead } =
     useNotifications();
   const [showNotif, setShowNotif] = useState(false);
+  const [showQA, setShowQA] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
   // Tutup dropdown saat klik di luar
@@ -225,6 +228,7 @@ export default function Navbar() {
   const displayRole = currentUser?.role ?? activeRole;
 
   return (
+    <>
     <header className="bg-white border-b border-nat-border sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
@@ -321,6 +325,16 @@ export default function Navbar() {
                 )}
               </div>
             )}
+
+            {/* Tanya AI — tersedia untuk semua role */}
+            <button
+              onClick={() => setShowQA(true)}
+              className="flex items-center space-x-1.5 px-3 py-1.5 text-xs text-emerald-700 hover:text-emerald-800 hover:bg-emerald-50 rounded-lg transition-colors border border-transparent hover:border-emerald-200 cursor-pointer"
+              title="Tanya AI data pangan TaniLink"
+            >
+              <Bot className="w-3.5 h-3.5" />
+              <span className="font-medium hidden sm:inline">Tanya AI</span>
+            </button>
 
             {/* Reset Data — hanya tampil untuk Admin */}
             {activeRole === "ADMIN" && (
@@ -462,5 +476,9 @@ export default function Navbar() {
         )}
       </div>
     </header>
+
+    {/* AI Q&A Modal — tersedia untuk semua role */}
+    {showQA && <QAInput onClose={() => setShowQA(false)} />}
+  </>
   );
 }

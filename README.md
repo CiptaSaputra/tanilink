@@ -42,12 +42,13 @@ TaniLink mempertemukan petani skala kecil dengan pembeli institusional **sejak t
 | Modul | Deskripsi | Status |
 |---|---|---|
 | 🌾 **Landing Page** | Hero video, timeline musim tanam, FAQ, CTA | ✅ |
-| 🗺️ **Peta Interaktif** | Leaflet.js + snap info lahan terdekat + geolocation | ✅ |
+| 🗺️ **Peta Interaktif** | Leaflet.js + info lahan terdekat dinamis + geolocation | ✅ |
 | 🤖 **Smart Matching** | Rekomendasi petani-pembeli (Haversine + volume + harga) | ✅ |
 | 📦 **PO Flow 2-Pihak** | Konfirmasi modal klausul (petani) → ACC Final (pembeli) | ✅ |
 | 🔬 **Deteksi Penyakit AI** | Upload foto daun → Gemini API diagnosis Bahasa Indonesia | ✅ |
-| 🔍 **QR Trace & Lacak Batch** | Modal 3-tab + halaman verifikasi publik `/public?trace=id` | ✅ |
+| 🔍 **QR Trace & Lacak Batch** | Modal 3-tab + scan kamera/upload + halaman verifikasi publik | ✅ |
 | 💬 **Chat In-App + WA** | Chat modal persisted DB + link WhatsApp | ✅ |
+| 🤖 **AI Q&A Gemini** | Tanya data pangan → Gemini + DB context real-time | ✅ |
 | 📊 **Prediksi Harga** | Grafik historis + prediksi 14 hari per komoditas | ✅ |
 | 🔗 **Hash-Chain Ledger** | Transaksi tamper-evident SHA-256 | ✅ |
 | 🚛 **Route Optimization** | Clarke-Wright + 2-opt TSP, rute jalan aktual OSRM | ✅ |
