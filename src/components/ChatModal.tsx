@@ -85,11 +85,16 @@ export default function ChatModal({
       <div className="bg-white w-full sm:max-w-md sm:rounded-2xl shadow-2xl border border-nat-border flex flex-col h-[85vh] sm:h-[600px]">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-nat-light-cream bg-gradient-to-r from-nat-dark to-nat-green rounded-t-none sm:rounded-t-2xl text-white">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-nat-sand" />
+          <div className="flex items-center gap-2.5">
+            {/* Avatar lawan bicara */}
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold border border-white/30 shadow-sm">
+              {(currentUserId === farmerUserId ? buyerName : farmerName)
+                .split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()}
+            </div>
             <div>
               <p className="text-xs font-bold">Chat Negosiasi</p>
-              <p className="text-[10px] text-nat-light-cream">
+              <p className="text-[10px] text-nat-light-cream flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
                 {currentUserId === farmerUserId ? buyerName : farmerName}
               </p>
             </div>
@@ -113,30 +118,67 @@ export default function ChatModal({
               </p>
             </div>
           ) : (
-            chatMessages.map((msg) => {
+          chatMessages.map((msg) => {
               const isMine = msg.senderUserId === currentUserId;
+              const isFromFarmer = msg.senderUserId === farmerUserId;
+              const senderName = isFromFarmer ? farmerName : buyerName;
+              const initials = senderName
+                .split(" ")
+                .map((w) => w[0])
+                .slice(0, 2)
+                .join("")
+                .toUpperCase();
+              const avatarColor = isFromFarmer
+                ? "bg-nat-green"
+                : "bg-nat-brown";
+
               return (
                 <div
                   key={msg.id}
-                  className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                  className={`flex items-end gap-2 ${isMine ? "flex-row-reverse" : "flex-row"}`}
                 >
-                  <div
-                    className={`max-w-[80%] px-3 py-2 rounded-xl text-xs ${
-                      isMine
-                        ? "bg-nat-green text-white rounded-br-sm"
-                        : "bg-white text-nat-dark border border-nat-border rounded-bl-sm"
-                    }`}
-                  >
-                    <p className="leading-relaxed">{msg.content}</p>
-                    <p
-                      className={`text-[9px] mt-1 ${isMine ? "text-white/70" : "text-nat-sage"}`}
+                  {/* Avatar */}
+                  {!isMine && (
+                    <div className={`w-7 h-7 rounded-full ${avatarColor} flex items-center justify-center text-white text-[10px] font-bold shrink-0 shadow-sm`}>
+                      {initials}
+                    </div>
+                  )}
+
+                  <div className={`flex flex-col gap-0.5 max-w-[75%] ${isMine ? "items-end" : "items-start"}`}>
+                    {/* Sender name — hanya tampil jika bukan saya */}
+                    {!isMine && (
+                      <span className="text-[10px] text-nat-sage font-semibold px-1">
+                        {senderName}
+                      </span>
+                    )}
+                    <div
+                      className={`px-3 py-2 rounded-2xl text-xs shadow-sm ${
+                        isMine
+                          ? "bg-nat-green text-white rounded-br-sm"
+                          : "bg-white text-nat-dark border border-nat-border rounded-bl-sm"
+                      }`}
                     >
-                      {new Date(msg.sentAt).toLocaleTimeString("id-ID", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
+                      <p className="leading-relaxed">{msg.content}</p>
+                      <p
+                        className={`text-[9px] mt-1 ${isMine ? "text-white/70" : "text-nat-sage"}`}
+                      >
+                        {new Date(msg.sentAt).toLocaleTimeString("id-ID", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
                   </div>
+
+                  {/* Avatar saya (kanan) */}
+                  {isMine && (
+                    <div className="w-7 h-7 rounded-full bg-nat-brown flex items-center justify-center text-white text-[10px] font-bold shrink-0 shadow-sm">
+                      {currentUserId === farmerUserId
+                        ? farmerName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
+                        : buyerName.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase()
+                      }
+                    </div>
+                  )}
                 </div>
               );
             })
