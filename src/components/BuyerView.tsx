@@ -16,6 +16,8 @@ import { ReviewModal } from "./modals/ReviewModal";
 import { PaymentModal } from "./modals/PaymentModal";
 import { HarvestTraceModal } from "./modals/HarvestTraceModal";
 import ChatModal from "./ChatModal";
+import dynamic from "next/dynamic";
+const QRCameraScanner = dynamic(() => import("./QRCameraScanner"), { ssr: false });
 import {
   ShoppingBag,
   Plus,
@@ -43,7 +45,6 @@ import {
   Store,
   ExternalLink,
 } from "lucide-react";
-
 import { Harvest } from "../types";
 import RegionAutocomplete from "./RegionAutocomplete";
 import RouteMap from "./shared/RouteMap";
@@ -109,6 +110,7 @@ export default function BuyerView({
   const [showRoute, setShowRoute] = useState(false);
   const [scannerBatchId, setScannerBatchId] = useState<string>("");
   const [isScanning, setIsScanning] = useState<boolean>(false);
+  const [showCameraScanner, setShowCameraScanner] = useState(false);
   const [scanSuccess, setScanSuccess] = useState<boolean>(false);
 
   // Initialize selected batch id for scanner if harvests are available
@@ -665,18 +667,24 @@ export default function BuyerView({
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.65))] pointer-events-none" />
                 </div>
 
-                {/* Dua tombol aksi */}
-                <div className="grid grid-cols-2 gap-2">
+                {/* Tiga tombol aksi */}
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={handleSimulatedScan}
                     disabled={isScanning || !scannerBatchId}
                     className="py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white shadow-sm"
                   >
                     {isScanning ? (
-                      <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Memverifikasi...</>
+                      <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> ...</>
                     ) : (
-                      <><Scan className="w-3.5 h-3.5 text-emerald-400" /> Simulasi Scan</>
+                      <><Scan className="w-3.5 h-3.5 text-emerald-400" /> Simulasi</>
                     )}
+                  </button>
+                  <button
+                    onClick={() => setShowCameraScanner(true)}
+                    className="py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                  >
+                    <Camera className="w-3.5 h-3.5" /> Kamera
                   </button>
                   <button
                     onClick={() => {
@@ -686,8 +694,7 @@ export default function BuyerView({
                     disabled={!scannerBatchId}
                     className="py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-nat-green hover:bg-nat-green-hover disabled:opacity-40 text-white shadow-sm"
                   >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    Halaman Publik
+                    <ExternalLink className="w-3.5 h-3.5" /> Publik
                   </button>
                 </div>
               </div>
@@ -1510,6 +1517,19 @@ export default function BuyerView({
           />
         );
       })()}
+
+      {/* ───── QR Camera Scanner ───── */}
+      {showCameraScanner && (
+        <QRCameraScanner
+          onScan={(result) => {
+            setScannerBatchId(result);
+            setShowCameraScanner(false);
+            // Langsung buka halaman verifikasi publik setelah scan berhasil
+            window.open(`/public?trace=${encodeURIComponent(result)}`, "_blank");
+          }}
+          onClose={() => setShowCameraScanner(false)}
+        />
+      )}
     </div>
   );
 }
