@@ -16,6 +16,7 @@ import RouteMapModal from "./modals/RouteMapModal";
 import { SellerRatingModal } from "./modals/SellerRatingModal";
 import { HarvestTraceModal } from "./modals/HarvestTraceModal";
 import { POConfirmModal } from "./modals/POConfirmModal";
+import ChatModal from "./ChatModal";
 import { PriceChart } from "./farmer/PriceChart";
 import { DiseaseDetector } from "./farmer/DiseaseDetector";
 import RegionAutocomplete from "./RegionAutocomplete";
@@ -100,6 +101,9 @@ export default function FarmerView({
 
   // PO Confirm modal state
   const [poConfirmMatch, setPOConfirmMatch] = useState<Match | null>(null);
+
+  // Chat modal state
+  const [chatPO, setChatPO] = useState<PreOrder | null>(null);
 
   // Route map modal
   const [routeMapPO, setRouteMapPO] = useState<PreOrder | null>(null);
@@ -1197,7 +1201,6 @@ export default function FarmerView({
                           <div className="flex items-center gap-2 flex-wrap">
                              <a
                               href={(() => {
-                                // Ambil nomor WA pembeli dari activeUser jika yang login adalah pembeli tersebut
                                 const buyerPhone = activeUser.PEMBELI?.phone || "62";
                                 const msg = `Halo Koperasi ${encodeURIComponent(po.buyerName)}, saya petani ${po.farmerName}. Terkait PO ${po.commodity} seberat ${po.agreedVolumeKg}Kg dengan harga Rp${po.agreedPricePerKg.toLocaleString('id-ID')}/Kg.`;
                                 return `https://wa.me/${buyerPhone}?text=${encodeURIComponent(msg)}`;
@@ -1207,8 +1210,15 @@ export default function FarmerView({
                                className="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
                              >
                                <MessageCircle className="w-3 h-3" />
-                               Chat Pembeli
+                               WA
                              </a>
+                             <button
+                               onClick={() => setChatPO(po)}
+                               className="bg-nat-green hover:bg-nat-green-hover text-white font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+                             >
+                               <MessageCircle className="w-3 h-3" />
+                               Chat In-App
+                             </button>
                             
                             {/* Lihat Rute — muncul saat PO CONFIRMED atau COMPLETED */}
                             {(po.status === "CONFIRMED" || po.status === "COMPLETED") && (
@@ -1524,6 +1534,26 @@ export default function FarmerView({
         onConfirm={(matchId) => updateMatchStatus(matchId, "CONFIRMED")}
         onClose={() => setPOConfirmMatch(null)}
       />
+
+      {/* ───── Chat In-App Modal ───── */}
+      {chatPO && (() => {
+        const linkedMatch = matches.find((m) =>
+          m.harvestId === chatPO.harvestId && m.demandId === chatPO.demandId
+        );
+        const linkedDemand = demands.find((d) => d.id === chatPO.demandId);
+        return (
+          <ChatModal
+            matchId={linkedMatch?.id ?? chatPO.id}
+            farmerUserId={activeUser.PETANI.id}
+            farmerName={activeUser.PETANI.name}
+            buyerUserId={linkedDemand?.buyerId ?? "b-1"}
+            buyerName={chatPO.buyerName}
+            currentUserId={activeUser.PETANI.id}
+            isOpen={!!chatPO}
+            onClose={() => setChatPO(null)}
+          />
+        );
+      })()}
     </div>
   );
 }

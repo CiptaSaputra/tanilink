@@ -15,6 +15,7 @@ import RouteMapModal from "./modals/RouteMapModal";
 import { ReviewModal } from "./modals/ReviewModal";
 import { PaymentModal } from "./modals/PaymentModal";
 import { HarvestTraceModal } from "./modals/HarvestTraceModal";
+import ChatModal from "./ChatModal";
 import {
   ShoppingBag,
   Plus,
@@ -101,6 +102,7 @@ export default function BuyerView({
   const [routeMapPO, setRouteMapPO] = useState<PreOrder | null>(null);
   const [reviewPO, setReviewPO] = useState<PreOrder | null>(null);
   const [paymentPO, setPaymentPO] = useState<PreOrder | null>(null);
+  const [chatPO, setChatPO] = useState<PreOrder | null>(null);
 
   // Logistics state
   const [selectedLogistics, setSelectedLogistics] = useState<string[]>([]);
@@ -1144,8 +1146,15 @@ export default function BuyerView({
                               className="bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
                             >
                               <MessageCircle className="w-3 h-3" />
-                              Chat WA
+                              WA
                             </a>
+                            <button
+                              onClick={() => setChatPO(po)}
+                              className="bg-nat-green hover:bg-nat-green-hover text-white font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+                            >
+                              <MessageCircle className="w-3 h-3" />
+                              Chat In-App
+                            </button>
 
                             {/* Lihat Rute */}
                             {(po.status === "CONFIRMED" || po.status === "COMPLETED") && (
@@ -1483,6 +1492,24 @@ export default function BuyerView({
         harvestBatches={harvestBatches}
         onClose={() => setSelectedTraceHarvest(null)}
       />
+
+      {/* ───── Chat In-App Modal ───── */}
+      {chatPO && (() => {
+        const linkedMatch = matches.find((m) => m.demandId === chatPO.demandId);
+        const poHarvest = harvests.find((h) => h.id === chatPO.harvestId);
+        return (
+          <ChatModal
+            matchId={linkedMatch?.id ?? chatPO.id}
+            farmerUserId={poHarvest?.farmerId ?? "f-1"}
+            farmerName={chatPO.farmerName}
+            buyerUserId={activeUser.PEMBELI.id}
+            buyerName={activeUser.PEMBELI.name}
+            currentUserId={activeUser.PEMBELI.id}
+            isOpen={!!chatPO}
+            onClose={() => setChatPO(null)}
+          />
+        );
+      })()}
     </div>
   );
 }
