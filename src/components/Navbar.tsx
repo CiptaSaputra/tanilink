@@ -392,8 +392,8 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Role Switcher Bar — hanya tampil jika user adalah Admin (demo mode) atau tidak ada user */}
-        {(!currentUser || currentUser.role === "ADMIN") && (
+        {/* Role Switcher Bar — hanya tampil jika belum login (demo/guest mode) */}
+        {!currentUser && (
           <div className="border-t border-nat-light-cream py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center space-x-2">
               <ShieldAlert className="w-4 h-4 text-nat-green shrink-0" />
