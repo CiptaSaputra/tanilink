@@ -152,7 +152,7 @@ export default function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
         {/* Header */}
         <div className="text-center mb-8">
           <img
-            src="/logo.jpeg"
+            src="/logo.png"
             alt="Logo TaniLink"
             className="w-28 h-20 object-contain mx-auto mb-4 drop-shadow-sm"
           />

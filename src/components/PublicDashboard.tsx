@@ -112,7 +112,7 @@ export default function PublicDashboard() {
       <nav className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-green-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-8 flex items-center justify-between h-14">
           <a href="/" className="flex items-center gap-2">
-            <img src="/logo.jpeg" alt="TaniLink" className="w-8 h-8 object-contain rounded-lg" />
+            <img src="/logo.png" alt="TaniLink" className="w-8 h-8 object-contain rounded-lg" />
             <span className="font-bold text-green-900 text-sm">TaniLink</span>
             <span className="hidden sm:inline text-[10px] text-green-600 font-semibold bg-green-100 px-2 py-0.5 rounded-full ml-1">Publik</span>
           </a>

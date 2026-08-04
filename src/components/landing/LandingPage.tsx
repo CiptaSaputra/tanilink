@@ -482,7 +482,7 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto mb-14 md:mb-16">
             <a href="/" className="flex items-center gap-2.5 mb-5">
               <img
-                src="/logo.jpeg"
+                src="/logo.png"
                 alt="TaniLink"
                 className="w-9 h-9 object-contain rounded-lg"
               />

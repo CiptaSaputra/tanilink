@@ -235,7 +235,7 @@ export default function Navbar() {
           {/* Brand Logo */}
           <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
             <img
-              src="/logo.jpeg"
+              src="/logo.png"
               alt="Logo TaniLink"
               className="w-10 h-8 sm:w-12 sm:h-9 object-contain drop-shadow-sm shrink-0"
             />
