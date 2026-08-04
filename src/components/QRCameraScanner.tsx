@@ -31,8 +31,17 @@ export default function QRCameraScanner({ onScan, onClose }: QRCameraScannerProp
       setErrorMsg("");
 
       const { Html5Qrcode } = await import("html5-qrcode");
+
+      // Stop dan clear instance lama dulu sebelum buat baru
       if (scannerRef.current) {
-        await scannerRef.current.stop().catch(() => {});
+        try {
+          const state = (scannerRef.current as any).getState?.();
+          if (state === 2) { // SCANNING
+            await scannerRef.current.stop();
+          }
+        } catch { /* ignore */ }
+        try { scannerRef.current.clear(); } catch { /* ignore */ }
+        scannerRef.current = null;
       }
 
       const scanner = new Html5Qrcode(containerId);
@@ -66,7 +75,6 @@ export default function QRCameraScanner({ onScan, onClose }: QRCameraScannerProp
           },
         },
         (decodedText) => {
-          scanner.stop().catch(() => {});
           handleResult(decodedText);
         },
         () => {}
@@ -82,15 +90,22 @@ export default function QRCameraScanner({ onScan, onClose }: QRCameraScannerProp
   };
 
   /* ── Parse & callback result ── */
-  const handleResult = (decodedText: string) => {
+  const handleResult = async (decodedText: string) => {
+    // Stop scanner dulu sebelum trigger callback
+    if (scannerRef.current) {
+      try {
+        const state = (scannerRef.current as any).getState?.();
+        if (state === 2) await scannerRef.current.stop();
+      } catch { /* ignore */ }
+      try { scannerRef.current.clear(); } catch { /* ignore */ }
+      scannerRef.current = null;
+    }
     let result = decodedText.trim();
     try {
       const url = new URL(decodedText);
       const trace = url.searchParams.get("trace");
       if (trace) result = trace;
-    } catch {
-      // bukan URL, pakai langsung
-    }
+    } catch { /* bukan URL */ }
     onScan(result);
   };
 
@@ -118,10 +133,25 @@ export default function QRCameraScanner({ onScan, onClose }: QRCameraScannerProp
     if (mode === "camera") {
       startCamera();
     } else {
-      scannerRef.current?.stop().catch(() => {});
+      // Stop kamera saat switch ke mode file
+      if (scannerRef.current) {
+        try {
+          const state = (scannerRef.current as any).getState?.();
+          if (state === 2) scannerRef.current.stop().catch(() => {});
+        } catch { /* ignore */ }
+      }
     }
     return () => {
-      scannerRef.current?.stop().catch(() => {});
+      // Cleanup saat unmount
+      const sc = scannerRef.current;
+      if (sc) {
+        try {
+          const state = (sc as any).getState?.();
+          if (state === 2) sc.stop().catch(() => {});
+        } catch { /* ignore */ }
+        try { sc.clear(); } catch { /* ignore */ }
+        scannerRef.current = null;
+      }
     };
   }, [mode]);
 
