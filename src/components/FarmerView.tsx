@@ -15,6 +15,7 @@ import type { Komoditas, Harvest, Match, PreOrder } from "../types";
 import RouteMapModal from "./modals/RouteMapModal";
 import { SellerRatingModal } from "./modals/SellerRatingModal";
 import { HarvestTraceModal } from "./modals/HarvestTraceModal";
+import { POConfirmModal } from "./modals/POConfirmModal";
 import { PriceChart } from "./farmer/PriceChart";
 import { DiseaseDetector } from "./farmer/DiseaseDetector";
 import RegionAutocomplete from "./RegionAutocomplete";
@@ -96,6 +97,9 @@ export default function FarmerView({
   const [bidFormMatch, setBidFormMatch] = useState<Match | null>(null);
   const [bidVolume, setBidVolume] = useState<number>(0);
   const [bidPrice, setBidPrice] = useState<number>(0);
+
+  // PO Confirm modal state
+  const [poConfirmMatch, setPOConfirmMatch] = useState<Match | null>(null);
 
   // Route map modal
   const [routeMapPO, setRouteMapPO] = useState<PreOrder | null>(null);
@@ -1003,13 +1007,11 @@ export default function FarmerView({
                                     Tolak
                                   </button>
                                   <button
-                                    onClick={() =>
-                                      updateMatchStatus(match.id, "CONFIRMED")
-                                    }
+                                    onClick={() => setPOConfirmMatch(match)}
                                     className="flex items-center gap-1 text-[10px] font-bold text-white bg-nat-green hover:bg-nat-green-hover px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
                                   >
                                     <CheckCircle className="w-3 h-3" />
-                                    Terima & Buat Kontrak
+                                    Tinjau & Konfirmasi
                                   </button>
                                 </div>
                               </motion.div>
@@ -1039,10 +1041,23 @@ export default function FarmerView({
                                 key="confirmed"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
+                                className="flex flex-col items-end gap-1"
+                              >
+                                <div className="flex items-center space-x-1.5 text-nat-green font-bold text-[11px] bg-nat-light-cream px-2.5 py-1 rounded-lg border border-nat-border">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-nat-green animate-pulse" />
+                                  <span>Menunggu ACC Final Pembeli</span>
+                                </div>
+                                <span className="text-[10px] text-nat-sage">Kontrak diteruskan ke pembeli</span>
+                              </motion.div>
+                            ) : match.status === "FINALIZED" ? (
+                              <motion.div
+                                key="finalized"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
                                 className="flex items-center space-x-1.5 text-nat-green font-bold text-[11px] bg-nat-light-cream px-2.5 py-1 rounded-lg border border-nat-border"
                               >
                                 <CheckCircle className="w-3.5 h-3.5" />
-                                <span>Kontrak Sepakat ✓</span>
+                                <span>Kontrak Disepakati Kedua Pihak ✓</span>
                               </motion.div>
                             ) : (
                               <motion.span
@@ -1499,6 +1514,15 @@ export default function FarmerView({
         preOrders={myPreOrders}
         harvestBatches={harvestBatches}
         onClose={() => setSelectedTraceHarvest(null)}
+      />
+
+      {/* ───── PO Confirm Modal ───── */}
+      <POConfirmModal
+        match={poConfirmMatch}
+        harvest={harvests.find((h) => h.id === poConfirmMatch?.harvestId)}
+        demand={demands.find((d) => d.id === poConfirmMatch?.demandId)}
+        onConfirm={(matchId) => updateMatchStatus(matchId, "CONFIRMED")}
+        onClose={() => setPOConfirmMatch(null)}
       />
     </div>
   );

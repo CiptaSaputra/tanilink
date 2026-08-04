@@ -9,6 +9,7 @@ const navLinks = [
   { label: "Fitur", href: "#fitur" },
   { label: "Musim Tanam", href: "#musim-tanam" },
   { label: "Dashboard", href: "#fitur" },
+  { label: "Data Publik", href: "/public" },
   { label: "Kontak", href: "#kontak" },
 ];
 

@@ -300,6 +300,33 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
       );
 
       if (status === "CONFIRMED") {
+        // Petani menyetujui & forward ke pembeli — BELUM buat PO
+        // Hanya update status match, notifikasi pembeli
+        try {
+          await fetch(`/api/matches/${matchId}/status`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "CONFIRMED" }),
+          });
+          if (d) {
+            await notificationAdd({
+              userId: d.buyerId,
+              type: "match",
+              message: `Petani ${h?.farmerName ?? ""} telah menyetujui penawaran Anda untuk ${h?.commodity ?? ""}. Silakan ACC Final untuk membuat kontrak PO.`,
+            });
+          }
+          showNotification(
+            "✅ Penawaran disetujui petani & diteruskan ke pembeli.",
+            "success",
+          );
+        } catch {
+          showNotification("Gagal update status. Coba lagi.", "warning");
+        }
+        return;
+      }
+
+      if (status === "FINALIZED") {
+        // Pembeli ACC final → buat PO
         if (!h || !d) return;
         try {
           const res = await fetch("/api/pre-orders/confirm", {
@@ -307,7 +334,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               matchId,
-              // Pass bid data so PO uses agreed price/volume
               bidVolume: bidData?.bidVolume ?? m.bidVolume,
               bidPrice: bidData?.bidPrice ?? m.bidPrice,
             }),
@@ -322,29 +348,32 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
             setDemands(updatedDemands);
             setPreOrders(updatedPreOrders);
             await refreshMatches();
-            // Notifikasi ke kedua pihak
             await notificationAdd({
               userId: h.farmerId,
               type: "preorder",
-              message: `PO disepakati: ${h.commodity} dengan ${d.buyerName} (${(bidData?.bidVolume ?? m.bidVolume ?? h.expectedVolume).toLocaleString("id-ID")} kg @ Rp${(bidData?.bidPrice ?? m.bidPrice ?? d.offerPrice).toLocaleString("id-ID")}/kg)`,
+              message: `🎉 PO FINAL disepakati: ${h.commodity} dengan ${d.buyerName} (${(m.bidVolume ?? h.expectedVolume).toLocaleString("id-ID")} kg @ Rp${(m.bidPrice ?? d.offerPrice).toLocaleString("id-ID")}/kg)`,
             });
             await notificationAdd({
               userId: d.buyerId,
               type: "preorder",
-              message: `PO disepakati: ${d.commodity} dengan petani ${h.farmerName} — stok terkunci sebelum panen.`,
+              message: `🎉 PO FINAL disepakati: ${d.commodity} dengan petani ${h.farmerName} — stok terkunci.`,
             });
             showNotification(
-              "✅ Pre-Order Berhasil! Kontrak telah disepakati.",
+              "🎉 Kontrak PO Final berhasil dibuat! Kedua pihak telah sepakat.",
               "success",
             );
           } else {
-            showNotification("Gagal memproses konfirmasi PO. Coba lagi.", "warning");
+            showNotification("Gagal memproses PO Final. Coba lagi.", "warning");
           }
         } catch (error) {
           console.error(error);
           showNotification("Terjadi kesalahan sistem saat memproses konfirmasi.", "warning");
         }
-      } else {
+        return;
+      }
+
+      // Persist status lainnya ke DB via PATCH
+      {
         // Persist non-CONFIRMED status to DB via PATCH
         try {
           await fetch(`/api/matches/${matchId}/status`, {

@@ -978,9 +978,32 @@ export default function BuyerView({
                               <span>Penawaran Petani Masuk ↑</span>
                             </div>
                           ) : match.status === "CONFIRMED" ? (
+                            <div className="flex flex-col items-end gap-1.5">
+                              <div className="flex items-center space-x-1.5 text-nat-green font-bold text-[11px] bg-nat-light-cream px-2.5 py-1 rounded-lg border border-nat-border">
+                                <span className="w-1.5 h-1.5 rounded-full bg-nat-green animate-pulse" />
+                                <span>Petani Menyetujui — Tunggu Acc Anda</span>
+                              </div>
+                              <div className="flex gap-1.5">
+                                <button
+                                  onClick={() => updateMatchStatus(match.id, "REJECTED")}
+                                  className="flex items-center gap-1 text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-2.5 py-1 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
+                                >
+                                  <XCircle className="w-3 h-3" />
+                                  Batalkan
+                                </button>
+                                <button
+                                  onClick={() => updateMatchStatus(match.id, "FINALIZED")}
+                                  className="flex items-center gap-1 text-[10px] font-bold text-white bg-nat-green hover:bg-nat-green-hover px-2.5 py-1 rounded-lg transition-colors cursor-pointer shadow-sm"
+                                >
+                                  <CheckCircle className="w-3 h-3" />
+                                  ACC Final & Buat PO
+                                </button>
+                              </div>
+                            </div>
+                          ) : match.status === "FINALIZED" ? (
                             <div className="flex items-center space-x-1.5 text-nat-green font-bold text-[11px] bg-nat-light-cream px-2.5 py-1 rounded-lg border border-nat-border">
                               <CheckCircle className="w-3.5 h-3.5" />
-                              <span>Kontrak Sepakat (Panen Teraman)</span>
+                              <span>Kontrak Disepakati Kedua Pihak ✓</span>
                             </div>
                           ) : (
                             <span className="text-nat-sage text-xs font-semibold">
@@ -1113,13 +1136,29 @@ export default function BuyerView({
                             )}
 
                             {po.status === "COMPLETED" ? (
-                              <button
-                                onClick={() => setReviewPO(po)}
-                                className="bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm"
-                              >
-                                <Star className="w-3 h-3" />
-                                Beri Rating
-                              </button>
+                              (() => {
+                                const myReview = reviews.find(
+                                  (r) => r.preOrderId === po.id && r.reviewerUserId === activeUser.PEMBELI.id
+                                );
+                                return myReview ? (
+                                  <div className="flex flex-col items-end gap-1">
+                                    <div className="flex items-center gap-0.5">
+                                      {[1,2,3,4,5].map((s) => (
+                                        <Star key={s} className={`w-3 h-3 ${s <= myReview.rating ? "text-amber-400 fill-amber-400" : "text-nat-border"}`} />
+                                      ))}
+                                    </div>
+                                    <span className="text-[10px] text-nat-sage font-medium">Ulasan terkirim</span>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => setReviewPO(po)}
+                                    className="bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold py-1 px-2.5 rounded-lg text-[10px] transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+                                  >
+                                    <Star className="w-3 h-3" />
+                                    Beri Rating
+                                  </button>
+                                );
+                              })()
                             ) : (
                               <button
                                 onClick={() => setPaymentPO(po)}

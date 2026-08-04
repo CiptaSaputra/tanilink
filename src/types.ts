@@ -125,8 +125,9 @@ export interface Match {
     | "PENDING"
     | "WAITING_BUYER_APPROVAL"  // Petani sudah ajukan penawaran, menunggu pembeli
     | "ACCEPTED_BY_BUYER"
-    | "CONFIRMED"
-    | "REJECTED"               // Pembeli menolak penawaran petani
+    | "CONFIRMED"               // Petani setuju & forward ke pembeli
+    | "FINALIZED"               // Pembeli acc final → PO terbentuk
+    | "REJECTED"
     | "DISPUTED";
   /** Volume yang ditawarkan petani (kg) — diisi saat farmer bid */
   bidVolume?: number;
