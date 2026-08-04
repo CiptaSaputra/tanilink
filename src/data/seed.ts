@@ -9,7 +9,7 @@ export const SEED_HARVESTS: Harvest[] = [
   {
     id: "h-1",
     farmerId: "u-petani-1",
-    farmerName: "Pak Joko Widodo",
+    farmerName: "Pak Budi Santoso",
     commodity: "Bawang Merah",
     landArea: 1.2,
     expectedVolume: 11000,
@@ -145,7 +145,7 @@ export const SEED_PREORDERS: PreOrder[] = [
     matchId: "m-1",
     harvestId: "h-1",
     demandId: "d-1",
-    farmerName: "Pak Joko Widodo",
+    farmerName: "Pak Budi Santoso",
     buyerName: "Koperasi Jaya Tani",
     commodity: "Bawang Merah",
     agreedPricePerKg: 26500,

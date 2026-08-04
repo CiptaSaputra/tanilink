@@ -197,7 +197,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({
   const activeUser: ActiveUserMap = {
     PETANI: {
       id: currentUser?.role === "PETANI" ? currentUser.id : "f-1",
-      name: currentUser?.role === "PETANI" ? currentUser.name : "Pak Joko",
+      name: currentUser?.role === "PETANI" ? currentUser.name : "Pak Budi",
       region: currentUser?.role === "PETANI" ? currentUser.region : "Brebes",
     },
     PEMBELI: {

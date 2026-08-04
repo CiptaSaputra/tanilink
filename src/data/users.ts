@@ -24,7 +24,7 @@ export function verifyPassword(password: string, hash: string): boolean {
 export const SEED_USERS: User[] = [
   {
     id: "u-petani-1",
-    name: "Pak Joko Widodo",
+    name: "Pak Budi Santoso",
     email: "petani@demo.com",
     passwordHash: hashPassword("demo123"),
     role: "PETANI",
