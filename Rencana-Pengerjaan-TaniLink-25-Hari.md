@@ -269,3 +269,22 @@ Rencana ini disusun untuk mengimplementasikan **GAGASAN INTI** TaniLink: memberd
 - [x] Hapus config `eslint` dari `next.config.mjs` (tidak didukung di v16)
 - [x] Fix `ssr: false` di Server Component
 - [x] Clear `.next` cache untuk fix react version mismatch
+
+### UI/UX Improvements (2026-08-03)
+- [x] **Landing page navbar**: tambah link "Data Publik" → `/public` agar mudah diakses tanpa login
+- [x] **Rating sekali pakai**: tombol "Beri Rating" setelah submit berubah jadi tampil bintang + "Ulasan terkirim" — tidak bisa input ulang untuk PO yang sama
+- [x] **PO Acceptance Flow 2-pihak** (verifikasi berlapis):
+  - Buat `POConfirmModal` — petani wajib centang 3 klausul kontrak (volume, harga, deadline) sebelum bisa acc
+  - Tambah status `FINALIZED` di `types.ts`
+  - Flow lengkap: `ACCEPTED_BY_BUYER` → petani klik "Tinjau & Konfirmasi" → modal detail → centang semua klausul → `CONFIRMED` (forward ke pembeli) → pembeli klik "ACC Final & Buat PO" → `FINALIZED` → PO terbentuk
+  - `DataContext`: `CONFIRMED` hanya update status + kirim notifikasi ke pembeli (belum buat PO), `FINALIZED` yang trigger `/api/pre-orders/confirm`
+  - Notifikasi otomatis ke petani & pembeli di setiap tahap
+- [x] **Redesign PublicDashboard** (`/public`):
+  - Sticky navbar logo + tombol Tanya AI + Masuk
+  - Hero banner gradient hijau dengan animated counter tonase
+  - 4 stat cards animasi
+  - Layout 2-kolom: log transaksi + sidebar top komoditas, export, AI QA
+  - Hash-chain ledger tabel dengan badge integritas
+  - Footer CTA daftar + info verifikasi QR
+- [x] **Logo TaniLink** di landing page navbar (desktop + mobile) dan footer — ganti Leaf icon
+- [x] Hapus folder `landing-page-test-main/` yang sudah tidak dipakai
