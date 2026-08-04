@@ -29,18 +29,25 @@ export interface DiseaseResult {
 }
 
 /**
- * Kirim gambar base64 ke deteksi penyakit via proxy Next.js.
- * Proxy: POST /api/disease-detections/predict → ML_API_URL/predict-base64
- * (Menghindari CORS dan expose port ML ke browser saat deploy).
+ * Kirim gambar base64 ke deteksi penyakit.
+ * Kalau ML_API_URL tersedia (production), hit Railway langsung dari browser.
+ * Kalau tidak, pakai proxy Next.js (/api/disease-detections/predict).
  */
 export async function predictDisease(
   imageBase64: string,
 ): Promise<DiseaseResult | null> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30_000);
+  const timeout = setTimeout(() => controller.abort(), 60_000);
+
+  // Di production, langsung hit Railway untuk hindari Vercel timeout
+  const isProduction = typeof window !== "undefined" &&
+    !window.location.hostname.includes("localhost");
+  const mlUrl = isProduction
+    ? "https://tanilink-app-production.up.railway.app/predict-base64"
+    : "/api/disease-detections/predict";
 
   try {
-    const res = await fetch("/api/disease-detections/predict", {
+    const res = await fetch(mlUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ image_base64: imageBase64, top: 3 }),
