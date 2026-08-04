@@ -13,28 +13,33 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? "";
 
 async function askGemini(prompt: string): Promise<string | null> {
   if (!GEMINI_API_KEY) return null;
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.4,
-            maxOutputTokens: 512,
-          },
-        }),
-        signal: AbortSignal.timeout(15000),
-      }
-    );
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data?.candidates?.[0]?.content?.parts?.[0]?.text ?? null;
-  } catch {
-    return null;
+  // Models to try in order
+  const models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-pro"];
+  for (const model of models) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { temperature: 0.4, maxOutputTokens: 512 },
+          }),
+          signal: AbortSignal.timeout(15000),
+        }
+      );
+      if (res.status === 429 || res.status === 503) continue; // quota/overload, try next
+      if (res.status === 404) continue; // model not found, try next
+      if (!res.ok) return null;
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (text) return text;
+    } catch {
+      continue;
+    }
   }
+  return null;
 }
 
 export async function POST(req: NextRequest) {

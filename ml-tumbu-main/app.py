@@ -283,7 +283,7 @@ Balas HANYA dengan format JSON murni yang valid (tanpa markdown, tanpa ```json):
 Jika bukan foto tanaman/daun, set is_plant: false dan disease: "Bukan tanaman"."""
 
     response = client.models.generate_content(
-        model="gemini-flash-latest",
+        model="gemini-1.5-flash",
         contents=[
             genai_types.Part.from_bytes(data=img_bytes, mime_type="image/jpeg"),
             prompt,
