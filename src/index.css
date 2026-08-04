@@ -40,3 +40,118 @@ body {
   }
 }
 
+/* ─────────────────────────────────────────────
+   LANDING PAGE STYLES
+   ───────────────────────────────────────────── */
+
+/* Font helpers untuk landing page */
+.font-instrument-serif { font-family: var(--font-instrument-serif, 'Georgia', 'Times New Roman', serif); }
+.font-display { font-family: var(--font-instrument-serif, 'Georgia', 'Times New Roman', serif); }
+.font-data    { font-family: var(--font-ibm-plex-mono, 'JetBrains Mono', 'Courier New', monospace); }
+
+/* ── LIQUID GLASS (dark/video bg context) ── */
+.liquid-glass {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.18);
+  position: relative;
+  overflow: hidden;
+}
+.liquid-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.2px;
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.45) 0%,
+    rgba(255,255,255,0.15) 20%,
+    rgba(255,255,255,0.0) 40%,
+    rgba(255,255,255,0.0) 60%,
+    rgba(255,255,255,0.15) 80%,
+    rgba(255,255,255,0.45) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── LIQUID GLASS GREEN (light bg context) ── */
+.liquid-glass-green {
+  background: rgba(22, 163, 74, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+.liquid-glass-green::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.2px;
+  background: linear-gradient(
+    180deg,
+    rgba(134,239,172,0.5) 0%,
+    rgba(134,239,172,0.15) 25%,
+    rgba(134,239,172,0.0) 50%,
+    rgba(134,239,172,0.15) 75%,
+    rgba(134,239,172,0.5) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Season Timeline ── */
+.season-card {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(4px);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  margin-left: 1rem;
+  box-shadow: 0 1px 2px rgba(27, 43, 30, 0.04);
+  transition: border-color 0.4s ease, background 0.4s ease;
+}
+@media (max-width: 767px) {
+  .season-card {
+    margin-left: 0;
+    background: rgba(255, 255, 255, 0.6);
+  }
+}
+
+/* ── FAQ Scroller Animations ── */
+@keyframes scroll-horizontal {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes scroll-horizontal-reverse {
+  0% { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+.animate-scroll-horizontal {
+  animation: scroll-horizontal var(--scroll-duration, 40s) linear infinite;
+}
+.animate-scroll-horizontal-reverse {
+  animation: scroll-horizontal-reverse var(--scroll-duration, 40s) linear infinite;
+}
+.group:hover .animate-scroll-horizontal,
+.group:hover .animate-scroll-horizontal-reverse {
+  animation-play-state: paused;
+}
+.scroller-mask {
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+
+/* ── Leaflet dark mode override untuk landing page dashboard ── */
+.landing-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
+}
+

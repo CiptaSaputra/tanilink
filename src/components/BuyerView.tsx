@@ -14,6 +14,7 @@ import type { Komoditas, Demand, Match, PreOrder } from "../types";
 import RouteMapModal from "./modals/RouteMapModal";
 import { ReviewModal } from "./modals/ReviewModal";
 import { PaymentModal } from "./modals/PaymentModal";
+import { HarvestTraceModal } from "./modals/HarvestTraceModal";
 import {
   ShoppingBag,
   Plus,
@@ -39,6 +40,7 @@ import {
   AlertCircle,
   Bell,
   Store,
+  ExternalLink,
 } from "lucide-react";
 
 import { Harvest } from "../types";
@@ -70,6 +72,7 @@ export default function BuyerView({
     activeUser,
     marketplaceListings,
     updateMarketplaceStatus,
+    harvestBatches,
   } = useData();
   const { showNotification } = useUI();
   const { reviews } = useReview();
@@ -559,98 +562,136 @@ export default function BuyerView({
             </form>
           </div>
 
-          {/* QR Scanner Simulator Card */}
+          {/* QR Scanner / Lacak Batch Card */}
           <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm space-y-4">
             <div>
               <h3 className="text-sm font-bold text-nat-dark flex items-center gap-1.5">
                 <Scan className="w-4 h-4 text-nat-green" />
-                Lacak Batch (Scanner QR)
+                Lacak Batch (Verifikasi QR)
               </h3>
               <p className="text-[11px] text-nat-sage mt-1 font-medium">
-                Pindai QR Code fisik komoditas panen untuk membaca data digital
-                di Sistem Food Loss.
+                Scan QR Code dari petani atau masukkan ID lahan untuk verifikasi
+                keaslian dan lacak status pengiriman batch.
               </p>
             </div>
 
+            {/* ── Mode 1: Input ID Manual ── */}
+            <div className="space-y-2">
+              <label className="block text-[10px] font-bold text-nat-text uppercase tracking-wider">
+                Input ID Lahan / Scan Hasil
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={scannerBatchId}
+                  onChange={(e) => setScannerBatchId(e.target.value)}
+                  placeholder="Contoh: H-001 atau paste ID dari QR..."
+                  className="flex-1 bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-xs font-mono text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green"
+                />
+                <button
+                  onClick={() => {
+                    if (!scannerBatchId.trim()) return;
+                    window.open(`/public?trace=${encodeURIComponent(scannerBatchId.trim())}`, "_blank");
+                  }}
+                  disabled={!scannerBatchId.trim()}
+                  className="px-3 py-2 bg-nat-green hover:bg-nat-green-hover disabled:opacity-40 text-white rounded-lg text-[11px] font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Verifikasi
+                </button>
+              </div>
+              <p className="text-[10px] text-nat-sage">
+                Halaman verifikasi publik terbuka di tab baru — bisa dibagikan ke siapa saja.
+              </p>
+            </div>
+
+            {/* ── Divider ── */}
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-px bg-nat-border" />
+              <span className="text-[10px] text-nat-sage font-semibold">atau pilih dari daftar</span>
+              <div className="flex-1 h-px bg-nat-border" />
+            </div>
+
+            {/* ── Mode 2: Pilih dari harvest yang ada → simulasi scan ── */}
             {harvests.length > 0 ? (
               <div className="space-y-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-nat-text uppercase tracking-wider mb-1">
-                    Pilih Batch Panen Tani
-                  </label>
-                  <select
-                    value={scannerBatchId}
-                    onChange={(e) => setScannerBatchId(e.target.value)}
-                    className="w-full bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green"
-                  >
-                    {harvests.map((h) => (
-                      <option key={h.id} value={h.id}>
-                        {h.id.toUpperCase()} - {h.farmerName} ({h.commodity})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <select
+                  value={scannerBatchId}
+                  onChange={(e) => setScannerBatchId(e.target.value)}
+                  className="w-full bg-nat-light-cream border border-nat-border rounded-lg px-3 py-2 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green"
+                >
+                  <option value="">— Pilih lahan petani —</option>
+                  {harvests.map((h) => (
+                    <option key={h.id} value={h.id}>
+                      {h.commodity} · {h.farmerName} · {h.region}
+                    </option>
+                  ))}
+                </select>
 
-                {/* Simulated Camera Scanner Viewport */}
+                {/* Simulated Camera Viewport */}
                 <div className="relative w-full aspect-video bg-slate-900 rounded-xl overflow-hidden border border-slate-700 flex flex-col items-center justify-center text-center">
-                  {/* Neon Grid Corners */}
-                  <div className="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-nat-green" />
-                  <div className="absolute top-2 right-2 w-3.5 h-3.5 border-t-2 border-r-2 border-nat-green" />
-                  <div className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b-2 border-l-2 border-nat-green" />
-                  <div className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b-2 border-r-2 border-nat-green" />
+                  <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-nat-green" />
+                  <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-nat-green" />
+                  <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-nat-green" />
+                  <div className="absolute bottom-2 right-2 w-4 h-4 border-b-2 border-r-2 border-nat-green" />
 
                   {isScanning ? (
                     <div className="space-y-2 text-center animate-pulse z-10 px-4">
-                      {/* Pulsing Target Ring */}
                       <div className="w-10 h-10 rounded-full border-2 border-nat-green border-dashed animate-spin mx-auto flex items-center justify-center">
                         <Camera className="w-4 h-4 text-emerald-400" />
                       </div>
                       <p className="text-[10px] text-emerald-400 font-mono tracking-widest uppercase font-bold">
-                        Targeting QR Code...
+                        Memverifikasi...
                       </p>
-                      {/* Laser Scrolling Line */}
-                      <div className="absolute left-0 right-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-nat-green to-transparent shadow-lg shadow-nat-green/50 animate-bounce" />
+                      <div className="absolute left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-nat-green to-transparent shadow-lg shadow-nat-green/50 animate-bounce" />
+                    </div>
+                  ) : scanSuccess ? (
+                    <div className="space-y-1.5 z-10 p-4">
+                      <CheckCircle className="w-8 h-8 text-emerald-400 mx-auto" />
+                      <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+                        Terverifikasi ✓
+                      </p>
                     </div>
                   ) : (
                     <div className="space-y-1.5 z-10 p-4">
                       <QrCode className="w-8 h-8 text-nat-sage mx-auto" />
                       <p className="text-[10px] text-nat-sage font-semibold uppercase tracking-wider">
-                        Kamera Siap Dipasangkan
-                      </p>
-                      <p className="text-[9px] text-nat-sage">
-                        Klik tombol di bawah untuk melakukan simulasi scan laser
+                        Siap Scan
                       </p>
                     </div>
                   )}
-                  {/* Subtle scan camera overlay lines */}
-                  <div className="absolute inset-0 bg-slate-900/10 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.65))] " />
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_45%,rgba(0,0,0,0.65))] pointer-events-none" />
                 </div>
 
-                <button
-                  onClick={handleSimulatedScan}
-                  disabled={isScanning}
-                  className={`w-full py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    isScanning
-                      ? "bg-nat-cream text-nat-sage border border-nat-border cursor-not-allowed"
-                      : "bg-slate-900 hover:bg-slate-800 text-white shadow-sm"
-                  }`}
-                >
-                  {isScanning ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Menganalisis Kunci Hash...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Scan className="w-4 h-4 text-emerald-400" />
-                      <span>Simulasikan Scan QR Code</span>
-                    </>
-                  )}
-                </button>
+                {/* Dua tombol aksi */}
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={handleSimulatedScan}
+                    disabled={isScanning || !scannerBatchId}
+                    className="py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white shadow-sm"
+                  >
+                    {isScanning ? (
+                      <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Memverifikasi...</>
+                    ) : (
+                      <><Scan className="w-3.5 h-3.5 text-emerald-400" /> Simulasi Scan</>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!scannerBatchId) return;
+                      window.open(`/public?trace=${encodeURIComponent(scannerBatchId)}`, "_blank");
+                    }}
+                    disabled={!scannerBatchId}
+                    className="py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-nat-green hover:bg-nat-green-hover disabled:opacity-40 text-white shadow-sm"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Halaman Publik
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="text-center py-4 text-nat-sage italic text-xs">
-                Belum ada batch panen terdaftar untuk dilacak.
+                Belum ada batch panen terdaftar.
               </div>
             )}
           </div>
@@ -1373,6 +1414,13 @@ export default function BuyerView({
           onClose={() => setPaymentPO(null)}
         />
       )}
+      {/* ───── Harvest Trace / QR Modal ───── */}
+      <HarvestTraceModal
+        harvest={selectedTraceHarvest}
+        preOrders={preOrders}
+        harvestBatches={harvestBatches}
+        onClose={() => setSelectedTraceHarvest(null)}
+      />
     </div>
   );
 }

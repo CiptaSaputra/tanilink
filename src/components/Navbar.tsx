@@ -35,6 +35,7 @@ import {
   Store,
   TrendingUp,
   BookOpen,
+  ScanEye,
   Inbox,
   Megaphone,
   BarChart3,
@@ -58,6 +59,7 @@ const ROLE_SECTIONS: Record<string, SectionNavItem[]> = {
   PETANI: [
     { id: "input", label: "Input Lahan", icon: <Plus className="w-3.5 h-3.5" /> },
     { id: "harga", label: "Prediksi Harga", icon: <TrendingUp className="w-3.5 h-3.5" /> },
+    { id: "deteksi", label: "Deteksi Penyakit", icon: <ScanEye className="w-3.5 h-3.5" /> },
     { id: "lahan", label: "Lahan Saya", icon: <Sprout className="w-3.5 h-3.5" /> },
     { id: "match", label: "Pencocokan & PO", icon: <Handshake className="w-3.5 h-3.5" /> },
     { id: "po", label: "Pre-Order", icon: <FileCheck className="w-3.5 h-3.5" /> },

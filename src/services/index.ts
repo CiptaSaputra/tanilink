@@ -20,3 +20,4 @@ export * from "./marketplaceService";
 export * from "./notificationService";
 export * from "./ledgerService";
 export * from "./educationalService";
+export * from "./diseaseService";

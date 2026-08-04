@@ -20,11 +20,40 @@ import {
   Fingerprint,
 } from "lucide-react";
 import { QAInput } from "./modals/QAInput";
+import TracePublicView from "./TracePublicView";
 
 type ExportDataType = "preOrders" | "harvests" | "demands";
 
 export default function PublicDashboard() {
   const { preOrders } = useData();
+
+  // ── Trace mode: cek ?trace=<harvestId> di URL ──
+  const [traceId, setTraceId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("trace");
+    if (id) setTraceId(id);
+
+    // Listen ke perubahan URL tanpa reload (misal user klik back)
+    const onPop = () => {
+      const p = new URLSearchParams(window.location.search);
+      setTraceId(p.get("trace"));
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  const handleBackFromTrace = () => {
+    setTraceId(null);
+    // Hapus ?trace dari URL tanpa reload
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("trace");
+      window.history.pushState({}, "", url.toString());
+    }
+  };
 
   // Ledger hash-chain state
   const [ledger, setLedger] = useState<LedgerEntry[]>([]);
@@ -56,6 +85,15 @@ export default function PublicDashboard() {
   const completedPOs = preOrders.filter((po) => po.status === "COMPLETED");
   const totalVolumeSavedKg = completedPOs.reduce((acc, po) => acc + po.agreedVolumeKg, 0);
   const totalValueSaved = completedPOs.reduce((acc, po) => acc + (po.agreedVolumeKg * po.agreedPricePerKg), 0);
+
+  // ── Jika ada traceId, tampilkan halaman verifikasi ──
+  if (traceId) {
+    return (
+      <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 py-2">
+        <TracePublicView harvestId={traceId} onBack={handleBackFromTrace} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">

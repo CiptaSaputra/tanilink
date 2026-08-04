@@ -1,14 +1,13 @@
 "use client";
 
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import dynamic from "next/dynamic";
 
-const RootApp = dynamic(() => import("@/components/RootApp"), { ssr: false });
+// SSR disabled karena komponen landing pakai leaflet & framer-motion
+const LandingPage = dynamic(
+  () => import("@/components/landing/LandingPage"),
+  { ssr: false }
+);
 
 export default function HomePage() {
-  return <RootApp />;
+  return <LandingPage />;
 }

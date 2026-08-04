@@ -14,7 +14,9 @@ import { COMMODITY_LIST } from "../constants/commodities";
 import type { Komoditas, Harvest, Match, PreOrder } from "../types";
 import RouteMapModal from "./modals/RouteMapModal";
 import { SellerRatingModal } from "./modals/SellerRatingModal";
+import { HarvestTraceModal } from "./modals/HarvestTraceModal";
 import { PriceChart } from "./farmer/PriceChart";
+import { DiseaseDetector } from "./farmer/DiseaseDetector";
 import RegionAutocomplete from "./RegionAutocomplete";
 import {
   Sprout,
@@ -100,6 +102,9 @@ export default function FarmerView({
 
   // Rating modal
   const [showRatingModal, setShowRatingModal] = useState(false);
+
+  // Disease detection
+  const [detectHarvestId, setDetectHarvestId] = useState<string | null>(null);
 
   // Harvest batch creation modal states
   const [showHarvestModal, setShowHarvestModal] = useState(false);
@@ -751,6 +756,28 @@ export default function FarmerView({
                 kiri untuk melapor.
               </div>
             )}
+          </div>
+
+          {/* ── Deteksi Penyakit Tanaman ── */}
+          <div id="deteksi" className="scroll-mt-28">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className="text-xs font-bold text-nat-dark">Kaitkan hasil ke lahan (opsional):</span>
+              <select
+                value={detectHarvestId ?? ""}
+                onChange={(e) => setDetectHarvestId(e.target.value || null)}
+                className="bg-white border border-nat-border rounded-lg px-3 py-1.5 text-xs font-semibold text-nat-dark focus:outline-none focus:ring-1 focus:ring-nat-green"
+              >
+                <option value="">— Tanpa keterkaitan lahan —</option>
+                {myHarvests.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.commodity} • {h.region}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <DiseaseDetector
+              harvest={harvests.find((h) => h.id === detectHarvestId)}
+            />
           </div>
 
           {/* Pencocokan Cerdas & Pre-Order */}
@@ -1465,6 +1492,14 @@ export default function FarmerView({
           onClose={() => setShowRatingModal(false)}
         />
       )}
+
+      {/* ───── Harvest Trace / QR Modal ───── */}
+      <HarvestTraceModal
+        harvest={selectedTraceHarvest}
+        preOrders={myPreOrders}
+        harvestBatches={harvestBatches}
+        onClose={() => setSelectedTraceHarvest(null)}
+      />
     </div>
   );
 }

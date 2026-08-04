@@ -46,7 +46,7 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
 
     const result = await login(credentials);
     if (result.success) {
-      router.replace("/");
+      router.replace("/dashboard");
     } else {
       setError(result.error ?? "Login gagal. Silakan coba lagi.");
     }
@@ -58,7 +58,7 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
     setError(null);
     const result = await login({ email, password: "demo123" });
     if (result.success) {
-      router.replace("/");
+      router.replace("/dashboard");
     } else {
       setError(result.error ?? "Login gagal.");
     }

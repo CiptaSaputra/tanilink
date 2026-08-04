@@ -261,6 +261,18 @@ export interface LedgerEntry {
   createdAt: string;
 }
 
+/** Hasil deteksi penyakit tanaman (dari API ml-tumbu) */
+export interface DiseaseDetection {
+  id: string;
+  plantingId: string;
+  detectedCondition: string;
+  confidenceScore: number;
+  volumeAdjustmentPct: number;
+  solution?: string;
+  imageBase64?: string;
+  detectedAt: string;
+}
+
 /** Konten edukasi budidaya yang dipublikasi PPL/BPP */
 export interface EducationalContent {
   id: string;

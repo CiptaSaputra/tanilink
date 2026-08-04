@@ -19,8 +19,9 @@ function AuthRedirect() {
       if (isAuthenticated) {
         router.replace("/dashboard");
       } else {
-        // PRD: dashboard publik dapat diakses tanpa login
-        router.replace("/public");
+        // Halaman pertama = dashboard teman (project terpisah).
+        // Di project ini, guest diarahkan ke login.
+        router.replace("/login");
       }
     }
   }, [isAuthenticated, isLoading, router]);

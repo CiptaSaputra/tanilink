@@ -185,6 +185,18 @@ export const salesLedger = pgTable("sales_ledger", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+/** Deteksi penyakit tanaman — hasil dari API ml-tumbu (ResNet9/Gemini) */
+export const diseaseDetections = pgTable("disease_detections", {
+  id: varchar("id").primaryKey(),
+  plantingId: varchar("planting_id").notNull(),
+  detectedCondition: varchar("detected_condition").notNull(),
+  confidenceScore: doublePrecision("confidence_score").notNull(),
+  volumeAdjustmentPct: doublePrecision("volume_adjustment_pct").notNull().default(0),
+  solution: text("solution"),
+  imageBase64: text("image_base64"),
+  detectedAt: timestamp("detected_at").defaultNow().notNull(),
+});
+
 /** Konten edukasi budidaya — dipublikasi PPL/BPP per wilayah binaan */
 export const educationalContents = pgTable("educational_contents", {
   id: varchar("id").primaryKey(),

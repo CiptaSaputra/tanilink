@@ -26,6 +26,10 @@ yarn-error.log*
 .env*.local
 .env.production
 
+# ML server env & venv
+ml-tumbu-main/.env
+ml-tumbu-main/.venv/
+
 # Database / Docker data
 db_data/
 docker-compose.override.yml
@@ -44,3 +48,6 @@ tsconfig.tsbuildinfo
 
 # Debug scripts
 check-login.mjs
+
+# Source folders sudah diintegrasikan ke proyek utama
+landing-page-test-main/
