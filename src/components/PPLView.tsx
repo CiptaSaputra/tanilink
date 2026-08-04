@@ -36,20 +36,30 @@ export default function PPLView() {
   const [eduTitle, setEduTitle] = useState("");
   const [eduBody, setEduBody] = useState("");
 
-  // Data agregat wilayah binaan — hanya dari planting yang dipublikasikan
+  // Filter wilayah — default wilayah PPL, tapi bisa lihat semua
+  const [regionFilter, setRegionFilter] = useState<string>(
+    activeUser.PPL.region,
+  );
+
+  const availableRegions = useMemo(() => {
+    const r = [...new Set([...harvests.map((h) => h.region), ...harvestBatches.map((b) => b.region)])].sort();
+    return r;
+  }, [harvests, harvestBatches]);
+
+  // Data agregat wilayah binaan
   const regionalHarvests = useMemo(() => {
     return harvests.filter(
       (h) =>
-        h.region.toLowerCase() === activeUser.PPL.region.toLowerCase() &&
+        h.region.toLowerCase() === regionFilter.toLowerCase() &&
         h.isPublished === true,
     );
-  }, [harvests, activeUser.PPL.region]);
+  }, [harvests, regionFilter]);
 
   const regionalBatches = useMemo(() => {
     return harvestBatches.filter(
-      (b) => b.region.toLowerCase() === activeUser.PPL.region.toLowerCase(),
+      (b) => b.region.toLowerCase() === regionFilter.toLowerCase(),
     );
-  }, [harvestBatches, activeUser.PPL.region]);
+  }, [harvestBatches, regionFilter]);
 
   const totalVolumeKg = useMemo(
     () => regionalHarvests.reduce((s, h) => s + h.expectedVolume, 0),
@@ -125,7 +135,17 @@ export default function PPLView() {
             | Akses Read-Only
           </p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center flex-wrap">
+          {/* Filter wilayah */}
+          <select
+            value={regionFilter}
+            onChange={(e) => setRegionFilter(e.target.value)}
+            className="bg-white/20 text-white border border-white/30 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none cursor-pointer"
+          >
+            {availableRegions.map((r) => (
+              <option key={r} value={r} className="text-black">{r}</option>
+            ))}
+          </select>
           <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
             <p className="text-[10px] text-teal-100 uppercase tracking-wider font-semibold">
               Petani Aktif

@@ -28,39 +28,55 @@ export default function KolektorView() {
   const { harvestBatches, preOrders, updateBatchStatus, activeUser } =
     useData();
 
-  // Ready batches for this region
+  // Filter wilayah — default semua, bisa dipersempit
+  const [regionFilter, setRegionFilter] = useState<string>("SEMUA");
+
+  // Ambil semua region yang ada dari batches
+  const availableRegions = useMemo(() => {
+    const regions = [...new Set(harvestBatches.map((b) => b.region))].sort();
+    return regions;
+  }, [harvestBatches]);
+
+  // Ready batches — tampilkan semua wilayah, filter opsional
   const regionalBatches = useMemo(
     () =>
       harvestBatches.filter(
         (b) =>
-          b.region.toLowerCase() === activeUser.KOLEKTOR.region.toLowerCase() &&
-          b.status === "READY",
+          b.status === "READY" &&
+          (regionFilter === "SEMUA" ||
+            b.region.toLowerCase() === regionFilter.toLowerCase()),
       ),
-    [harvestBatches, activeUser.KOLEKTOR.region],
+    [harvestBatches, regionFilter],
   );
 
-  // All batches (including in-transit/delivered)
+  // All batches including in-transit/delivered
   const allRegionalBatches = useMemo(
     () =>
       harvestBatches.filter(
         (b) =>
-          b.region.toLowerCase() === activeUser.KOLEKTOR.region.toLowerCase(),
+          regionFilter === "SEMUA" ||
+          b.region.toLowerCase() === regionFilter.toLowerCase(),
       ),
-    [harvestBatches, activeUser.KOLEKTOR.region],
+    [harvestBatches, regionFilter],
   );
 
   // Default depot coordinates per region
   const depotCoords: Record<string, { lat: number; lng: number }> = {
-    Brebes: { lat: -6.871, lng: 109.042 },
-    Garut: { lat: -7.227, lng: 107.908 },
-    Malang: { lat: -7.982, lng: 112.63 },
-    Cianjur: { lat: -6.822, lng: 107.138 },
-    Lampung: { lat: -5.402, lng: 105.263 },
+    Brebes:   { lat: -6.871,  lng: 109.042 },
+    Garut:    { lat: -7.227,  lng: 107.908 },
+    Malang:   { lat: -7.982,  lng: 112.63  },
+    Cianjur:  { lat: -6.822,  lng: 107.138 },
+    Lampung:  { lat: -5.402,  lng: 105.263 },
+    Cirebon:  { lat: -6.705,  lng: 108.557 },
+    Bandung:  { lat: -6.921,  lng: 107.607 },
+    Semarang: { lat: -6.966,  lng: 110.416 },
+    Surabaya: { lat: -7.250,  lng: 112.768 },
+    Yogyakarta:{ lat: -7.797, lng: 110.370 },
   };
-  const depot = depotCoords[activeUser.KOLEKTOR.region] || {
-    lat: -6.871,
-    lng: 109.042,
-  };
+  const activeRegion = regionFilter === "SEMUA"
+    ? activeUser.KOLEKTOR.region
+    : regionFilter;
+  const depot = depotCoords[activeRegion] ?? { lat: -6.871, lng: 109.042 };
 
   // Compute route recommendation
   const optimizedRoutes = useMemo(() => {
@@ -91,7 +107,18 @@ export default function KolektorView() {
             | Rute bersifat rekomendasi
           </p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center flex-wrap">
+          {/* Filter region */}
+          <select
+            value={regionFilter}
+            onChange={(e) => setRegionFilter(e.target.value)}
+            className="bg-white/20 text-white border border-white/30 rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none cursor-pointer"
+          >
+            <option value="SEMUA" className="text-black">Semua Wilayah</option>
+            {availableRegions.map((r) => (
+              <option key={r} value={r} className="text-black">{r}</option>
+            ))}
+          </select>
           <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/10">
             <p className="text-[10px] text-amber-100 uppercase tracking-wider font-semibold">
               Siap Jemput
@@ -329,9 +356,9 @@ export default function KolektorView() {
             Tidak Ada Batch Siap Jemput
           </h4>
           <p className="text-xs text-nat-sage leading-relaxed">
-            Belum ada batch panen yang siap dijemput di wilayah{" "}
-            {activeUser.KOLEKTOR.region}. Petani harus menandai panen selesai
-            terlebih dahulu.
+            Belum ada batch panen yang siap dijemput
+            {regionFilter !== "SEMUA" ? ` di wilayah ${regionFilter}` : " di semua wilayah"}.
+            Petani harus menandai panen selesai terlebih dahulu.
           </p>
         </div>
       )}
