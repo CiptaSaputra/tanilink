@@ -59,6 +59,12 @@ export default function InteractiveMap({
     onSelectCoordsRef.current = onSelectCoords;
   }, [onSelectCoords]);
 
+  // Ref untuk harvests — dipakai di click handler snap logic
+  const harvestsRef = useRef(filteredHarvests);
+  useEffect(() => {
+    harvestsRef.current = filteredHarvests;
+  }, [filteredHarvests]);
+
   // Approximate region based on coordinates (flexible distance-based fallback)
   const getRegionFromLatLng = (lat: number, lng: number): string => {
     const knownCenters = [
@@ -171,21 +177,42 @@ export default function InteractiveMap({
       const roundedLat = Math.round(lat * 1000) / 1000;
       const roundedLng = Math.round(lng * 1000) / 1000;
 
-      // Automatically zoom in closer to see surroundings
-      map.flyTo([roundedLat, roundedLng], 12, { animate: true, duration: 1 });
+      // ── SNAP ke lahan terdekat bila dalam radius 0.05 derajat (~5km) ──
+      const SNAP_RADIUS = 0.05;
+      const currentHarvests = harvestsRef.current ?? [];
+      let snapTarget: { lat: number; lng: number; region: string } | null = null;
+      let minDist = SNAP_RADIUS;
 
-      // Show immediate loading indicator in forms
-      onSelectCoordsRef.current(roundedLat, roundedLng, "Mencari Wilayah...");
+      for (const h of currentHarvests) {
+        if (!h.latitude || !h.longitude) continue;
+        const dist = Math.sqrt(
+          Math.pow(lat - h.latitude, 2) + Math.pow(lng - h.longitude, 2)
+        );
+        if (dist < minDist) {
+          minDist = dist;
+          snapTarget = { lat: h.latitude, lng: h.longitude, region: h.region };
+        }
+      }
+
+      const finalLat = snapTarget ? Math.round(snapTarget.lat * 1000) / 1000 : roundedLat;
+      const finalLng = snapTarget ? Math.round(snapTarget.lng * 1000) / 1000 : roundedLng;
+      const finalRegion = snapTarget ? snapTarget.region : "Mencari Wilayah...";
+
+      // Automatically zoom in closer to see surroundings
+      map.flyTo([finalLat, finalLng], 12, { animate: true, duration: 1 });
+
+      // Show immediate loading indicator in forms (atau region langsung jika snap)
+      onSelectCoordsRef.current(finalLat, finalLng, finalRegion);
 
       setSelectedPoint({
         type: "HARVEST",
         data: {
           id: "new-pin",
-          farmerName: "Lokasi Pilihan Anda",
+          farmerName: snapTarget ? "📍 Snap ke Lahan Terdekat" : "Lokasi Pilihan Anda",
           commodity: "Cabai Merah",
-          latitude: roundedLat,
-          longitude: roundedLng,
-          region: "Mencari Wilayah...",
+          latitude: finalLat,
+          longitude: finalLng,
+          region: finalRegion,
           expectedVolume: 0,
           askingPrice: 0,
           status: "ACTIVE",
@@ -194,11 +221,14 @@ export default function InteractiveMap({
         },
       });
 
+      // Kalau sudah snap ke lahan, tidak perlu fetch Nominatim
+      if (snapTarget) return;
+
       // Fetch dynamic region from Nominatim API
       let region = "Lokasi Kustom";
       try {
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${roundedLat}&lon=${roundedLng}&zoom=10`,
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${finalLat}&lon=${finalLng}&zoom=10`,
           {
             headers: {
               "Accept-Language": "id,en",
@@ -223,16 +253,16 @@ export default function InteractiveMap({
               )
               .trim();
           } else {
-            region = getRegionFromLatLng(roundedLat, roundedLng);
+            region = getRegionFromLatLng(finalLat, finalLng);
           }
         } else {
-          region = getRegionFromLatLng(roundedLat, roundedLng);
+          region = getRegionFromLatLng(finalLat, finalLng);
         }
       } catch (err) {
-        region = getRegionFromLatLng(roundedLat, roundedLng);
+        region = getRegionFromLatLng(finalLat, finalLng);
       }
 
-      onSelectCoordsRef.current(roundedLat, roundedLng, region);
+      onSelectCoordsRef.current(finalLat, finalLng, region);
 
       setSelectedPoint({
         type: "HARVEST",
@@ -240,8 +270,8 @@ export default function InteractiveMap({
           id: "new-pin",
           farmerName: "Lokasi Pilihan Anda",
           commodity: "Cabai Merah",
-          latitude: roundedLat,
-          longitude: roundedLng,
+          latitude: finalLat,
+          longitude: finalLng,
           region,
           expectedVolume: 0,
           askingPrice: 0,
