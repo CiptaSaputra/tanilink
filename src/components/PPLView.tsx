@@ -42,16 +42,22 @@ export default function PPLView() {
   );
 
   const availableRegions = useMemo(() => {
-    const r = [...new Set([...harvests.map((h) => h.region), ...harvestBatches.map((b) => b.region)])].sort();
+    const r = [
+      ...new Set([
+        activeUser.PPL.region, // selalu masukkan region PPL sebagai default
+        ...harvests.map((h) => h.region),
+        ...harvestBatches.map((b) => b.region),
+      ]),
+    ].filter(Boolean).sort();
     return r;
-  }, [harvests, harvestBatches]);
+  }, [harvests, harvestBatches, activeUser.PPL.region]);
 
-  // Data agregat wilayah binaan
+  // Data agregat wilayah binaan — tampilkan semua harvest di wilayah tersebut
   const regionalHarvests = useMemo(() => {
     return harvests.filter(
       (h) =>
         h.region.toLowerCase() === regionFilter.toLowerCase() &&
-        h.isPublished === true,
+        h.status !== "EXPIRED",
     );
   }, [harvests, regionFilter]);
 
