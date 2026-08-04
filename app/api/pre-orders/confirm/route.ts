@@ -17,8 +17,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }
 
-    if (match.status === "CONFIRMED") {
-      return NextResponse.json({ error: "Match already confirmed" }, { status: 400 });
+    if (match.status === "FINALIZED") {
+      return NextResponse.json({ error: "Match already finalized" }, { status: 400 });
     }
 
     // 2. Fetch Harvest and Demand
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     await db.transaction(async (tx) => {
       await tx.update(harvests).set({ status: "MATCHED" }).where(eq(harvests.id, harvest.id));
       await tx.update(demands).set({ status: "FULFILLED" }).where(eq(demands.id, demand.id));
-      await tx.update(matches).set({ status: "CONFIRMED" }).where(eq(matches.id, match.id));
+      await tx.update(matches).set({ status: "FINALIZED" }).where(eq(matches.id, match.id));
 
       await tx.insert(preOrders).values({
         id: preOrderId,
