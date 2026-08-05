@@ -62,16 +62,43 @@ export default function KolektorView() {
 
   // Default depot coordinates per region
   const depotCoords: Record<string, { lat: number; lng: number }> = {
-    Brebes:   { lat: -6.871,  lng: 109.042 },
-    Garut:    { lat: -7.227,  lng: 107.908 },
-    Malang:   { lat: -7.982,  lng: 112.63  },
-    Cianjur:  { lat: -6.822,  lng: 107.138 },
-    Lampung:  { lat: -5.402,  lng: 105.263 },
-    Cirebon:  { lat: -6.705,  lng: 108.557 },
-    Bandung:  { lat: -6.921,  lng: 107.607 },
-    Semarang: { lat: -6.966,  lng: 110.416 },
-    Surabaya: { lat: -7.250,  lng: 112.768 },
-    Yogyakarta:{ lat: -7.797, lng: 110.370 },
+    // Jawa Tengah
+    Brebes:       { lat: -6.871,  lng: 109.042 },
+    Tegal:        { lat: -6.879,  lng: 109.125 },
+    Semarang:     { lat: -6.993,  lng: 110.420 },
+    Solo:         { lat: -7.575,  lng: 110.825 },
+    Purwokerto:   { lat: -7.424,  lng: 109.230 },
+    Wonosobo:     { lat: -7.361,  lng: 109.905 },
+    Magelang:     { lat: -7.470,  lng: 110.218 },
+    Temanggung:   { lat: -7.317,  lng: 110.166 },
+    // Jawa Barat
+    Garut:        { lat: -7.227,  lng: 107.908 },
+    Cianjur:      { lat: -6.822,  lng: 107.138 },
+    Bandung:      { lat: -6.917,  lng: 107.619 },
+    Bogor:        { lat: -6.595,  lng: 106.816 },
+    Cirebon:      { lat: -6.705,  lng: 108.557 },
+    Tasikmalaya:  { lat: -7.327,  lng: 108.221 },
+    // Jawa Timur
+    Malang:       { lat: -7.982,  lng: 112.630 },
+    Surabaya:     { lat: -7.250,  lng: 112.768 },
+    Batu:         { lat: -7.869,  lng: 112.524 },
+    Pasuruan:     { lat: -7.645,  lng: 112.907 },
+    Kediri:       { lat: -7.816,  lng: 112.011 },
+    // DI Yogyakarta
+    Yogyakarta:   { lat: -7.795,  lng: 110.369 },
+    Sleman:       { lat: -7.717,  lng: 110.355 },
+    Bantul:       { lat: -7.889,  lng: 110.328 },
+    // Sumatera
+    Lampung:      { lat: -5.402,  lng: 105.263 },
+    Medan:        { lat: -3.595,  lng: 98.672  },
+    Padang:       { lat: -0.950,  lng: 100.354 },
+    // Kalimantan
+    Pontianak:    { lat: -0.026,  lng: 109.342 },
+    Banjarmasin:  { lat: -3.318,  lng: 114.591 },
+    Samarinda:    { lat: -0.502,  lng: 117.153 },
+    // Sulawesi & Bali
+    Makassar:     { lat: -5.147,  lng: 119.432 },
+    Denpasar:     { lat: -8.670,  lng: 115.212 },
   };
   const activeRegion = regionFilter === "SEMUA"
     ? activeUser.KOLEKTOR.region

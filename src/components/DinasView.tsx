@@ -105,11 +105,62 @@ export default function DinasView() {
   // Dynamic depot coordinates registry computed from default values and registered harvests
   const DEPOT_COORDINATES = useMemo(() => {
     const registry: Record<string, { lat: number; lng: number }> = {
-      Brebes: { lat: -6.871, lng: 109.042 },
-      Garut: { lat: -7.227, lng: 107.908 },
-      Malang: { lat: -7.982, lng: 112.63 },
-      Cianjur: { lat: -6.822, lng: 107.138 },
-      Lampung: { lat: -5.402, lng: 105.263 },
+      // Jawa Tengah
+      Brebes:       { lat: -6.871,  lng: 109.042 },
+      Tegal:        { lat: -6.879,  lng: 109.125 },
+      Pekalongan:   { lat: -6.888,  lng: 109.675 },
+      Semarang:     { lat: -6.993,  lng: 110.420 },
+      Solo:         { lat: -7.575,  lng: 110.825 },
+      Purwokerto:   { lat: -7.424,  lng: 109.230 },
+      Wonosobo:     { lat: -7.361,  lng: 109.905 },
+      Magelang:     { lat: -7.470,  lng: 110.218 },
+      Temanggung:   { lat: -7.317,  lng: 110.166 },
+      Banjarnegara: { lat: -7.393,  lng: 109.693 },
+      // Jawa Barat
+      Garut:        { lat: -7.227,  lng: 107.908 },
+      Cianjur:      { lat: -6.822,  lng: 107.138 },
+      Bandung:      { lat: -6.917,  lng: 107.619 },
+      Bogor:        { lat: -6.595,  lng: 106.816 },
+      Sukabumi:     { lat: -6.921,  lng: 106.930 },
+      Cirebon:      { lat: -6.705,  lng: 108.557 },
+      Tasikmalaya:  { lat: -7.327,  lng: 108.221 },
+      Kuningan:     { lat: -6.977,  lng: 108.476 },
+      Indramayu:    { lat: -6.328,  lng: 108.325 },
+      // Jawa Timur
+      Malang:       { lat: -7.982,  lng: 112.630 },
+      Surabaya:     { lat: -7.250,  lng: 112.768 },
+      Batu:         { lat: -7.869,  lng: 112.524 },
+      Pasuruan:     { lat: -7.645,  lng: 112.907 },
+      Probolinggo:  { lat: -7.754,  lng: 113.216 },
+      Jember:       { lat: -8.172,  lng: 113.702 },
+      Blitar:       { lat: -8.098,  lng: 112.161 },
+      Kediri:       { lat: -7.816,  lng: 112.011 },
+      Nganjuk:      { lat: -7.603,  lng: 111.893 },
+      // DI Yogyakarta
+      Yogyakarta:   { lat: -7.795,  lng: 110.369 },
+      Sleman:       { lat: -7.717,  lng: 110.355 },
+      Bantul:       { lat: -7.889,  lng: 110.328 },
+      Kulonprogo:   { lat: -7.815,  lng: 110.157 },
+      Gunungkidul:  { lat: -7.969,  lng: 110.615 },
+      // Sumatera
+      Lampung:      { lat: -5.402,  lng: 105.263 },
+      Palembang:    { lat: -2.990,  lng: 104.756 },
+      Medan:        { lat: -3.595,  lng: 98.672  },
+      Padang:       { lat: -0.950,  lng: 100.354 },
+      Bengkulu:     { lat: -3.800,  lng: 102.266 },
+      Jambi:        { lat: -1.610,  lng: 103.614 },
+      // Kalimantan
+      Pontianak:    { lat: -0.026,  lng: 109.342 },
+      Banjarmasin:  { lat: -3.318,  lng: 114.591 },
+      Samarinda:    { lat: -0.502,  lng: 117.153 },
+      Balikpapan:   { lat: -1.268,  lng: 116.831 },
+      // Sulawesi
+      Makassar:     { lat: -5.147,  lng: 119.432 },
+      Manado:       { lat:  1.474,  lng: 124.842 },
+      Palu:         { lat: -0.896,  lng: 119.872 },
+      // Bali & Nusa Tenggara
+      Denpasar:     { lat: -8.670,  lng: 115.212 },
+      Mataram:      { lat: -8.583,  lng: 116.118 },
     };
 
     harvests.forEach((h) => {
