@@ -147,10 +147,21 @@ DATABASE_URL="postgresql://..." npx tsx src/db/seed.ts
 ```
 
 ### Setup Railway (ML Server)
-1. New Project → Deploy from GitHub → pilih repo
+1. New Project → Deploy from GitHub → pilih repo (fork)
 2. Root Directory: `ml-tumbu-main`
-3. Variables: tambah `GEMINI_API_KEY`
+3. Variables yang perlu diisi:
+
+| Key | Value |
+|---|---|
+| `GEMINI_API_KEY` | *(key Gemini)* |
+| `OPENROUTER_API_KEY` | *(key OpenRouter — fallback vision)* |
+| `VISION_PROVIDER` | `auto` atau `openrouter` |
+| `OPENROUTER_MODEL` | `google/gemma-4-26b-a4b-it:free` |
+| `DISABLE_LOCAL_ML` | `true` |
+
 4. Generate Domain (port 8080) → dapat URL ML server
+
+> **Priority chain:** Gemini API → OpenRouter Vision → Color-based analysis (fallback demo)
 
 ### Setup Vercel
 1. Import repo dari GitHub

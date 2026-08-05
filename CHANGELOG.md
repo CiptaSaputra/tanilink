@@ -4,7 +4,24 @@ Semua perubahan signifikan dicatat di sini secara kronologis.
 
 ---
 
-## [v1.6.0] — 2026-08-05 · UX Polish & Provider Fallback
+## [v1.6.1] — 2026-08-05 · OpenRouter Vision Aktif
+
+### ✅ Fix
+- **OpenRouter vision berhasil**: model `google/gemma-4-26b-a4b-it:free` + fallback `nvidia/nemotron-nano-12b-v2-vl:free`
+- **VISION_PROVIDER=openrouter**: bypass Gemini yang quota habis, langsung ke OpenRouter
+- Disease detection di production (Railway) sudah berfungsi penuh
+
+### 🔧 Railway Variables yang perlu diset
+```
+OPENROUTER_API_KEY = sk-or-v1-...
+VISION_PROVIDER    = openrouter
+OPENROUTER_MODEL   = google/gemma-4-26b-a4b-it:free
+DISABLE_LOCAL_ML   = true
+```
+
+---
+
+
 
 ### ✨ Fitur Baru
 - **Konfirmasi Logout**: muncul dialog "Yakin ingin keluar?" sebelum logout
