@@ -108,17 +108,25 @@ export default function LoginPage({ onNavigateToRegister }: LoginPageProps) {
       >
         {/* Header */}
         <div className="text-center mb-8">
-          <img
-            src="/logo.png"
-            alt="Logo TaniLink"
-            className="w-28 h-20 object-contain mx-auto mb-4 drop-shadow-sm"
-          />
+          <a href="/" className="inline-block">
+            <img
+              src="/logo.png"
+              alt="Logo TaniLink"
+              className="w-28 h-20 object-contain mx-auto mb-4 drop-shadow-sm hover:opacity-80 transition-opacity"
+            />
+          </a>
           <h1 className="text-2xl font-bold text-nat-dark">
             Masuk ke TaniLink
           </h1>
           <p className="text-sm text-nat-sage mt-1">
             Platform Sinergi Hulu-Hilir Pertanian
           </p>
+          <a
+            href="/"
+            className="inline-flex items-center gap-1.5 mt-3 text-xs text-nat-green hover:text-nat-green-hover font-semibold transition-colors"
+          >
+            ← Kembali ke Beranda
+          </a>
         </div>
 
         {/* Card */}

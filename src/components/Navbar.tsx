@@ -380,7 +380,11 @@ export default function Navbar() {
 
                 {/* Logout */}
                 <button
-                  onClick={logout}
+                  onClick={() => {
+                    if (window.confirm("Yakin ingin keluar dari akun TaniLink?")) {
+                      logout();
+                    }
+                  }}
                   className="flex items-center space-x-1.5 px-3 py-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200 cursor-pointer"
                   title="Keluar dari akun"
                 >

@@ -484,7 +484,7 @@ export default function LandingPage() {
               <img
                 src="/logo.png"
                 alt="TaniLink"
-                className="w-9 h-9 object-contain rounded-lg"
+                className="w-9 h-9 object-contain rounded-lg brightness-0 invert"
               />
               <span className="font-instrument-serif font-bold text-2xl text-white tracking-tight">
                 TaniLink

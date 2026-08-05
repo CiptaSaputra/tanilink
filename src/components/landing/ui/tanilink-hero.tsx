@@ -92,7 +92,7 @@ export function TanilinkHero() {
               <img
                 src="/logo.png"
                 alt="TaniLink"
-                className="w-8 h-8 object-contain rounded-md"
+                className="w-8 h-8 object-contain rounded-md brightness-0 invert"
               />
               TaniLink
             </span>
@@ -175,7 +175,7 @@ export function TanilinkHero() {
               <img
                 src="/logo.png"
                 alt="TaniLink"
-                className="w-7 h-7 md:w-8 md:h-8 object-contain rounded-md"
+                className="w-7 h-7 md:w-8 md:h-8 object-contain rounded-md brightness-0 invert"
               />
               TaniLink
             </Link>
