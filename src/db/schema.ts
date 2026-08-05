@@ -16,6 +16,7 @@ export const users = pgTable("users", {
   passwordHash: varchar("password_hash").notNull(),
   role: varchar("role").notNull(),
   region: varchar("region").notNull(),
+  phone: varchar("phone"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

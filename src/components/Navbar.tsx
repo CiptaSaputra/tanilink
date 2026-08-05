@@ -52,6 +52,7 @@ import {
 } from "lucide-react";
 import { Role } from "../types";
 import { QAInput } from "./modals/QAInput";
+import { ProfileModal } from "./modals/ProfileModal";
 
 // ─── Section Navigation per role ────────────────────────────────────────────────
 // Dirender di dalam Navbar (yang sudah sticky top-0 z-50) agar selalu tampil
@@ -116,6 +117,7 @@ export default function Navbar() {
     useNotifications();
   const [showNotif, setShowNotif] = useState(false);
   const [showQA, setShowQA] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
   // Tutup dropdown saat klik di luar
@@ -351,7 +353,7 @@ export default function Navbar() {
             {/* Divider */}
             <div className="h-6 w-px bg-nat-border" />
 
-            {/* User info */}
+            {/* User info + Profile button */}
             {currentUser && (
               <div className="flex items-center space-x-2.5">
                 <div className="flex items-center space-x-2 text-right">
@@ -366,9 +368,14 @@ export default function Navbar() {
                       </p>
                     </div>
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-nat-light-cream border border-nat-border flex items-center justify-center">
-                    <UserCircle className="w-5 h-5 text-nat-sage" />
-                  </div>
+                  {/* Avatar — klik untuk buka profile */}
+                  <button
+                    onClick={() => setShowProfile(true)}
+                    className="w-8 h-8 rounded-full bg-nat-green flex items-center justify-center text-white font-bold text-sm hover:bg-nat-green-hover transition-colors cursor-pointer border-2 border-white shadow-sm"
+                    title="Edit Profil"
+                  >
+                    {currentUser.name?.[0]?.toUpperCase() ?? "?"}
+                  </button>
                 </div>
 
                 {/* Role badge */}
@@ -483,6 +490,9 @@ export default function Navbar() {
 
     {/* AI Q&A Modal — tersedia untuk semua role */}
     {showQA && <QAInput onClose={() => setShowQA(false)} />}
+
+    {/* Profile Modal */}
+    {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
   </>
   );
 }

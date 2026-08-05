@@ -105,6 +105,22 @@ export default function BuyerView({
   const [paymentPO, setPaymentPO] = useState<PreOrder | null>(null);
   const [chatPO, setChatPO] = useState<PreOrder | null>(null);
 
+  // Cache phone number petani — di-fetch saat PO list render
+  const [userPhones, setUserPhones] = useState<Record<string, string>>({});
+
+  const fetchPhone = async (userId: string) => {
+    if (!userId || userPhones[userId]) return;
+    try {
+      const res = await fetch(`/api/auth/users/${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.phone) {
+          setUserPhones(prev => ({ ...prev, [userId]: data.phone }));
+        }
+      }
+    } catch { /* ignore */ }
+  };
+
   // Logistics state
   const [selectedLogistics, setSelectedLogistics] = useState<string[]>([]);
   const [showRoute, setShowRoute] = useState(false);
@@ -1151,7 +1167,9 @@ export default function BuyerView({
                             <a
                               href={(() => {
                                 const harvest = harvests.find(h => h.id === po.harvestId);
-                                const farmerPhone = (harvest as any)?.farmerPhone ||
+                                // Fetch phone petani jika belum ada di cache
+                                if (harvest?.farmerId) fetchPhone(harvest.farmerId);
+                                const farmerPhone = userPhones[harvest?.farmerId ?? ""] ||
                                   activeUser.PETANI?.phone ||
                                   "62";
                                 const msg = `Halo Petani ${encodeURIComponent(po.farmerName)}, saya dari Koperasi. Terkait Pre-Order ${po.commodity} seberat ${po.agreedVolumeKg}Kg dengan harga Rp${po.agreedPricePerKg.toLocaleString('id-ID')}/Kg.`;

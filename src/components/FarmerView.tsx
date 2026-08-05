@@ -105,6 +105,19 @@ export default function FarmerView({
   // Chat modal state
   const [chatPO, setChatPO] = useState<PreOrder | null>(null);
 
+  // Cache phone pembeli — di-fetch saat PO list render
+  const [userPhones, setUserPhones] = useState<Record<string, string>>({});
+  const fetchPhone = async (userId: string) => {
+    if (!userId || userPhones[userId]) return;
+    try {
+      const res = await fetch(`/api/auth/users/${userId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.phone) setUserPhones(prev => ({ ...prev, [userId]: data.phone }));
+      }
+    } catch { /* ignore */ }
+  };
+
   // Route map modal
   const [routeMapPO, setRouteMapPO] = useState<PreOrder | null>(null);
 
@@ -1201,7 +1214,10 @@ export default function FarmerView({
                           <div className="flex items-center gap-2 flex-wrap">
                              <a
                               href={(() => {
-                                const buyerPhone = activeUser.PEMBELI?.phone || "62";
+                                // Cari nomor WA pembeli dari demand + cache
+                                const linkedDemand = demands.find(d => d.id === po.demandId);
+                                if (linkedDemand?.buyerId) fetchPhone(linkedDemand.buyerId);
+                                const buyerPhone = userPhones[linkedDemand?.buyerId ?? ""] || "62";
                                 const msg = `Halo Koperasi ${encodeURIComponent(po.buyerName)}, saya petani ${po.farmerName}. Terkait PO ${po.commodity} seberat ${po.agreedVolumeKg}Kg dengan harga Rp${po.agreedPricePerKg.toLocaleString('id-ID')}/Kg.`;
                                 return `https://wa.me/${buyerPhone}?text=${encodeURIComponent(msg)}`;
                               })()}
