@@ -10,10 +10,11 @@ import { eq, asc } from "drizzle-orm";
  */
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? "";
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY ?? "";
+const OPENROUTER_QNA_MODEL = process.env.OPENROUTER_QNA_MODEL ?? "meta-llama/llama-3.3-70b-instruct:free";
 
 async function askGemini(prompt: string): Promise<string | null> {
   if (!GEMINI_API_KEY) return null;
-  // Models to try in order
   const models = ["gemini-2.0-flash", "gemini-flash-latest", "gemini-2.5-flash"];
   for (const model of models) {
     try {
@@ -29,17 +30,43 @@ async function askGemini(prompt: string): Promise<string | null> {
           signal: AbortSignal.timeout(15000),
         }
       );
-      if (res.status === 429 || res.status === 503) continue; // quota/overload, try next
-      if (res.status === 404) continue; // model not found, try next
+      if (res.status === 429 || res.status === 503 || res.status === 404) continue;
       if (!res.ok) return null;
       const data = await res.json();
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (text) return text;
-    } catch {
-      continue;
-    }
+    } catch { continue; }
   }
   return null;
+}
+
+async function askOpenRouter(systemPrompt: string, userQuestion: string): Promise<string | null> {
+  if (!OPENROUTER_API_KEY) return null;
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+        "HTTP-Referer": "https://tanilink.vercel.app",
+        "X-Title": "TaniLink",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: OPENROUTER_QNA_MODEL,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userQuestion },
+        ],
+        max_tokens: 512,
+        temperature: 0.3,
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.error) return null;
+    return data?.choices?.[0]?.message?.content ?? null;
+  } catch { return null; }
 }
 
 export async function POST(req: NextRequest) {
@@ -99,9 +126,8 @@ export async function POST(req: NextRequest) {
       .map(([c, p]) => `${c}: Rp${p.toLocaleString("id-ID")}/kg`)
       .join(", ");
 
-    // ── Coba Gemini dulu ──
-    if (GEMINI_API_KEY) {
-      const systemContext = `Kamu adalah asisten AI platform pertanian TaniLink yang membantu menjawab pertanyaan publik tentang data pangan Indonesia.
+    // ── System context untuk AI (shared Gemini & OpenRouter) ──
+    const systemContext = `Kamu adalah asisten AI platform pertanian TaniLink. Tugasmu HANYA menjawab pertanyaan tentang data pangan dari platform TaniLink.
 
 DATA REAL TANILINK SAAT INI:
 - Total transaksi PO: ${allPO.length} (selesai: ${completedPOs.length})
@@ -112,18 +138,27 @@ DATA REAL TANILINK SAAT INI:
 - Status wilayah: ${regionRows || "belum ada data wilayah"}
 - Harga pasar terkini: ${priceStr || "belum ada data harga"}
 
-INSTRUKSI:
-- Jawab dalam Bahasa Indonesia yang ramah dan profesional
-- Gunakan data di atas sebagai referensi utama
-- Jika pertanyaan di luar konteks pangan/pertanian, arahkan kembali ke topik TaniLink
-- Maksimal 3 paragraf, langsung ke inti jawaban
-- Jika data belum tersedia, katakan secara jujur
+ATURAN WAJIB:
+1. Jawab HANYA dalam Bahasa Indonesia yang ramah dan profesional
+2. Gunakan data di atas sebagai referensi UTAMA — jangan karang data
+3. Jika pertanyaan di luar topik pangan/pertanian TaniLink, arahkan kembali
+4. Maksimal 3 paragraf singkat, langsung ke inti jawaban
+5. Jika data belum tersedia, katakan secara jujur`;
 
-PERTANYAAN PENGGUNA: ${q}`;
-
-      const geminiAnswer = await askGemini(systemContext);
+    // ── Coba Gemini dulu ──
+    if (GEMINI_API_KEY) {
+      const fullPrompt = `${systemContext}\n\nPERTANYAAN PENGGUNA: ${q}`;
+      const geminiAnswer = await askGemini(fullPrompt);
       if (geminiAnswer) {
         return NextResponse.json({ answer: geminiAnswer, source: "gemini" });
+      }
+    }
+
+    // ── Fallback ke OpenRouter ──
+    if (OPENROUTER_API_KEY) {
+      const orAnswer = await askOpenRouter(systemContext, q);
+      if (orAnswer) {
+        return NextResponse.json({ answer: orAnswer, source: "openrouter" });
       }
     }
 
