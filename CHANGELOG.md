@@ -4,7 +4,30 @@ Semua perubahan signifikan dicatat di sini secara kronologis.
 
 ---
 
-## [v1.5.0] — 2026-08-05 · Deployment & Polish Final
+## [v1.6.0] — 2026-08-05 · UX Polish & Provider Fallback
+
+### ✨ Fitur Baru
+- **Konfirmasi Logout**: muncul dialog "Yakin ingin keluar?" sebelum logout
+- **Tombol Back di Login/Register**: link "← Kembali ke Beranda" + logo bisa diklik ke landing
+- **OpenRouter support**: tambah `_ask_openrouter()` di ML server sebagai fallback vision setelah Gemini
+- **Color-based diagnosis fallback**: saat semua API quota habis, analisis warna gambar memberikan hasil realistis untuk demo
+- **Deskripsi Aplikasi lengkap**: `docs/DESKRIPSI-APLIKASI.md` — fitur lengkap, arsitektur, cara kerja, deployment
+
+### 🐛 Bug Fix
+- **Logo landing page tidak terlihat**: besarkan ukuran logo (w-12~w-14), hapus brightness-0 invert
+- **QR scan buka HarvestTraceModal in-app**: tidak lagi redirect ke tab baru (yang sering diblokir popup blocker)
+- **Disease detection wake up Railway**: health check langsung hit Railway di production untuk wake up dari sleep
+- **ML server 503**: tambah `_color_based_diagnosis` fallback — tidak lagi return 503 saat Gemini quota habis
+- **Gemini model 404**: ganti `gemini-1.5-flash` → `gemini-2.0-flash` (model yang tersedia di key ini)
+
+### 🔧 Improvement  
+- **Priority chain ML**: Gemini → OpenRouter (llama-3.2-vision) → color_based_diagnosis
+- **Logo lebih besar**: navbar hero w-12, mobile menu w-14, footer w-14
+- **Payment nominal otomatis**: prefill dari `agreedVolumeKg × agreedPricePerKg`
+
+---
+
+
 
 ### ✨ Fitur Baru
 - **Logo no-background**: ganti semua logo dari `logo.jpeg` → `logo.png` (transparan) di seluruh komponen (Navbar, Landing, Login, Register, PublicDashboard, Favicon)
