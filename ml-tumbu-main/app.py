@@ -31,9 +31,41 @@ MODEL_PATH = os.environ.get("MODEL_PATH", "plant-disease-model-complete.pth")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+# auto | gemini | openrouter — set "openrouter" untuk tes lokal tanpa Gemini
+VISION_PROVIDER = os.environ.get("VISION_PROVIDER", "auto").strip().lower()
+# true = jangan muat ResNet9 lokal (.pth)
+DISABLE_LOCAL_ML = os.environ.get("DISABLE_LOCAL_ML", "true").strip().lower() in ("1", "true", "yes")
+# Primary free vision model + fallback (llama-3.2-11b-vision:free sudah di-delist OpenRouter)
+OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "google/gemma-4-26b-a4b-it:free")
+OPENROUTER_FALLBACK_MODELS = [
+    m for m in [
+        OPENROUTER_MODEL,
+        "nvidia/nemotron-nano-12b-v2-vl:free",
+    ] if m
+]
+# Deduplicate while preserving order
+_seen = set()
+OPENROUTER_FALLBACK_MODELS = [
+    m for m in OPENROUTER_FALLBACK_MODELS
+    if not (m in _seen or _seen.add(m))
+]
 IMAGE_SIZE = 256
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_FILE_SIZE_MB = 10
+
+# Prompt vision bersama — kualitas respons setara Gemini untuk OpenRouter
+VISION_ANALYSIS_PROMPT = """Kamu adalah ahli patologi tanaman. Analisis gambar ini dan berikan diagnosis lengkap.
+
+Balas HANYA dengan format JSON murni yang valid (tanpa markdown, tanpa ```json):
+{
+  "is_plant": true,
+  "disease": "Nama penyakit lengkap dalam Bahasa Indonesia, sertakan nama umum Inggris dalam kurung jika ada (contoh: 'Bercak Kering Alternaria (Hawar Dini) pada Tomat'), atau 'Sehat / Tidak Ada Penyakit'",
+  "confidence": 0.93,
+  "detailed_analysis": "Tulis analisis MENDALAM dalam Bahasa Indonesia dengan format persis seperti ini (pakai heading KAPITAL dan penomoran):\n\nDIAGNOSIS DAN NAMA ILMIAH:\n[paragraf diagnosis + nama ilmiah patogen]\n\nGEJALA YANG TERLIHAT PADA FOTO:\n1. [gejala visual spesifik dari foto]\n2. [gejala berikutnya]\n\nPENYEBAB:\n[penyebab singkat]\n\nPENGENDALIAN:\n1. Tindakan segera: ...\n2. Kimia (bahan aktif): ...\n3. Organik: ...\n4. Pencegahan jangka panjang: ..."
+}
+
+Jika bukan foto tanaman/daun, set is_plant: false, disease: "Bukan tanaman", detailed_analysis: "".
+"""
 
 # ── PyTorch & model — opsional, hanya dimuat jika file .pth tersedia ──
 _torch = None
@@ -49,47 +81,49 @@ _MODEL_AVAILABLE = False  # akan di-set True jika .pth berhasil dimuat
 
 def load_model():
     """
-    Muat PyTorch model jika file .pth tersedia.
-    Jika tidak ada, server tetap berjalan dalam GEMINI-ONLY mode.
+    Muat PyTorch model jika file .pth tersedia dan DISABLE_LOCAL_ML=false.
+    Default: ResNet9 dimatikan — pakai Gemini / OpenRouter / color.
     """
     global _torch, _model, _transform, _device, _MODEL_AVAILABLE
 
-    if not os.path.exists(MODEL_PATH):
-        if GEMINI_API_KEY:
-            print(f"[app] File model '{MODEL_PATH}' tidak ditemukan.")
-            print("[app] Berjalan dalam GEMINI-ONLY mode — Gemini API akan menangani semua request.")
-        else:
-            print(f"[app] PERINGATAN: File model '{MODEL_PATH}' tidak ditemukan DAN GEMINI_API_KEY kosong.")
-            print("[app] Server berjalan tapi tidak bisa memproses gambar. Isi GEMINI_API_KEY di .env")
-        return
-
-    try:
-        import torch
-        import torch.nn.functional as F
-        from torchvision import transforms
-        from model import ResNet9
-
-        _torch = torch
-        _device = "cuda" if torch.cuda.is_available() else "cpu"
-        _transform = transforms.Compose([
-            transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
-            transforms.ToTensor(),
-        ])
-
-        import __main__
-        __main__.ResNet9 = ResNet9
-        _model = torch.load(MODEL_PATH, map_location=_device, weights_only=False)
-        _model.eval()
-        _MODEL_AVAILABLE = True
-        print(f"[app] Model ResNet9 dimuat dari '{MODEL_PATH}' ke device '{_device}'.")
-    except Exception as e:
-        print(f"[app] Gagal memuat model: {e}")
-        print("[app] Fallback ke GEMINI-ONLY mode.")
-
-    if GEMINI_API_KEY:
-        print("[app] Gemini API Key aktif — digunakan sebagai analisis utama.")
+    if DISABLE_LOCAL_ML:
+        print("[app] DISABLE_LOCAL_ML=true — ResNet9 lokal dilewati.")
+        _MODEL_AVAILABLE = False
+    elif not os.path.exists(MODEL_PATH):
+        print(f"[app] File model '{MODEL_PATH}' tidak ditemukan — skip ResNet9.")
+        _MODEL_AVAILABLE = False
     else:
-        print("[app] Gemini API Key tidak ditemukan — hanya model ML lokal yang aktif.")
+        try:
+            import torch
+            from torchvision import transforms
+            from model import ResNet9
+
+            _torch = torch
+            _device = "cuda" if torch.cuda.is_available() else "cpu"
+            _transform = transforms.Compose([
+                transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+                transforms.ToTensor(),
+            ])
+
+            import __main__
+            __main__.ResNet9 = ResNet9
+            _model = torch.load(MODEL_PATH, map_location=_device, weights_only=False)
+            _model.eval()
+            _MODEL_AVAILABLE = True
+            print(f"[app] Model ResNet9 dimuat dari '{MODEL_PATH}' ke device '{_device}'.")
+        except Exception as e:
+            print(f"[app] Gagal memuat model: {e}")
+            _MODEL_AVAILABLE = False
+
+    print(f"[app] VISION_PROVIDER={VISION_PROVIDER}")
+    if GEMINI_API_KEY:
+        print("[app] Gemini API Key aktif.")
+    else:
+        print("[app] Gemini API Key tidak ditemukan.")
+    if OPENROUTER_API_KEY:
+        print(f"[app] OpenRouter aktif — models: {OPENROUTER_FALLBACK_MODELS}")
+    else:
+        print("[app] OpenRouter API Key tidak ditemukan — fallback color bila vision API gagal.")
 
 
 @asynccontextmanager
@@ -113,39 +147,64 @@ app.add_middleware(
 @app.get("/health")
 def health():
     """Endpoint sederhana untuk cek server & model sudah siap."""
+    if VISION_PROVIDER == "openrouter" and OPENROUTER_API_KEY:
+        mode = "openrouter_primary"
+    elif VISION_PROVIDER == "gemini" and GEMINI_API_KEY:
+        mode = "gemini_primary"
+    elif GEMINI_API_KEY:
+        mode = "gemini_primary"
+    elif OPENROUTER_API_KEY:
+        mode = "openrouter_fallback"
+    elif _MODEL_AVAILABLE:
+        mode = "ml_local"
+    else:
+        mode = "color_only"
     return {
         "status": "ok",
         "device": _device,
         "num_classes": len(CLASS_NAMES),
+        "vision_provider": VISION_PROVIDER,
         "gemini_active": bool(GEMINI_API_KEY),
+        "openrouter_active": bool(OPENROUTER_API_KEY),
+        "openrouter_models": OPENROUTER_FALLBACK_MODELS if OPENROUTER_API_KEY else [],
         "model_loaded": _MODEL_AVAILABLE,
-        "mode": "gemini_primary" if GEMINI_API_KEY else ("ml_local" if _MODEL_AVAILABLE else "unavailable"),
+        "disable_local_ml": DISABLE_LOCAL_ML,
+        "mode": mode,
     }
 
 
-def _ask_openrouter(img: Image.Image) -> dict:
-    """Kirim gambar ke OpenRouter (model vision gratis)."""
-    import urllib.request
-    buf = io.BytesIO()
-    img_resized = img.resize((512, 512))
-    img_resized.save(buf, format="JPEG", quality=85)
-    b64 = base64.b64encode(buf.getvalue()).decode()
+def _parse_openrouter_json(text: str) -> dict:
+    """Parse JSON dari respons model (toleran terhadap markdown fence)."""
+    text = text.strip()
+    if text.startswith("```"):
+        parts = text.split("```")
+        text = parts[1] if len(parts) > 1 else text
+        if text.startswith("json"):
+            text = text[4:]
+    text = text.strip()
+    # Ambil objek JSON pertama jika ada teks di sekitarnya
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        text = text[start : end + 1]
+    return json.loads(text)
 
-    prompt = """Kamu adalah ahli patologi tanaman. Analisis gambar daun ini.
-Balas HANYA JSON valid (tanpa markdown):
-{"is_plant":true,"disease":"nama penyakit dalam Bahasa Indonesia","confidence":0.9,"detailed_analysis":"penjelasan + solusi lengkap dalam Bahasa Indonesia"}
-Jika bukan tanaman: {"is_plant":false,"disease":"Bukan tanaman","confidence":0.99,"detailed_analysis":""}"""
+
+def _ask_openrouter_once(img_b64: str, model: str, prompt: str) -> dict:
+    """Satu request OpenRouter ke model tertentu. Raise Exception dengan body HTTP bila gagal."""
+    import urllib.error
+    import urllib.request
 
     payload = json.dumps({
-        "model": "meta-llama/llama-3.2-11b-vision-instruct:free",
+        "model": model,
         "messages": [{
             "role": "user",
             "content": [
-                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
-                {"type": "text", "text": prompt}
-            ]
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{img_b64}"}},
+                {"type": "text", "text": prompt},
+            ],
         }],
-        "max_tokens": 512
+        "max_tokens": 2048,
     }).encode()
 
     req = urllib.request.Request(
@@ -155,22 +214,80 @@ Jika bukan tanaman: {"is_plant":false,"disease":"Bukan tanaman","confidence":0.9
             "Authorization": f"Bearer {OPENROUTER_API_KEY}",
             "HTTP-Referer": "https://tanilink.vercel.app",
             "X-Title": "TaniLink",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         },
-        method="POST"
+        method="POST",
     )
-    with urllib.request.urlopen(req, timeout=30) as res:
-        data = json.loads(res.read().decode())
+    try:
+        with urllib.request.urlopen(req, timeout=90) as res:
+            data = json.loads(res.read().decode())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode(errors="replace") if e.fp else ""
+        try:
+            err_json = json.loads(body)
+            msg = err_json.get("error", {}).get("message") or body[:500]
+        except Exception:
+            msg = body[:500] or str(e)
+        raise Exception(f"OpenRouter HTTP {e.code} ({model}): {msg}") from e
+    except urllib.error.URLError as e:
+        raise Exception(f"OpenRouter network error ({model}): {e.reason}") from e
 
     if "error" in data:
-        raise Exception(f"OpenRouter error: {data['error'].get('message', '')}")
+        err = data["error"]
+        msg = err.get("message", str(err)) if isinstance(err, dict) else str(err)
+        raise Exception(f"OpenRouter error ({model}): {msg}")
 
     text = data["choices"][0]["message"]["content"].strip()
-    if text.startswith("```"):
-        text = text.split("```")[1]
-        if text.startswith("json"):
-            text = text[4:]
-    return json.loads(text.strip())
+    return _parse_openrouter_json(text)
+
+
+def _ask_openrouter(img: Image.Image) -> dict:
+    """
+    Kirim gambar ke OpenRouter (model vision gratis).
+    Coba primary model lalu fallback vision free lain bila gagal.
+    Prompt sama dengan Gemini agar kualitas respons setara.
+    """
+    if not OPENROUTER_API_KEY:
+        raise Exception("OPENROUTER_API_KEY kosong")
+
+    buf = io.BytesIO()
+    # Resize lebih besar supaya detail bercak/gejala tetap terbaca model
+    w, h = img.size
+    scale = min(1.0, 1024 / max(w, h))
+    img_resized = img.resize((max(1, int(w * scale)), max(1, int(h * scale))))
+    img_resized.save(buf, format="JPEG", quality=90)
+    b64 = base64.b64encode(buf.getvalue()).decode()
+
+    last_err = None
+    for model in OPENROUTER_FALLBACK_MODELS:
+        try:
+            print(f"[app] OpenRouter mencoba model: {model}")
+            return _ask_openrouter_once(b64, model, VISION_ANALYSIS_PROMPT)
+        except Exception as err:
+            print(f"[app] OpenRouter gagal ({model}): {err}")
+            last_err = err
+    raise Exception(f"Semua model OpenRouter gagal: {last_err}")
+
+
+def _openrouter_result(or_data: dict) -> dict:
+    """Susun response API dari hasil OpenRouter."""
+    is_plant = or_data.get("is_plant", True)
+    disease_name = or_data.get("disease", "Tidak Diketahui")
+    confidence = float(or_data.get("confidence", 0.85))
+    detailed = or_data.get("detailed_analysis", "")
+    is_healthy = "sehat" in disease_name.lower() or "tidak ada" in disease_name.lower()
+    return {
+        "is_plant": is_plant,
+        "warning": None if is_plant else "Bukan foto tanaman.",
+        "mode": "openrouter_vision",
+        "gemini_analysis": detailed,
+        "predictions": [{
+            "disease": disease_name,
+            "disease_key": "healthy" if is_healthy else "or_disease",
+            "confidence": confidence,
+            "solution": detailed,
+        }],
+    }
 
 
 def _color_based_diagnosis(img: Image.Image) -> dict:
@@ -257,6 +374,7 @@ def _color_based_diagnosis(img: Image.Image) -> dict:
 
 
 
+def _check_is_plant(img: Image.Image, top_confidence: float):
     """
     Memeriksa apakah gambar kemungkinan besar adalah foto tanaman/daun,
     bukan screenshot UI, dokumen, atau gambar non-tanaman.
@@ -405,23 +523,11 @@ def _ask_gemini_detailed(image: Image.Image) -> dict:
     image.save(buf, format="JPEG")
     img_bytes = buf.getvalue()
 
-    prompt = """Kamu adalah ahli patologi tanaman. Analisis gambar ini dan berikan diagnosis lengkap.
-    
-Balas HANYA dengan format JSON murni yang valid (tanpa markdown, tanpa ```json):
-{
-  "is_plant": true,
-  "disease": "Nama penyakit lengkap dalam Bahasa Indonesia (atau 'Sehat / Tidak Ada Penyakit')",
-  "confidence": 0.95,
-  "detailed_analysis": "Penjelasan mendalam dan lengkap dalam Bahasa Indonesia. Tulis diagnosis, nama ilmiah, ciri-ciri yang terlihat di foto, penyebab, dan cara pengendalian yang sangat detail mencakup: tindakan segera, pengendalian kimia (nama bahan aktif), pengendalian organik, dan pencegahan jangka panjang. Gunakan format yang mudah dibaca manusia dengan penomoran dan sub-poin."
-}
-
-Jika bukan foto tanaman/daun, set is_plant: false dan disease: "Bukan tanaman"."""
-
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=[
             genai_types.Part.from_bytes(data=img_bytes, mime_type="image/jpeg"),
-            prompt,
+            VISION_ANALYSIS_PROMPT,
         ],
     )
 
@@ -446,7 +552,8 @@ class PredictBase64Request(BaseModel):
 async def predict_base64(payload: PredictBase64Request):
     """
     Alternatif endpoint yang menerima gambar sebagai JSON (base64).
-    Gemini API (dari .env) adalah analisis UTAMA. Model ML lokal adalah FALLBACK.
+    Priority (VISION_PROVIDER=auto): Gemini → OpenRouter → ML lokal → color.
+    Set VISION_PROVIDER=openrouter untuk tes OpenRouter saja.
     """
     raw = payload.image_base64
     if "," in raw and raw.strip().lower().startswith("data:"):
@@ -465,8 +572,15 @@ async def predict_base64(payload: PredictBase64Request):
     except Exception:
         raise HTTPException(status_code=400, detail="File bukan gambar yang valid.")
 
-    # 1. API Gemini (Analisis UTAMA) — diambil dari .env
-    if GEMINI_API_KEY:
+    use_gemini = VISION_PROVIDER in ("auto", "gemini") and bool(GEMINI_API_KEY)
+    use_openrouter = VISION_PROVIDER in ("auto", "openrouter") and bool(OPENROUTER_API_KEY)
+    if VISION_PROVIDER == "openrouter":
+        use_gemini = False
+    if VISION_PROVIDER == "gemini":
+        use_openrouter = False
+
+    # 1. API Gemini (kecuali VISION_PROVIDER=openrouter)
+    if use_gemini:
         try:
             gemini_data = _ask_gemini_detailed(img)
             is_plant = gemini_data.get("is_plant", True)
@@ -489,40 +603,24 @@ async def predict_base64(payload: PredictBase64Request):
                 ],
             }
         except Exception as e:
-            print("Gemini API Error, fallback to ML:", e)
-            err_str = str(e)
-            if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
-                # Coba OpenRouter dulu sebelum color fallback
-                if OPENROUTER_API_KEY:
-                    try:
-                        or_data = _ask_openrouter(img)
-                        is_plant = or_data.get("is_plant", True)
-                        disease_name = or_data.get("disease", "Tidak Diketahui")
-                        confidence = float(or_data.get("confidence", 0.85))
-                        detailed = or_data.get("detailed_analysis", "")
-                        return {
-                            "is_plant": is_plant,
-                            "warning": None if is_plant else "Bukan foto tanaman.",
-                            "mode": "openrouter_vision",
-                            "gemini_analysis": detailed,
-                            "predictions": [{
-                                "disease": disease_name,
-                                "disease_key": "healthy" if "sehat" in disease_name.lower() else "or_disease",
-                                "confidence": confidence,
-                                "solution": detailed,
-                            }],
-                        }
-                    except Exception as or_err:
-                        print("OpenRouter Error, fallback to color:", or_err)
-                return _color_based_diagnosis(img)
-            # Error lain, lanjut ke ML fallback di bawah
+            print("Gemini API Error, fallback ke OpenRouter/ML/color:", e)
 
-    # 2. Local ML Model (FALLBACK jika Gemini gagal / key tidak ada)
-    top = max(1, min(payload.top, len(CLASS_NAMES)))
-    probs, img_obj = _get_probs_and_image(image_bytes)
-    res = _build_predictions(probs, top, payload.disease_only, img_obj)
+    # 2. OpenRouter vision
+    if use_openrouter:
+        try:
+            return _openrouter_result(_ask_openrouter(img))
+        except Exception as or_err:
+            print("OpenRouter Error, fallback ke ML/color:", or_err)
 
-    if GEMINI_API_KEY:
-        res["warning"] = "Gemini API error, beralih ke Model ML lokal."
+    # 3. Local ML Model (jika .pth tersedia dan tidak di-disable)
+    if _MODEL_AVAILABLE:
+        top = max(1, min(payload.top, len(CLASS_NAMES)))
+        probs, img_obj = _get_probs_and_image(image_bytes)
+        res = _build_predictions(probs, top, payload.disease_only, img_obj)
+        if use_gemini or use_openrouter:
+            res["warning"] = "API vision error, beralih ke Model ML lokal."
+        return res
 
-    return res
+    # 4. Color-based diagnosis — hindari 503
+    print("[app] Semua API vision & ML lokal unavailable — color_based_diagnosis")
+    return _color_based_diagnosis(img)

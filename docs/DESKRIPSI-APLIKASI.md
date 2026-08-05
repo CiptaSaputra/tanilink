@@ -219,9 +219,16 @@ Browser → Railway FastAPI (/predict-base64)
 Decode base64 → PIL Image
         │
         ▼
-Gemini API (gemini-2.0-flash)
-  Prompt: "Analisis foto tanaman ini, berikan diagnosis, 
-           confidence, dan solusi penanganan dalam Bahasa Indonesia"
+1. Gemini API (gemini-2.0-flash)  ← analisis UTAMA
+        │ gagal / quota habis
+        ▼
+2. OpenRouter vision (gemma-4 / nemotron VL free)
+        │ gagal / key kosong
+        ▼
+3. Model ML lokal ResNet9 (.pth) — jika tersedia
+        │ tidak ada
+        ▼
+4. Color-based diagnosis (demo fallback, hindari 503)
         │
         ▼
 Parse JSON response:
@@ -229,7 +236,8 @@ Parse JSON response:
     is_plant: true/false,
     disease: "Nama penyakit",
     confidence: 0.0-1.0,
-    detailed_analysis: "Deskripsi + solusi lengkap"
+    detailed_analysis: "Deskripsi + solusi lengkap",
+    mode: "gemini_primary" | "openrouter_vision" | "color_analysis" | ...
   }
         │
         ▼
@@ -238,6 +246,11 @@ Return ke frontend → tampilkan hasil
   + simpan ke DB (disease_detections table)
   + tampil di QR Trace Modal tab "Kesehatan"
 ```
+
+Env yang dibutuhkan di ML server (`ml-tumbu-main/.env` / Railway):
+- `GEMINI_API_KEY` — analisis utama
+- `OPENROUTER_API_KEY` — fallback vision (https://openrouter.ai/keys)
+- `OPENROUTER_MODEL` (opsional) — default `google/gemma-4-26b-a4b-it:free`
 
 ### Cara Kerja QR Trace & Lacak Batch
 

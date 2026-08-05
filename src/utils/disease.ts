@@ -37,7 +37,7 @@ export async function predictDisease(
   imageBase64: string,
 ): Promise<DiseaseResult | null> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 60_000);
+  const timeout = setTimeout(() => controller.abort(), 120_000);
 
   // Di production, langsung hit Railway untuk hindari Vercel timeout
   const isProduction = typeof window !== "undefined" &&

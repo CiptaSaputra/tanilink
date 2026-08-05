@@ -174,7 +174,18 @@ export const DiseaseDetector: React.FC<DiseaseDetectorProps> = ({
   const isHealthy =
     top?.disease_key?.toLowerCase().includes("healthy") ||
     top?.disease?.toLowerCase().includes("sehat");
-  const isGemini = result?.mode === "gemini_primary";
+  // Gemini & OpenRouter sama-sama analisis naratif mendalam
+  const isVisionAI =
+    result?.mode === "gemini_primary" || result?.mode === "openrouter_vision";
+  const analysisText = result?.gemini_analysis || top?.solution || "";
+  const providerLabel =
+    result?.mode === "gemini_primary"
+      ? "🤖 Dianalisis oleh Gemini AI"
+      : result?.mode === "openrouter_vision"
+        ? "🤖 Dianalisis oleh AI Vision (OpenRouter)"
+        : result?.mode === "color_analysis"
+          ? "🎨 Analisis warna (fallback demo)"
+          : "🔬 Model ResNet9 (lokal)";
 
   return (
     <div className="bg-white rounded-2xl border border-nat-border p-5 shadow-sm">
@@ -330,7 +341,7 @@ export const DiseaseDetector: React.FC<DiseaseDetectorProps> = ({
 
             {/* Mode badge */}
             <p className="text-[10px] font-semibold mb-2 opacity-60">
-              {isGemini ? "🤖 Dianalisis oleh Gemini AI" : "🔬 Model ResNet9 (lokal)"}
+              {providerLabel}
             </p>
 
             {/* Confidence bar */}
@@ -343,14 +354,13 @@ export const DiseaseDetector: React.FC<DiseaseDetectorProps> = ({
               />
             </div>
 
-            {/* Solusi / analisis Gemini */}
-            {isGemini && result.gemini_analysis ? (
-              <div className="text-[11px] text-amber-900 leading-relaxed whitespace-pre-line">
-                {result.gemini_analysis.slice(0, 400)}
-                {result.gemini_analysis.length > 400 && "…"}
+            {/* Analisis mendalam (Gemini / OpenRouter) */}
+            {isVisionAI && analysisText ? (
+              <div className="text-[11px] text-amber-900 leading-relaxed whitespace-pre-line max-h-80 overflow-y-auto">
+                {analysisText}
               </div>
             ) : top.solution ? (
-              <p className="text-[11px] text-amber-900 leading-relaxed">
+              <p className="text-[11px] text-amber-900 leading-relaxed whitespace-pre-line">
                 💡 {top.solution}
               </p>
             ) : null}
@@ -370,8 +380,8 @@ export const DiseaseDetector: React.FC<DiseaseDetectorProps> = ({
             )}
           </div>
 
-          {/* Prediksi lain (toggle) */}
-          {!isGemini && result.predictions.length > 1 && (
+          {/* Prediksi lain (toggle) — hanya mode ML lokal multi-class */}
+          {!isVisionAI && result.predictions.length > 1 && (
             <div>
               <button
                 onClick={() => setShowAllPredictions((v) => !v)}
