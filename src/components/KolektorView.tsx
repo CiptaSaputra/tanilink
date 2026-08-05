@@ -101,7 +101,7 @@ export default function KolektorView() {
     Denpasar:     { lat: -8.670,  lng: 115.212 },
   };
   const activeRegion = regionFilter === "SEMUA"
-    ? activeUser.KOLEKTOR.region
+    ? (regionalBatches[0]?.region ?? allRegionalBatches[0]?.region ?? activeUser.KOLEKTOR.region)
     : regionFilter;
   const depot = depotCoords[activeRegion] ?? { lat: -6.871, lng: 109.042 };
 

@@ -186,14 +186,33 @@ export default function FarmerView({
   const handleGetLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        async (position) => {
           const lat = Math.round(position.coords.latitude * 1000) / 1000;
           const lng = Math.round(position.coords.longitude * 1000) / 1000;
           setLatitude(lat);
           setLongitude(lng);
-          showNotification("Lokasi GPS Anda berhasil disinkronkan!", "success");
+          showNotification("Lokasi GPS disinkronkan! Mencari nama wilayah...", "success");
+          // Reverse geocoding untuk update region otomatis
+          try {
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10`,
+              { headers: { "Accept-Language": "id,en" } }
+            );
+            if (res.ok) {
+              const data = await res.json();
+              const addr = data.address;
+              if (addr) {
+                const rawRegion = addr.city || addr.regency || addr.county || addr.state_district || addr.state || "";
+                if (rawRegion) {
+                  const cleanRegion = rawRegion.replace(/(Kabupaten|Kab\.|Kota|Regency|City)\s+/gi, "").trim();
+                  setRegion(cleanRegion);
+                  showNotification(`GPS: ${lat}, ${lng} — Wilayah: ${cleanRegion}`, "success");
+                }
+              }
+            }
+          } catch { /* ignore geocoding error */ }
         },
-        (error) => {
+        () => {
           showNotification(
             "Gagal mendapatkan lokasi GPS. Silakan tentukan manual atau klik pada peta.",
             "warning",
