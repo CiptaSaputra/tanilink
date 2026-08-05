@@ -29,6 +29,8 @@ from PIL import Image
 
 MODEL_PATH = os.environ.get("MODEL_PATH", "plant-disease-model-complete.pth")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 IMAGE_SIZE = 256
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_FILE_SIZE_MB = 10
@@ -119,6 +121,56 @@ def health():
         "model_loaded": _MODEL_AVAILABLE,
         "mode": "gemini_primary" if GEMINI_API_KEY else ("ml_local" if _MODEL_AVAILABLE else "unavailable"),
     }
+
+
+def _ask_openrouter(img: Image.Image) -> dict:
+    """Kirim gambar ke OpenRouter (model vision gratis)."""
+    import urllib.request
+    buf = io.BytesIO()
+    img_resized = img.resize((512, 512))
+    img_resized.save(buf, format="JPEG", quality=85)
+    b64 = base64.b64encode(buf.getvalue()).decode()
+
+    prompt = """Kamu adalah ahli patologi tanaman. Analisis gambar daun ini.
+Balas HANYA JSON valid (tanpa markdown):
+{"is_plant":true,"disease":"nama penyakit dalam Bahasa Indonesia","confidence":0.9,"detailed_analysis":"penjelasan + solusi lengkap dalam Bahasa Indonesia"}
+Jika bukan tanaman: {"is_plant":false,"disease":"Bukan tanaman","confidence":0.99,"detailed_analysis":""}"""
+
+    payload = json.dumps({
+        "model": "meta-llama/llama-3.2-11b-vision-instruct:free",
+        "messages": [{
+            "role": "user",
+            "content": [
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}},
+                {"type": "text", "text": prompt}
+            ]
+        }],
+        "max_tokens": 512
+    }).encode()
+
+    req = urllib.request.Request(
+        "https://openrouter.ai/api/v1/chat/completions",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            "HTTP-Referer": "https://tanilink.vercel.app",
+            "X-Title": "TaniLink",
+            "Content-Type": "application/json"
+        },
+        method="POST"
+    )
+    with urllib.request.urlopen(req, timeout=30) as res:
+        data = json.loads(res.read().decode())
+
+    if "error" in data:
+        raise Exception(f"OpenRouter error: {data['error'].get('message', '')}")
+
+    text = data["choices"][0]["message"]["content"].strip()
+    if text.startswith("```"):
+        text = text.split("```")[1]
+        if text.startswith("json"):
+            text = text[4:]
+    return json.loads(text.strip())
 
 
 def _color_based_diagnosis(img: Image.Image) -> dict:
@@ -438,9 +490,30 @@ async def predict_base64(payload: PredictBase64Request):
             }
         except Exception as e:
             print("Gemini API Error, fallback to ML:", e)
-            # Jika 429 (quota habis), gunakan color-based analysis sebagai demo fallback
             err_str = str(e)
             if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str or "quota" in err_str.lower():
+                # Coba OpenRouter dulu sebelum color fallback
+                if OPENROUTER_API_KEY:
+                    try:
+                        or_data = _ask_openrouter(img)
+                        is_plant = or_data.get("is_plant", True)
+                        disease_name = or_data.get("disease", "Tidak Diketahui")
+                        confidence = float(or_data.get("confidence", 0.85))
+                        detailed = or_data.get("detailed_analysis", "")
+                        return {
+                            "is_plant": is_plant,
+                            "warning": None if is_plant else "Bukan foto tanaman.",
+                            "mode": "openrouter_vision",
+                            "gemini_analysis": detailed,
+                            "predictions": [{
+                                "disease": disease_name,
+                                "disease_key": "healthy" if "sehat" in disease_name.lower() else "or_disease",
+                                "confidence": confidence,
+                                "solution": detailed,
+                            }],
+                        }
+                    except Exception as or_err:
+                        print("OpenRouter Error, fallback to color:", or_err)
                 return _color_based_diagnosis(img)
             # Error lain, lanjut ke ML fallback di bawah
 
